@@ -32,6 +32,17 @@ android {
     kotlinOptions {
         jvmTarget = "1.8"
     }
+    buildFeatures {
+        compose = true
+    }
+    composeOptions {
+        kotlinCompilerExtensionVersion = "1.5.1"
+    }
+    packaging {
+        resources {
+            excludes += "/META-INF/{AL2.0,LGPL2.1}"
+        }
+    }
 }
 
 dependencies {
@@ -47,13 +58,13 @@ dependencies {
 
     // Google
     implementation(libs.play.services.auth)
-    implementation(libs.play.services.ads)
+//    implementation(libs.play.services.ads)
 
     // Firebase
-    implementation(platform(libs.firebase.bom))
-    implementation(libs.firebase.analytics.ktx)
-    implementation(libs.firebase.crashlytics.ktx)
-    implementation(libs.firebase.auth.ktx)
+//    implementation(platform(libs.firebase.bom))
+//    implementation(libs.firebase.analytics.ktx)
+//    implementation(libs.firebase.crashlytics.ktx)
+//    implementation(libs.firebase.auth.ktx)
 
     // Gson
     implementation(libs.gson)
