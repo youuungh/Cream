@@ -223,7 +223,7 @@ private fun MainContent(
             route = MainRoute.Home.route,
             deepLinks = MainRoute.Home.deepLinks
         ) {
-            HomeScreen(navController = navController)
+            HomeScreen(viewModel = hiltViewModel(), navController = navController)
         }
         composable(
             route = MainRoute.Category.route,

@@ -1,3 +1,22 @@
 <resources>
     <string name="app_name">Cream</string>
+    
+    <string name="try_again">재시도</string>
+    
+    <string name="just_dropped">Just Dropped</string>
+    <string name="just_dropped_subtitle">발매 상품</string>
+    <string name="most_popular">Most Popular</string>
+    <string name="most_popular_subtitle">인기 상품</string>
+    <string name="for_you">For you</string>
+    <string name="for_you_subtitle">추천 상품</string>
+    <string name="top_brand">Top Brand</string>
+    <string name="top_brand_subtitle">인기 탑 브랜드</string>
+
+    <string name="error_title">접속이 원활하지 않습니다</string>
+    <string name="error_subtitle">네트워크 연결상태를 확인하거나\n잠시 후 다시 시도해주세요</string>
+
+    <string name="lorem_text">
+        Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.\n
+        Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
+    </string>
 </resources>
