@@ -17,9 +17,9 @@ import com.ninezero.cream.ui.theme.CreamTheme
 import com.ninezero.di.R
 
 @Composable
-fun ErrorScreen(onRetry: () -> Unit) {
+fun ErrorScreen(onRetry: () -> Unit, modifier: Modifier = Modifier) {
     Column(
-        modifier = Modifier.fillMaxSize(),
+        modifier = modifier.fillMaxSize(),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
@@ -39,13 +39,5 @@ fun ErrorScreen(onRetry: () -> Unit) {
             text = stringResource(id = R.string.try_again),
             onClick = onRetry
         )
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun PreviewErrorScreen() {
-    CreamTheme {
-        ErrorScreen { }
     }
 }

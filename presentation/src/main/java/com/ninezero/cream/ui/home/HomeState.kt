@@ -12,6 +12,7 @@ sealed class HomeAction : MviAction {
     object Fetch : HomeAction()
     object Refresh : HomeAction()
     //data class ProductClicked(val productId: String) : HomeAction()
+    //data class SavedClicked(val productId: String) : HomeAction()
 }
 
 sealed class HomeResult : MviResult {
@@ -21,7 +22,7 @@ sealed class HomeResult : MviResult {
 }
 
 sealed class HomeEvent : MviEvent {
-    //data class NavigateToProductDetail(val productId: String) : HomeEvent()
+    data class NavigateToProductDetail(val productId: String) : HomeEvent()
 }
 
 sealed class HomeState : MviViewState {

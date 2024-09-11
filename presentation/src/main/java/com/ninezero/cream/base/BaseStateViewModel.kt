@@ -14,6 +14,7 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.scan
+import kotlinx.coroutines.launch
 
 abstract class BaseStateViewModel<Action : MviAction, Result : MviResult, Event : MviEvent, State : MviViewState, Reducer : MviStateReducer<State, Result>>(
     initialState: State,

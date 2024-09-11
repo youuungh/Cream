@@ -33,6 +33,7 @@ class HomeMapper @Inject constructor() : BaseMapper<HomeResponse, HomeData>() {
                     ?.take(10)
                     ?.map { it.toDomain() } ?: emptyList(),
                 forYou = model?.products
+                    ?.shuffled()
                     ?.map { it.toDomain() } ?: emptyList(),
                 brands = model?.products
                     ?.map { it.brand.toDomain() }

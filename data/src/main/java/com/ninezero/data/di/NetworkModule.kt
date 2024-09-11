@@ -54,7 +54,7 @@ class NetworkModule {
     ): Retrofit {
         return Retrofit.Builder()
             .client(okHttpClient)
-            .baseUrl(logBaseUrl(baseUrl = "https://gist.githubusercontent.com/youuungh/12862d93521f807a474b75f9a1341c13/raw/c0e9e69cea7f29e464572348382eed33978c25b6/"))
+            .baseUrl(logBaseUrl(baseUrl = "https://gist.githubusercontent.com/youuungh/12862d93521f807a474b75f9a1341c13/raw/59d26f39cf5ab47d381f05efaddfcf909bd5f09b/"))
             .addConverterFactory(StringConverterFactory(gson))
             .build()
     }

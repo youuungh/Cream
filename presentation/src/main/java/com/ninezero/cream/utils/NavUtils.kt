@@ -10,7 +10,7 @@ import com.ninezero.cream.ui.OrderHistoryRoute
 import com.ninezero.cream.ui.ProductDetailRoute
 import com.ninezero.cream.ui.SearchRoute
 
-object NavigationUtils {
+object NavUtils {
 
     fun navigateTo(
         controller: NavHostController,

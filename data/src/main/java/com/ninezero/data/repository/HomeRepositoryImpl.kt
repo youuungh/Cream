@@ -15,7 +15,7 @@ class HomeRepositoryImpl @Inject constructor(
     private val homeMapper: HomeMapper
 ) : HomeRepository {
     override fun fetchHomeData(): Flow<EntityWrapper<HomeData>> = flow {
-        emit(homeMapper.mapFromResult(remoteDataSource.getHomeData()))
+        emit(homeMapper.mapFromResult(remoteDataSource.fetchData()))
     }.catch { e ->
         emit(EntityWrapper.Fail(e))
     }

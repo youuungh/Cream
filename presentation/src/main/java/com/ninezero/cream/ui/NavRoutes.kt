@@ -11,7 +11,6 @@ import androidx.navigation.navArgument
 import androidx.navigation.navDeepLink
 import com.ninezero.cream.utils.GsonUtils
 import com.ninezero.di.R
-import com.ninezero.domain.model.Category
 
 sealed class MainRoute(
     override val route: String,
@@ -20,7 +19,7 @@ sealed class MainRoute(
 ) : Destination {
     object Home : MainRoute(
         AppRoutes.MAIN_HOME,
-        { painterResource(id = R.drawable.ic_shop) },
+        { painterResource(id = R.drawable.ic_store) },
         RouteTitles.MAIN_HOME
     )
 
@@ -32,7 +31,7 @@ sealed class MainRoute(
 
     object Saved : MainRoute(
         AppRoutes.MAIN_SAVED,
-        { painterResource(id = R.drawable.ic_saved) },
+        { painterResource(id = R.drawable.ic_save) },
         RouteTitles.MAIN_SAVED
     )
 
@@ -82,10 +81,10 @@ object OrderHistoryRoute : Destination {
     )
 }
 
-object CategoryDetailRoute : DestinationArg<Category> {
+object CategoryDetailRoute : DestinationArg<String> {
     override val route: String = AppRoutes.CATEGORY_DETAIL
     override val title: String = RouteTitles.CATEGORY_DETAIL
-    override val argName: String = "category"
+    override val argName: String = "categoryId"
     override val deepLinks: List<NavDeepLink> = listOf(
         navDeepLink { uriPattern = "${AppRoutes.DEEP_LINK_SCHEME}$route/{$argName}" }
     )
@@ -94,14 +93,12 @@ object CategoryDetailRoute : DestinationArg<Category> {
         navArgument(argName) { type = NavType.StringType }
     )
 
-    override fun navigateWithArg(item: Category): String {
-        val arg = GsonUtils.toJson(item)
-        return "$route/$arg"
+    override fun navigateWithArg(item: String): String {
+        return "$route/$item"
     }
 
-    override fun findArgument(navBackStackEntry: NavBackStackEntry): Category? {
-        val categoryString = navBackStackEntry.arguments?.getString(argName)
-        return GsonUtils.fromJson<Category>(categoryString)
+    override fun findArgument(navBackStackEntry: NavBackStackEntry): String? {
+        return navBackStackEntry.arguments?.getString(argName)
     }
 }
 

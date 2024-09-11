@@ -5,3 +5,8 @@ data class Category(
     val categoryName: String,
     val ko: String
 )
+
+data class CategoryDetails(
+    val category: Category,
+    val products: List<Product>
+)

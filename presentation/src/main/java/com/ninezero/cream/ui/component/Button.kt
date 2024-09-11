@@ -156,7 +156,7 @@ private fun PreviewButtons() {
             )
             IconTonalButton(
                 onClick = {},
-                iconResId = R.drawable.ic_saved,
+                iconResId = R.drawable.ic_save,
                 contentDescription = "Save",
                 modifier = Modifier.size(36.dp)
             )
