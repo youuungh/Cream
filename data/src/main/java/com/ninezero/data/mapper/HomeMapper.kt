@@ -25,19 +25,27 @@ class HomeMapper @Inject constructor() : BaseMapper<HomeResponse, HomeData>() {
                 topBanners = model?.topBanners?.map { it.toDomain() } ?: emptyList(),
                 banner = model?.banner?.toDomain(),
                 justDropped = model?.products
+                    ?.asSequence()
                     ?.sortedByDescending { it.releaseDate }
                     ?.take(10)
-                    ?.map { it.toDomain() } ?: emptyList(),
+                    ?.map { it.toDomain() }
+                    ?.toList() ?: emptyList(),
                 mostPopular = model?.products
+                    ?.asSequence()
                     ?.sortedByDescending { it.tradingVolume }
                     ?.take(10)
-                    ?.map { it.toDomain() } ?: emptyList(),
+                    ?.map { it.toDomain() }
+                    ?.toList() ?: emptyList(),
                 forYou = model?.products
+                    ?.asSequence()
                     ?.shuffled()
-                    ?.map { it.toDomain() } ?: emptyList(),
+                    ?.map { it.toDomain() }
+                    ?.toList() ?: emptyList(),
                 brands = model?.products
+                    ?.asSequence()
                     ?.map { it.brand.toDomain() }
-                    ?.distinctBy { it.brandId } ?: emptyList()
+                    ?.distinctBy { it.brandId }
+                    ?.toList() ?: emptyList()
             )
         )
     }

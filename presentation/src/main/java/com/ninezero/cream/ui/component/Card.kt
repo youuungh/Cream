@@ -1,5 +1,14 @@
+@file:OptIn(ExperimentalSharedTransitionApi::class)
+
 package com.ninezero.cream.ui.component
 
+import androidx.compose.animation.EnterExitState
+import androidx.compose.animation.ExperimentalSharedTransitionApi
+import androidx.compose.animation.SharedTransitionScope
+import androidx.compose.animation.core.animate
+import androidx.compose.animation.core.animateDp
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -23,6 +32,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -35,7 +45,13 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
+import com.ninezero.cream.ui.LocalNavAnimatedVisibilityScope
+import com.ninezero.cream.ui.LocalSharedTransitionScope
+import com.ninezero.cream.utils.CategorySharedElementKey
+import com.ninezero.cream.utils.CategorySharedElementType
 import com.ninezero.cream.utils.NumUtils
+import com.ninezero.cream.utils.categoryDetailBoundsTransform
+import com.ninezero.cream.utils.getCategoryImageResource
 import com.ninezero.di.R
 import com.ninezero.domain.model.Brand
 import com.ninezero.domain.model.Category
@@ -174,57 +190,93 @@ fun BrandCard(
 @Composable
 fun CategoryCard(
     category: Category,
-    onClick: () -> Unit
+    onCategoryClick: (String, String) -> Unit
 ) {
-    Card(
-        modifier = Modifier.aspectRatio(1f),
-        shape = RoundedCornerShape(16.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
-    ) {
-        Box(
+    val sharedTransitionScope = LocalSharedTransitionScope.current
+        ?: throw IllegalStateException("No Scope found")
+    val animatedVisibilityScope = LocalNavAnimatedVisibilityScope.current
+        ?: throw IllegalStateException("No Scope found")
+    val roundedCornerAnimation by animatedVisibilityScope.transition
+        .animateDp(label = "rounded_corner") { enterExit: EnterExitState ->
+            when (enterExit) {
+                EnterExitState.PreEnter -> 0.dp
+                EnterExitState.Visible -> 16.dp
+                EnterExitState.PostExit -> 16.dp
+            }
+        }
+
+    with(sharedTransitionScope) {
+        Card(
+            shape = RoundedCornerShape(roundedCornerAnimation),
+            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
             modifier = Modifier
-                .fillMaxSize()
-                .clickable(onClick = onClick),
+                .aspectRatio(1f)
+                .sharedBounds(
+                    sharedContentState = rememberSharedContentState(
+                        key = CategorySharedElementKey(
+                            categoryId = category.categoryId,
+                            categoryName = category.ko,
+                            type = CategorySharedElementType.Bounds
+                        )
+                    ),
+                    animatedVisibilityScope = animatedVisibilityScope,
+                    boundsTransform = categoryDetailBoundsTransform,
+                    clipInOverlayDuringTransition = OverlayClip(
+                        RoundedCornerShape(
+                            roundedCornerAnimation
+                        )
+                    ),
+                    enter = fadeIn(),
+                    exit = fadeOut()
+                )
         ) {
-            Image(
-                painter = painterResource(id = getCategoryImageResource(category.categoryId)),
-                contentDescription = category.categoryName,
-                modifier = Modifier.fillMaxSize(),
-                contentScale = ContentScale.Crop
-            )
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(
-                        Brush.verticalGradient(
-                            0f to Color.Transparent,
-                            0.3f to Color.Black.copy(alpha = 0.1f),
-                            0.6f to Color.Black.copy(alpha = 0.3f),
-                            0.8f to Color.Black.copy(alpha = 0.5f),
-                            1f to Color.Black.copy(alpha = 0.7f)
+                    .clickable(onClick = {
+                        onCategoryClick(
+                            category.categoryId,
+                            category.ko
                         )
-                    )
-            )
-            Column(
-                modifier = Modifier
-                    .align(Alignment.BottomStart)
-                    .padding(16.dp)
+                    }),
             ) {
-                Text(
-                    text = category.ko,
-                    style = MaterialTheme.typography.titleMedium,
-                    color = Color.White
+                Image(
+                    painter = painterResource(id = getCategoryImageResource(category.categoryId)),
+                    contentDescription = category.categoryName,
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Crop
                 )
-                Text(
-                    text = category.categoryName,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = Color.White.copy(alpha = 0.7f),
-                    maxLines = 1
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(
+                            Brush.verticalGradient(
+                                0f to Color.Transparent,
+                                0.3f to Color.Black.copy(alpha = 0.1f),
+                                0.6f to Color.Black.copy(alpha = 0.3f),
+                                0.8f to Color.Black.copy(alpha = 0.5f),
+                                1f to Color.Black.copy(alpha = 0.7f)
+                            )
+                        )
                 )
+                Column(
+                    modifier = Modifier
+                        .align(Alignment.BottomStart)
+                        .padding(16.dp)
+                ) {
+                    Text(
+                        text = category.ko,
+                        style = MaterialTheme.typography.titleMedium,
+                        color = Color.White
+                    )
+                    Text(
+                        text = category.categoryName,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = Color.White.copy(alpha = 0.7f),
+                        maxLines = 1
+                    )
+                }
             }
         }
     }
 }
-
-fun getCategoryImageResource(categoryId: String) =
-    R.drawable::class.java.getField("category_img_$categoryId").getInt(null)

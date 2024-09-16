@@ -64,11 +64,11 @@ fun <T> GridSection(
     ) {
         SectionTitle(title = title, subtitle = subtitle)
         LazyHorizontalGrid(
+            modifier = Modifier.height(height.dp),
             rows = GridCells.Fixed(rows),
             contentPadding = PaddingValues(horizontal = 16.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-            modifier = Modifier.height(height.dp)
+            verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             items(items) { itemContent(it) }
         }
@@ -76,35 +76,40 @@ fun <T> GridSection(
 }
 
 @Composable
-fun <T> VerticalGridSection(
-    items: List<T>,
-    columns: Int,
+fun <T> VerticalGrid(
     modifier: Modifier = Modifier,
+    columns: Int,
+    items: List<T>,
     itemContent: @Composable (T) -> Unit
 ) {
     LazyVerticalGrid(
+        modifier = modifier,
         columns = GridCells.Fixed(columns),
-        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 16.dp),
+        contentPadding = PaddingValues(
+            start = 16.dp,
+            end = 16.dp,
+            top = 8.dp,
+            bottom = 16.dp
+        ),
         horizontalArrangement = Arrangement.spacedBy(16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
-        modifier = modifier
+        verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         items(items) { itemContent(it) }
     }
 }
 
 @Composable
-fun <T> VerticalGridSectionWithName(
-    name: String,
-    items: List<T>,
-    columns: Int,
+fun <T> VerticalGridDetail(
     modifier: Modifier = Modifier,
+    columns: Int,
+    items: List<T>,
     itemContent: @Composable (T) -> Unit
 ) {
     val density = LocalDensity.current
     val navigationBarHeight = WindowInsets.navigationBars.getBottom(density)
 
     LazyVerticalGrid(
+        modifier = modifier,
         columns = GridCells.Fixed(columns),
         contentPadding = PaddingValues(
             start = 16.dp,
@@ -113,8 +118,7 @@ fun <T> VerticalGridSectionWithName(
             bottom = 16.dp + with(density) { navigationBarHeight.toDp() }
         ),
         horizontalArrangement = Arrangement.spacedBy(16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
-        modifier = modifier
+        verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         items(items) { itemContent(it) }
     }

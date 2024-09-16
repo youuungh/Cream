@@ -37,8 +37,8 @@ fun FilledButton(
     enabled: Boolean = true
 ) {
     Button(
-        onClick = onClick,
         modifier = modifier,
+        onClick = onClick,
         enabled = enabled,
         colors = ButtonDefaults.buttonColors()
     ) {
@@ -54,8 +54,8 @@ fun OutlinedButton(
     enabled: Boolean = true
 ) {
     OutlinedButton(
-        onClick = onClick,
         modifier = modifier,
+        onClick = onClick,
         enabled = enabled
     ) {
         Text(text = text)
@@ -71,8 +71,8 @@ fun TonalButton(
     content: @Composable RowScope.() -> Unit
 ) {
     FilledTonalButton(
-        onClick = onClick,
         modifier = modifier,
+        onClick = onClick,
         enabled = enabled,
         contentPadding = contentPadding,
         content = content
@@ -88,8 +88,8 @@ fun IconTonalButton(
     enabled: Boolean = true
 ) {
     FilledTonalButton(
-        onClick = onClick,
         modifier = modifier,
+        onClick = onClick,
         enabled = enabled,
         contentPadding = PaddingValues(8.dp)
     ) {
@@ -110,8 +110,8 @@ fun LoadingButton(
     loadingText: String = "잠시만요...",
 ) {
     Button(
-        onClick = onClick,
         modifier = modifier,
+        onClick = onClick,
         enabled = !loading,
         colors = ButtonDefaults.buttonColors()
     ) {
@@ -155,10 +155,10 @@ private fun PreviewButtons() {
                 onClick = {}
             )
             IconTonalButton(
+                modifier = Modifier.size(36.dp),
                 onClick = {},
                 iconResId = R.drawable.ic_save,
-                contentDescription = "Save",
-                modifier = Modifier.size(36.dp)
+                contentDescription = "Save"
             )
         }
     }

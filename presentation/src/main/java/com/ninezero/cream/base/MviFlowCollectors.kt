@@ -1,4 +1,4 @@
-package com.ninezero.cream.utils
+package com.ninezero.cream.base
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -8,12 +8,6 @@ import androidx.compose.runtime.remember
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.repeatOnLifecycle
-import com.ninezero.cream.base.BaseStateViewModel
-import com.ninezero.cream.base.MviAction
-import com.ninezero.cream.base.MviEvent
-import com.ninezero.cream.base.MviResult
-import com.ninezero.cream.base.MviStateReducer
-import com.ninezero.cream.base.MviViewState
 import kotlinx.coroutines.flow.StateFlow
 
 @Composable

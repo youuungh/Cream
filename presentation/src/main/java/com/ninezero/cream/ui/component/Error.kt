@@ -17,7 +17,10 @@ import com.ninezero.cream.ui.theme.CreamTheme
 import com.ninezero.di.R
 
 @Composable
-fun ErrorScreen(onRetry: () -> Unit, modifier: Modifier = Modifier) {
+fun ErrorScreen(
+    modifier: Modifier = Modifier,
+    onRetry: () -> Unit
+) {
     Column(
         modifier = modifier.fillMaxSize(),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -36,8 +39,8 @@ fun ErrorScreen(onRetry: () -> Unit, modifier: Modifier = Modifier) {
             modifier = Modifier.padding(bottom = 16.dp)
         )
         OutlinedButton(
-            text = stringResource(id = R.string.try_again),
-            onClick = onRetry
+            onClick = onRetry,
+            text = stringResource(id = R.string.try_again)
         )
     }
 }

@@ -15,10 +15,11 @@ import javax.inject.Inject
 
 @HiltViewModel
 class CategoryViewModel @Inject constructor(
-    private val categoryUseCase: CategoryUseCase
+    private val categoryUseCase: CategoryUseCase,
+    reducer: CategoryReducer
 ) : BaseStateViewModel<CategoryAction, CategoryResult, CategoryEvent, CategoryState, CategoryReducer>(
     initialState = CategoryState.Loading,
-    reducer = CategoryReducer()
+    reducer = reducer
 ) {
     init {
         action(CategoryAction.Fetch)
@@ -27,9 +28,9 @@ class CategoryViewModel @Inject constructor(
     override fun CategoryAction.process(): Flow<CategoryResult> {
         return when (this) {
             CategoryAction.Fetch, CategoryAction.Refresh -> fetchCategories()
-            is CategoryAction.CategoryClicked -> emitEvent(
-                event = CategoryEvent.NavigateToCategoryDetail(categoryId)
-            )
+            is CategoryAction.CategoryClicked -> flow {
+                emit(CategoryEvent.NavigateToCategoryDetail(categoryId, categoryName))
+            }
         }
     }
 

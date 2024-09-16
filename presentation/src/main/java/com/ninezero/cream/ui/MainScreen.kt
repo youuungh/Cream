@@ -1,186 +1,159 @@
+@file:OptIn(ExperimentalSharedTransitionApi::class)
+
 package com.ninezero.cream.ui
 
-import androidx.compose.animation.core.tween
+import androidx.compose.animation.AnimatedVisibilityScope
+import androidx.compose.animation.ExperimentalSharedTransitionApi
+import androidx.compose.animation.SharedTransitionLayout
+import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.ArrowBack
-import androidx.compose.material3.BottomAppBar
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.NavigationBarItem
-import androidx.compose.material3.NavigationBarItemDefaults
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.foundation.layout.systemBarsPadding
+import androidx.compose.material3.SnackbarHost
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.navigation.NavGraph.Companion.findStartDestination
-import androidx.navigation.NavHostController
+import androidx.navigation.NavBackStackEntry
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
-import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.ninezero.cream.ui.category.CategoryDetailScreen
-import com.ninezero.cream.ui.category.CategoryScreen
-import com.ninezero.cream.ui.component.SearchBar
-import com.ninezero.cream.ui.component.Snackbar
-import com.ninezero.cream.ui.home.HomeScreen
-import com.ninezero.cream.utils.NavUtils
+import com.ninezero.cream.ui.component.BottomBar
+import com.ninezero.cream.ui.component.CreamScaffold
+import com.ninezero.cream.ui.component.CustomSnackbar
+import com.ninezero.cream.ui.component.rememberCreamScaffoldState
+import com.ninezero.cream.ui.navigation.AppRoutes
+import com.ninezero.cream.ui.navigation.addMainGraph
+import com.ninezero.cream.ui.navigation.composableWithCompositionLocal
+import com.ninezero.cream.ui.navigation.rememberCreamNavController
+import com.ninezero.cream.ui.theme.CreamTheme
+import com.ninezero.cream.utils.nonSpatialExpressiveSpring
+import com.ninezero.cream.utils.spatialExpressiveSpring
 import com.ninezero.cream.viewmodel.MainViewModel
-import com.ninezero.di.R
+
+val LocalNavAnimatedVisibilityScope = compositionLocalOf<AnimatedVisibilityScope?> { null }
+val LocalSharedTransitionScope = compositionLocalOf<SharedTransitionScope?> { null }
 
 @Composable
 fun MainScreen() {
-    val viewModel = hiltViewModel<MainViewModel>()
-    val snackbarHostState = remember { SnackbarHostState() }
-    val navController = rememberNavController()
-    val navBackStackEntry by navController.currentBackStackEntryAsState()
+    //val viewModel = hiltViewModel<MainViewModel>()
+    val navController = rememberCreamNavController()
+
+    SharedTransitionLayout {
+        CompositionLocalProvider(
+            LocalSharedTransitionScope provides this
+        ) {
+            NavHost(
+                navController = navController.navController,
+                startDestination = AppRoutes.MAIN
+            ) {
+                composableWithCompositionLocal(route = AppRoutes.MAIN) {
+                    MainContent(
+                        onCartClick = navController::navigateToCart,
+                        onSearchClick = navController::navigateToSearch,
+                        onCategoryClick = navController::navigateToCategoryDetail
+                    )
+                }
+
+                composableWithCompositionLocal(
+                    route = "${AppRoutes.CATEGORY_DETAIL}/{${AppRoutes.CATEGORY_ID_KEY}}/{${AppRoutes.CATEGORY_NAME_KEY}}",
+                    arguments = listOf(
+                        navArgument(AppRoutes.CATEGORY_ID_KEY) { type = NavType.StringType },
+                        navArgument(AppRoutes.CATEGORY_NAME_KEY) { type = NavType.StringType }
+                    )
+                ) {
+                    val arguments = requireNotNull(it.arguments)
+                    val categoryId = arguments.getString(AppRoutes.CATEGORY_ID_KEY) ?: ""
+                    val categoryName = arguments.getString(AppRoutes.CATEGORY_NAME_KEY) ?: ""
+
+                    CategoryDetailScreen(
+                        categoryId = categoryId,
+                        categoryName = categoryName,
+                        onProductClick = { productId ->
+                            navController.navigateToProductDetail(productId = productId, it)
+                        },
+                        onNavigateBack = navController::navigateBack
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun MainContent(
+    modifier: Modifier = Modifier,
+    onCartClick: () -> Unit,
+    onSearchClick: () -> Unit,
+    onCategoryClick: (String, String, NavBackStackEntry) -> Unit
+) {
+    val creamScaffoldState = rememberCreamScaffoldState()
+    val nestedNavController = rememberCreamNavController()
+    val navBackStackEntry by nestedNavController.navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
 
-    Scaffold(
+    val sharedTransitionScope = LocalSharedTransitionScope.current
+        ?: throw IllegalStateException("No SharedElementScope found")
+    val animatedVisibilityScope = LocalNavAnimatedVisibilityScope.current
+        ?: throw IllegalStateException("No SharedElementScope found")
+
+    CreamScaffold(
         bottomBar = {
-            if (MainRoute.isMainRoute(currentRoute))
-                BottomNavigationBar(navController, currentRoute)
-        },
-        snackbarHost = { Snackbar(snackbarHostState) },
-        contentWindowInsets = WindowInsets(0, 0, 0, 0)
-    ) { innerPadding ->
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-        ) {
-            MainNavHost(
-                navController = navController,
-                viewModel = viewModel,
-                modifier = Modifier.fillMaxSize()
-            )
-        }
-    }
-}
-
-@Composable
-private fun BottomNavigationBar(navController: NavHostController, currentRoute: String?) {
-    val bottomNavigationRoutes = listOf(
-        MainRoute.Home,
-        MainRoute.Category,
-        MainRoute.Saved,
-        MainRoute.MyPage
-    )
-
-    BottomAppBar(
-        modifier = Modifier
-            .clip(RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp)),
-    ) {
-        bottomNavigationRoutes.forEach {
-            NavigationBarItem(
-                icon = { Icon(painter = it.icon(), contentDescription = it.title) },
-                alwaysShowLabel = false,
-                label = { Text(it.title) },
-                selected = currentRoute == it.route,
-                onClick = {
-                    NavUtils.navigateTo(
-                        controller = navController,
-                        destination = it.route,
-                        popUpToRoute = navController.graph.findStartDestination().route
+            with(animatedVisibilityScope) {
+                with(sharedTransitionScope) {
+                    BottomBar(
+                        currentRoute = currentRoute ?: AppRoutes.MAIN_HOME,
+                        navigateToRoute = nestedNavController::navigateToBottomBarRoute,
+                        modifier = Modifier
+                            .renderInSharedTransitionScopeOverlay(zIndexInOverlay = 1f)
+                            .animateEnterExit(
+                                enter = fadeIn(
+                                    nonSpatialExpressiveSpring()
+                                ) + slideInVertically(
+                                    spatialExpressiveSpring()
+                                ) { it },
+                                exit = fadeOut(
+                                    nonSpatialExpressiveSpring()
+                                ) + slideOutVertically(
+                                    spatialExpressiveSpring()
+                                ) { it }
+                            )
                     )
-                },
-                colors = NavigationBarItemDefaults.colors(
-                    selectedIconColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                    selectedTextColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                    unselectedTextColor = MaterialTheme.colorScheme.outline,
-                    unselectedIconColor = MaterialTheme.colorScheme.outline
-                )
+                }
+            }
+        },
+        modifier = modifier,
+        snackbarHost = {
+            SnackbarHost(
+                hostState = it,
+                modifier = Modifier.systemBarsPadding(),
+                snackbar = { snackbarData -> CustomSnackbar(snackbarData) }
+            )
+        },
+        snackbarHostState = creamScaffoldState.snackBarHostState
+    ) { innerPadding ->
+        NavHost(
+            navController = nestedNavController.navController,
+            startDestination = AppRoutes.MAIN_HOME
+        ) {
+            addMainGraph(
+                onCartClick = onCartClick,
+                onSearchClick = onSearchClick,
+                onCategoryClick = onCategoryClick,
+                modifier = Modifier
+                    .padding(innerPadding)
+                    .consumeWindowInsets(innerPadding)
             )
         }
     }
 }
 
-@Composable
-private fun MainNavHost(
-    navController: NavHostController,
-    viewModel: MainViewModel,
-    modifier: Modifier = Modifier
-) {
-    NavHost(
-        navController = navController,
-        startDestination = MainRoute.Home.route,
-        modifier = modifier,
-        enterTransition = { fadeIn(animationSpec = tween(300)) },
-        exitTransition = { fadeOut(animationSpec = tween(300)) }
-    ) {
-        composable(
-            route = MainRoute.Home.route,
-            deepLinks = MainRoute.Home.deepLinks
-        ) {
-            HomeScreen(
-                viewModel = hiltViewModel(),
-                onOpenSearch = { viewModel.openSearch(navController) },
-                onOpenCart = { viewModel.openCart(navController) }
-            )
-        }
-        composable(
-            route = MainRoute.Category.route,
-            deepLinks = MainRoute.Category.deepLinks
-        ) {
-            CategoryScreen(
-                viewModel = hiltViewModel(),
-                onOpenCart = { viewModel.openCart(navController) },
-                onCategoryClick = { navController.navigate(CategoryDetailRoute.navigateWithArg(it)) }
-            )
-        }
-        composable(
-            route = MainRoute.Saved.route,
-            deepLinks = MainRoute.Saved.deepLinks
-        ) {
-            // Saved
-        }
-        composable(
-            route = MainRoute.MyPage.route,
-            deepLinks = MainRoute.MyPage.deepLinks
-        ) {
-            // MyPage
-        }
-        composable(
-            route = CartRoute.route,
-            deepLinks = CartRoute.deepLinks
-        ) {
-            // Cart
-        }
-        composable(
-            route = SearchRoute.route,
-            deepLinks = SearchRoute.deepLinks
-        ) {
-            // Search
-        }
-        composable(
-            route = CategoryDetailRoute.routeWithArgName(),
-            arguments = CategoryDetailRoute.arguments
-        ) {
-            CategoryDetailScreen(
-                viewModel = hiltViewModel(),
-                onNavigateBack = { navController.popBackStack() },
-                onProductClick = { // ProductDetail
-                }
-            )
-        }
-    }
-}
+

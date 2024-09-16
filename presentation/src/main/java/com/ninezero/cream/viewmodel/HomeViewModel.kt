@@ -15,10 +15,11 @@ import javax.inject.Inject
 
 @HiltViewModel
 class HomeViewModel @Inject constructor(
-    private val homeUseCase: HomeUseCase
+    private val homeUseCase: HomeUseCase,
+    reducer: HomeReducer
 ) : BaseStateViewModel<HomeAction, HomeResult, HomeEvent, HomeState, HomeReducer>(
     initialState = HomeState.Loading,
-    reducer = HomeReducer()
+    reducer = reducer
 ) {
     init {
         action(HomeAction.Fetch)
@@ -26,7 +27,7 @@ class HomeViewModel @Inject constructor(
 
     override fun HomeAction.process(): Flow<HomeResult> {
         return when (this) {
-            is HomeAction.Fetch, HomeAction.Refresh -> fetchHomeData()
+            HomeAction.Fetch, HomeAction.Refresh -> fetchHomeData()
         }
     }
 

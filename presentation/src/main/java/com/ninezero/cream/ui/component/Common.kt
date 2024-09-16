@@ -10,6 +10,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsDraggedAsState
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
@@ -21,27 +22,39 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Snackbar
+import androidx.compose.material3.SnackbarData
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.times
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import coil.compose.AsyncImage
+import coil.compose.AsyncImagePainter
+import coil.request.ImageRequest
 import com.ninezero.domain.model.Banner
 import com.ninezero.domain.model.TopBanner
 import kotlinx.coroutines.delay
@@ -58,20 +71,15 @@ fun Divider() {
 }
 
 @Composable
-fun Snackbar(
-    snackbarHostState: SnackbarHostState,
+fun CustomSnackbar(
+    snackbarData: SnackbarData,
     modifier: Modifier = Modifier,
     cornerRadius: Int = 10
 ) {
-    SnackbarHost(
-        hostState = snackbarHostState,
-        modifier = modifier.padding(16.dp),
-        snackbar = {
-            Snackbar(
-                snackbarData = it,
-                shape = RoundedCornerShape(cornerRadius.dp)
-            )
-        }
+    Snackbar(
+        modifier = modifier,
+        snackbarData = snackbarData,
+        shape = RoundedCornerShape(cornerRadius.dp)
     )
 }
 
@@ -84,19 +92,19 @@ fun SearchBar(
 
     Box(
         modifier = modifier
+            .fillMaxWidth()
             .clip(RoundedCornerShape(12.dp))
             .background(MaterialTheme.colorScheme.surfaceVariant)
             .clickable(
                 interactionSource = interactionSource,
                 indication = null,
                 onClick = onClick
-            )
-            .fillMaxWidth(),
+            ),
         contentAlignment = Alignment.CenterStart
     ) {
         Text(
-            text = "브랜드, 상품 등",
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+            text = "브랜드, 상품 등",
             color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
             style = MaterialTheme.typography.bodyMedium
         )
@@ -105,6 +113,8 @@ fun SearchBar(
 
 @Composable
 fun SingleBanner(banner: Banner) {
+    var isImageLoaded by remember { mutableStateOf(false) }
+
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -115,8 +125,11 @@ fun SingleBanner(banner: Banner) {
             model = banner.imageUrl,
             contentDescription = null,
             modifier = Modifier.fillMaxSize(),
-            contentScale = ContentScale.Crop
+            contentScale = ContentScale.Crop,
+            onSuccess = { isImageLoaded = true }
         )
+
+        if (!isImageLoaded) CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
     }
 }
 
@@ -125,12 +138,26 @@ fun TopBanner(banners: List<TopBanner>) {
     val pagerState = rememberPagerState(pageCount = { banners.size })
     val screenWidth = LocalConfiguration.current.screenWidthDp.dp
     val indicatorWidth = (screenWidth - 32.dp) / banners.size
+    val isDragged by pagerState.interactionSource.collectIsDraggedAsState()
+    var isAutoScrolling by remember { mutableStateOf(true) }
+    val lifecycleOwner = LocalLifecycleOwner.current
 
-    LaunchedEffect(Unit) {
-        while (true) {
-            delay(3000)
-            val nextPage = (pagerState.currentPage + 1) % banners.size
-            pagerState.animateScrollToPage(nextPage)
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            isAutoScrolling = event == Lifecycle.Event.ON_RESUME
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
+    }
+    LaunchedEffect(isDragged, isAutoScrolling) {
+        if (!isDragged && isAutoScrolling) {
+            while (true) {
+                delay(3000)
+                val nextPage = (pagerState.currentPage + 1) % banners.size
+                pagerState.animateScrollToPage(nextPage)
+            }
         }
     }
     Box(
@@ -144,12 +171,24 @@ fun TopBanner(banners: List<TopBanner>) {
                 .fillMaxWidth()
                 .height(400.dp)
         ) { page ->
+            var isImageLoading by remember { mutableStateOf(true) }
+
             AsyncImage(
-                model = banners[page].imageUrl.firstOrNull(),
-                contentDescription = null,
                 modifier = Modifier.fillMaxSize(),
-                contentScale = ContentScale.Crop
+                model = ImageRequest.Builder(LocalContext.current)
+                    .data(banners[page].imageUrl.firstOrNull())
+                    .crossfade(true)
+                    .build(),
+                contentDescription = null,
+                contentScale = ContentScale.Crop,
+                onState = {
+                    isImageLoading = it is AsyncImagePainter.State.Loading
+                }
             )
+
+            if (isImageLoading) {
+                CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+            }
         }
         Box(
             modifier = Modifier

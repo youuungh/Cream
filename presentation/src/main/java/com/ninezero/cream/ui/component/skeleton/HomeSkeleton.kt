@@ -1,4 +1,4 @@
-package com.ninezero.cream.ui.home
+package com.ninezero.cream.ui.component.skeleton
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement

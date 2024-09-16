@@ -11,7 +11,7 @@ import javax.inject.Inject
 sealed class CategoryAction : MviAction {
     object Fetch : CategoryAction()
     object Refresh : CategoryAction()
-    data class CategoryClicked(val categoryId: String) : CategoryAction()
+    data class CategoryClicked(val categoryId: String, val categoryName: String) : CategoryAction()
 }
 
 sealed class CategoryResult : MviResult {
@@ -21,7 +21,7 @@ sealed class CategoryResult : MviResult {
 }
 
 sealed class CategoryEvent : MviEvent, CategoryResult() {
-    data class NavigateToCategoryDetail(val categoryId: String) : CategoryEvent()
+    data class NavigateToCategoryDetail(val categoryId: String, val categoryName: String) : CategoryEvent()
 }
 
 sealed class CategoryState : MviViewState {

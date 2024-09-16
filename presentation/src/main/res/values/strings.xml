@@ -3,6 +3,14 @@
     
     <string name="try_again">재시도</string>
     
+    <string name="main_home">HOME</string>
+    <string name="main_category">CATEGORY</string>
+    <string name="main_saved">SAVED</string>
+    <string name="main_my_page">MY PAGE</string>
+    <string name="cart">장바구니</string>
+    <string name="search">검색</string>
+    <string name="order_history">구매 내역</string>
+
     <string name="just_dropped">Just Dropped</string>
     <string name="just_dropped_subtitle">발매 상품</string>
     <string name="most_popular">Most Popular</string>

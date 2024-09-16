@@ -1,4 +1,4 @@
-package com.ninezero.cream.ui.category
+package com.ninezero.cream.ui.component.skeleton
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
