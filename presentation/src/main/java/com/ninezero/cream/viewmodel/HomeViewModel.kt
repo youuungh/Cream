@@ -28,6 +28,9 @@ class HomeViewModel @Inject constructor(
     override fun HomeAction.process(): Flow<HomeResult> {
         return when (this) {
             HomeAction.Fetch, HomeAction.Refresh -> fetchHomeData()
+            is HomeAction.ProductClicked -> flow {
+                emit(HomeEvent.NavigateToProductDetail(productId))
+            }
         }
     }
 

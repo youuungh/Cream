@@ -3,13 +3,14 @@ package com.ninezero.cream.ui.category
 
 import androidx.compose.animation.EnterExitState
 import androidx.compose.animation.ExperimentalSharedTransitionApi
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateDp
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -17,17 +18,15 @@ import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.ninezero.cream.ui.component.ErrorScreen
@@ -37,11 +36,9 @@ import com.ninezero.cream.ui.component.skeleton.CategoryDetailSkeleton
 import com.ninezero.cream.base.collectEvents
 import com.ninezero.cream.ui.LocalNavAnimatedVisibilityScope
 import com.ninezero.cream.ui.LocalSharedTransitionScope
-import com.ninezero.cream.ui.component.CreamSurface
-import com.ninezero.cream.ui.component.GenericTopAppBar
 import com.ninezero.cream.utils.CategorySharedElementKey
 import com.ninezero.cream.utils.CategorySharedElementType
-import com.ninezero.cream.utils.categoryDetailBoundsTransform
+import com.ninezero.cream.utils.detailBoundsTransform
 import com.ninezero.cream.utils.nonSpatialExpressiveSpring
 import com.ninezero.cream.viewmodel.CategoryDetailViewModel
 
@@ -59,7 +56,10 @@ fun CategoryDetailScreen(
     val animatedVisibilityScope = LocalNavAnimatedVisibilityScope.current
         ?: throw IllegalStateException("No AnimatedVisibilityScope found")
     val roundedCornerAnimation by animatedVisibilityScope.transition
-        .animateDp(label = "rounded_corner") { enterExit: EnterExitState ->
+        .animateDp(
+            label = "rounded_corner",
+            transitionSpec = { tween(durationMillis = 300, easing = FastOutSlowInEasing) }
+        ) { enterExit: EnterExitState ->
             when (enterExit) {
                 EnterExitState.PreEnter -> 16.dp
                 EnterExitState.Visible -> 0.dp
@@ -75,9 +75,12 @@ fun CategoryDetailScreen(
 
     with(sharedTransitionScope) {
         Box(
-            Modifier
+            modifier = Modifier
                 .fillMaxSize()
-                .clip(RoundedCornerShape(roundedCornerAnimation))
+                .graphicsLayer {
+                    clip = true
+                    shape = RoundedCornerShape(roundedCornerAnimation)
+                }
                 .sharedBounds(
                     sharedContentState = rememberSharedContentState(
                         key = CategorySharedElementKey(
@@ -87,7 +90,7 @@ fun CategoryDetailScreen(
                         )
                     ),
                     animatedVisibilityScope = animatedVisibilityScope,
-                    boundsTransform = categoryDetailBoundsTransform,
+                    boundsTransform = detailBoundsTransform,
                     clipInOverlayDuringTransition = OverlayClip(RoundedCornerShape(roundedCornerAnimation)),
                     enter = fadeIn(nonSpatialExpressiveSpring()),
                     exit = fadeOut(nonSpatialExpressiveSpring())
@@ -133,7 +136,7 @@ fun CategoryDetailScreen(
                     }
 
                     is CategoryDetailState.Error -> ErrorScreen(
-                        onRetry = { viewModel.action(CategoryDetailAction.Fetch) },
+                        onRetry = { viewModel.action(CategoryDetailAction.Refresh) },
                         modifier = Modifier.padding(innerPadding)
                     )
                 }

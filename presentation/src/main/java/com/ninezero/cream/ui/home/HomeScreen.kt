@@ -21,11 +21,12 @@ import com.ninezero.cream.ui.component.Divider
 import com.ninezero.cream.ui.component.GridSection
 import com.ninezero.cream.ui.component.ProductCard
 import com.ninezero.cream.ui.component.RowSection
-import com.ninezero.cream.ui.component.TopBanner
 import com.ninezero.cream.base.collectAsState
+import com.ninezero.cream.base.collectEvents
 import com.ninezero.cream.ui.component.CreamSurface
 import com.ninezero.cream.ui.component.ErrorScreen
 import com.ninezero.cream.ui.component.SearchTopAppBar
+import com.ninezero.cream.ui.component.TopBanner
 import com.ninezero.cream.ui.component.skeleton.HomeSkeleton
 import com.ninezero.cream.viewmodel.HomeViewModel
 import com.ninezero.di.R
@@ -36,15 +37,16 @@ fun HomeScreen(
     modifier: Modifier = Modifier,
     onCartClick: () -> Unit,
     onSearchClick: () -> Unit,
+    onProductClick: (String) -> Unit,
     viewModel: HomeViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.state.collectAsState()
 
-//    viewModel.collectEvents {
-//        when (it) {
-//            is HomeEvent.NavigateToProductDetail -> //onProductClick
-//        }
-//    }
+    viewModel.collectEvents {
+        when (it) {
+            is HomeEvent.NavigateToProductDetail -> onProductClick(it.productId)
+        }
+    }
 
     CreamSurface(modifier = modifier.fillMaxSize()) {
         SharedTransitionLayout {
@@ -60,7 +62,7 @@ fun HomeScreen(
 
                     is HomeState.Content -> HomeContent(
                         data = state.homeData,
-                        onProductClick = { /*TODO*/ },
+                        onProductClick = { productId -> viewModel.action(HomeAction.ProductClicked(productId)) },
                         onSaveClick = { /*TODO*/ },
                         onBrandClick = { /*TODO*/ },
                         modifier = Modifier.padding(innerPadding)

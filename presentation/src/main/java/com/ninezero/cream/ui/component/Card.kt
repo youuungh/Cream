@@ -4,8 +4,6 @@ package com.ninezero.cream.ui.component
 
 import androidx.compose.animation.EnterExitState
 import androidx.compose.animation.ExperimentalSharedTransitionApi
-import androidx.compose.animation.SharedTransitionScope
-import androidx.compose.animation.core.animate
 import androidx.compose.animation.core.animateDp
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -50,7 +48,7 @@ import com.ninezero.cream.ui.LocalSharedTransitionScope
 import com.ninezero.cream.utils.CategorySharedElementKey
 import com.ninezero.cream.utils.CategorySharedElementType
 import com.ninezero.cream.utils.NumUtils
-import com.ninezero.cream.utils.categoryDetailBoundsTransform
+import com.ninezero.cream.utils.detailBoundsTransform
 import com.ninezero.cream.utils.getCategoryImageResource
 import com.ninezero.di.R
 import com.ninezero.domain.model.Brand
@@ -62,11 +60,10 @@ import timber.log.Timber
 fun ProductCard(
     product: Product,
     onClick: () -> Unit,
-    onSaveClick: () -> Unit,
-    modifier: Modifier = Modifier
+    onSaveClick: () -> Unit
 ) {
     Column(
-        modifier = modifier
+        modifier = Modifier
             .width(160.dp)
             .clip(RoundedCornerShape(8.dp))
             .background(Color.Transparent)
@@ -126,62 +123,15 @@ fun ProductCard(
             )
             Spacer(modifier = Modifier.height(8.dp))
             Text(
-                text = "${NumUtils.formatWithCommas(product.price.instantBuyPrice)}원",
+                text = NumUtils.formatPriceWithCommas(product.price.instantBuyPrice),
                 style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold)
             )
             Text(
                 text = "즉시구매가",
                 style = MaterialTheme.typography.labelSmall.copy(
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
                     fontWeight = FontWeight.Normal
-                ),
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-            )
-        }
-    }
-}
-
-@Composable
-fun BrandCard(
-    brand: Brand,
-    onClick: () -> Unit
-) {
-    Timber.d(brand.toString())
-
-    Box(
-        modifier = Modifier
-            .size(80.dp)
-            .aspectRatio(1f)
-            .clip(RoundedCornerShape(8.dp))
-            .background(Color.Transparent)
-            .clickable(onClick = onClick)
-    ) {
-        Column(
-            modifier = Modifier.fillMaxSize(),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(60.dp)
-                    .clip(CircleShape)
-                    .background(Color.LightGray)
-            ) {
-                AsyncImage(
-                    model = brand.imageUrl,
-                    contentDescription = null,
-                    modifier = Modifier.fillMaxSize(),
-                    contentScale = ContentScale.Crop,
-                    placeholder = painterResource(id = R.drawable.ic_placeholder)
                 )
-            }
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(
-                text = brand.brandName,
-                style = MaterialTheme.typography.bodySmall,
-                textAlign = TextAlign.Center,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.padding(horizontal = 4.dp)
             )
         }
     }
@@ -193,9 +143,9 @@ fun CategoryCard(
     onCategoryClick: (String, String) -> Unit
 ) {
     val sharedTransitionScope = LocalSharedTransitionScope.current
-        ?: throw IllegalStateException("No Scope found")
+        ?: throw IllegalStateException("No sharedTransitionScope found")
     val animatedVisibilityScope = LocalNavAnimatedVisibilityScope.current
-        ?: throw IllegalStateException("No Scope found")
+        ?: throw IllegalStateException("No animatedVisibilityScope found")
     val roundedCornerAnimation by animatedVisibilityScope.transition
         .animateDp(label = "rounded_corner") { enterExit: EnterExitState ->
             when (enterExit) {
@@ -220,7 +170,7 @@ fun CategoryCard(
                         )
                     ),
                     animatedVisibilityScope = animatedVisibilityScope,
-                    boundsTransform = categoryDetailBoundsTransform,
+                    boundsTransform = detailBoundsTransform,
                     clipInOverlayDuringTransition = OverlayClip(
                         RoundedCornerShape(
                             roundedCornerAnimation
@@ -277,6 +227,53 @@ fun CategoryCard(
                     )
                 }
             }
+        }
+    }
+}
+
+@Composable
+fun BrandCard(
+    brand: Brand,
+    onClick: () -> Unit
+) {
+    Timber.d(brand.toString())
+
+    Box(
+        modifier = Modifier
+            .size(80.dp)
+            .aspectRatio(1f)
+            .clip(RoundedCornerShape(8.dp))
+            .background(Color.Transparent)
+            .clickable(onClick = onClick)
+    ) {
+        Column(
+            modifier = Modifier.fillMaxSize(),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(60.dp)
+                    .clip(CircleShape)
+                    .background(Color.LightGray)
+            ) {
+                AsyncImage(
+                    model = brand.imageUrl,
+                    contentDescription = null,
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Crop,
+                    placeholder = painterResource(id = R.drawable.ic_placeholder)
+                )
+            }
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = brand.brandName,
+                style = MaterialTheme.typography.bodySmall,
+                textAlign = TextAlign.Center,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.padding(horizontal = 4.dp)
+            )
         }
     }
 }

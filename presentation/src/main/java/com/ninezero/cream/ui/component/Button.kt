@@ -1,17 +1,19 @@
 package com.ninezero.cream.ui.component
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonColors
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilledTonalButton
@@ -22,7 +24,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -30,11 +31,65 @@ import com.ninezero.cream.ui.theme.CreamTheme
 import com.ninezero.di.R
 
 @Composable
+fun BuyButton(
+    price: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true
+) {
+    Button(
+        modifier = modifier
+            .height(48.dp)
+            .fillMaxWidth(),
+        onClick = onClick,
+        enabled = enabled,
+        colors = ButtonDefaults.buttonColors(),
+        contentPadding = PaddingValues(horizontal = 20.dp)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "구매",
+                style = MaterialTheme.typography.titleMedium
+            )
+            VerticalDivider(
+                modifier = Modifier
+                    .height(24.dp)
+                    .padding(horizontal = 12.dp),
+                color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.5f)
+            )
+            Box(
+                modifier = Modifier.weight(1f)
+            ) {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        text = "즉시구매가",
+                        style = MaterialTheme.typography.labelSmall.copy(
+                            color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.5f)
+                        )
+
+                    )
+                    Text(
+                        text = price,
+                        style = MaterialTheme.typography.titleMedium
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
 fun FilledButton(
     text: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
-    enabled: Boolean = true
+    enabled: Boolean = true,
 ) {
     Button(
         modifier = modifier,
@@ -88,10 +143,12 @@ fun IconTonalButton(
     enabled: Boolean = true
 ) {
     FilledTonalButton(
-        modifier = modifier,
+        modifier = modifier
+            .size(48.dp)
+            .aspectRatio(1f),
         onClick = onClick,
         enabled = enabled,
-        contentPadding = PaddingValues(8.dp)
+        contentPadding = PaddingValues(0.dp)
     ) {
         Icon(
             painter = painterResource(id = iconResId),
@@ -134,6 +191,7 @@ fun LoadingButton(
     }
 }
 
+
 @Preview(showBackground = true)
 @Composable
 private fun PreviewButtons() {
@@ -143,6 +201,7 @@ private fun PreviewButtons() {
             verticalArrangement = Arrangement.spacedBy(8.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
+            BuyButton(onClick = {}, price = "100,000")
             FilledButton(text = "Filled Button", onClick = {})
             OutlinedButton(text = "Outlined Button", onClick = {})
             TonalButton(onClick = {}) {

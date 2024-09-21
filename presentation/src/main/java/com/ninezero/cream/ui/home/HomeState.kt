@@ -9,24 +9,24 @@ import com.ninezero.domain.model.HomeData
 import javax.inject.Inject
 
 sealed class HomeAction : MviAction {
-    object Fetch : HomeAction()
-    object Refresh : HomeAction()
-    //data class ProductClicked(val productId: String) : HomeAction()
+    data object Fetch : HomeAction()
+    data object Refresh : HomeAction()
+    data class ProductClicked(val productId: String) : HomeAction()
     //data class SavedClicked(val productId: String) : HomeAction()
 }
 
 sealed class HomeResult : MviResult {
-    object Loading : HomeResult()
+    data object Loading : HomeResult()
     data class HomeContent(val homeData: HomeData) : HomeResult()
     data class Error(val message: String) : HomeResult()
 }
 
-sealed class HomeEvent : MviEvent {
+sealed class HomeEvent : MviEvent, HomeResult() {
     data class NavigateToProductDetail(val productId: String) : HomeEvent()
 }
 
 sealed class HomeState : MviViewState {
-    object Loading : HomeState()
+    data object Loading : HomeState()
     data class Content(val homeData: HomeData) : HomeState()
     data class Error(val message: String) : HomeState()
 }
@@ -37,6 +37,7 @@ class HomeReducer @Inject constructor() : MviStateReducer<HomeState, HomeResult>
             is HomeResult.Loading -> HomeState.Loading
             is HomeResult.HomeContent -> HomeState.Content(result.homeData)
             is HomeResult.Error -> HomeState.Error(result.message)
+            is HomeEvent.NavigateToProductDetail -> this
         }
     }
 }

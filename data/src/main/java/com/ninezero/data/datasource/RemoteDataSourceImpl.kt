@@ -6,6 +6,7 @@ import com.ninezero.data.remote.model.CategoryDetailsResponse
 import com.ninezero.data.remote.model.CategoryResponse
 import com.ninezero.data.remote.model.HomeResponse
 import com.ninezero.data.remote.model.NetworkRequestInfo
+import com.ninezero.data.remote.model.ProductResponse
 import com.ninezero.data.remote.model.RequestType
 import com.ninezero.data.remote.retrofit.NetworkRequestFactory
 import javax.inject.Inject
@@ -26,6 +27,20 @@ class RemoteDataSourceImpl @Inject constructor(
             if (it.response is ApiResponse.Success) {
                 cachedHomeResponse = it.response.data
             }
+        }
+    }
+
+    override suspend fun getProductDetails(productId: String): ApiResult<ProductResponse> {
+        return when (val response = fetchData().response) {
+            is ApiResponse.Success -> {
+                val product = response.data.products.find { it.productId == productId }
+                if (product != null) {
+                    ApiResult(ApiResponse.Success(product))
+                } else {
+                    ApiResult(ApiResponse.Fail(Exception("Product not found")))
+                }
+            }
+            is ApiResponse.Fail -> ApiResult(response)
         }
     }
 

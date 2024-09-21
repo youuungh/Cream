@@ -33,7 +33,7 @@ class CategoryDetailViewModel @Inject constructor(
 
     override fun CategoryDetailAction.process(): Flow<CategoryDetailResult> {
         return when (this) {
-            is CategoryDetailAction.Fetch -> fetchCategoryDetails()
+            CategoryDetailAction.Fetch, CategoryDetailAction.Refresh -> fetchCategoryDetails()
             is CategoryDetailAction.ProductClicked -> flow {
                 emit(CategoryDetailEvent.NavigateToProductDetail(productId))
             }

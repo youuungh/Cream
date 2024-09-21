@@ -50,6 +50,7 @@ dependencies {
 
     // Hilt
     implementation(libs.hilt.android)
+    implementation(libs.androidx.foundation.android)
     ksp(libs.hilt.compiler)
 
     // Navigation

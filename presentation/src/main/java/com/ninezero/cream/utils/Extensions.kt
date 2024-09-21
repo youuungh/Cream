@@ -1,3 +1,4 @@
+@file:OptIn(ExperimentalSharedTransitionApi::class)
 package com.ninezero.cream.utils
 
 import androidx.compose.animation.BoundsTransform
@@ -15,8 +16,7 @@ fun <T> nonSpatialExpressiveSpring() = spring<T>(
     stiffness = 1600f
 )
 
-@OptIn(ExperimentalSharedTransitionApi::class)
-val categoryDetailBoundsTransform = BoundsTransform { _, _ ->
+val detailBoundsTransform = BoundsTransform { _, _ ->
     spatialExpressiveSpring()
 }
 

@@ -9,12 +9,13 @@ import com.ninezero.domain.model.CategoryDetails
 import javax.inject.Inject
 
 sealed class CategoryDetailAction : MviAction {
-    object Fetch : CategoryDetailAction()
+    data object Fetch : CategoryDetailAction()
+    data object Refresh : CategoryDetailAction()
     data class ProductClicked(val productId: String) : CategoryDetailAction()
 }
 
 sealed class CategoryDetailResult : MviResult {
-    object Loading : CategoryDetailResult()
+    data object Loading : CategoryDetailResult()
     data class CategoryDetailContent(val categoryDetails: CategoryDetails) : CategoryDetailResult()
     data class Error(val message: String, val categoryId: String, val categoryName: String) : CategoryDetailResult()
 }
@@ -24,7 +25,7 @@ sealed class CategoryDetailEvent : MviEvent, CategoryDetailResult() {
 }
 
 sealed class CategoryDetailState : MviViewState {
-    object Loading : CategoryDetailState()
+    data object Loading : CategoryDetailState()
     data class Content(val categoryDetails: CategoryDetails) : CategoryDetailState()
     data class Error(val message: String, val categoryId: String, val categoryName: String) : CategoryDetailState()
 }

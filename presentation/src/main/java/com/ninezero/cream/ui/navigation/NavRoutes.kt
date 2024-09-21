@@ -18,13 +18,13 @@ object AppRoutes {
     const val CART = "cart"
     const val SEARCH = "search"
 
-    const val CATEGORY_DETAIL = "category_detail"
     const val PRODUCT_DETAIL = "product_detail"
+    const val CATEGORY_DETAIL = "category_detail"
     const val ORDER_HISTORY = "order_history"
 
+    const val PRODUCT_ID_KEY = "productId"
     const val CATEGORY_ID_KEY = "categoryId"
     const val CATEGORY_NAME_KEY = "categoryName"
-    const val PRODUCT_ID_KEY = "productId"
 
     const val DEEP_LINK_SCHEME = "cream://"
 }

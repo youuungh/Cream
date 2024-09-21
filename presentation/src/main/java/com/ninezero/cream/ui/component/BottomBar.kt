@@ -1,18 +1,30 @@
+@file:OptIn(ExperimentalSharedTransitionApi::class)
 package com.ninezero.cream.ui.component
 
 import androidx.annotation.FloatRange
+import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.AnimationSpec
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -23,6 +35,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
@@ -41,10 +54,13 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.lerp
 import androidx.core.os.ConfigurationCompat
+import com.ninezero.cream.ui.LocalNavAnimatedVisibilityScope
+import com.ninezero.cream.ui.LocalSharedTransitionScope
 import com.ninezero.cream.ui.navigation.AppRoutes
 import com.ninezero.cream.ui.navigation.MainRoute
 import com.ninezero.cream.ui.theme.CreamTheme
 import com.ninezero.cream.utils.spatialExpressiveSpring
+import com.ninezero.di.R
 import java.util.Locale
 
 private val TextIconSpacing = 2.dp
@@ -118,6 +134,59 @@ fun BottomBar(
                     onSelected = { navigateToRoute(section.route) },
                     animSpec = springSpec,
                 )
+            }
+        }
+    }
+}
+
+@Composable
+fun ProductBottomBar(
+    price: String,
+    isSaved: Boolean,
+    onSaveToggle: () -> Unit,
+    onBuyClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val sharedTransitionScope =
+        LocalSharedTransitionScope.current ?: throw IllegalStateException("No Shared scope")
+    val animatedVisibilityScope =
+        LocalNavAnimatedVisibilityScope.current ?: throw IllegalStateException("No Shared scope")
+
+    with(sharedTransitionScope) {
+        with(animatedVisibilityScope) {
+            CreamSurface(
+                modifier = modifier
+                    .renderInSharedTransitionScopeOverlay(zIndexInOverlay = 4f)
+                    .animateEnterExit(
+                        enter = slideInVertically(tween(300, delayMillis = 300)) { it } +
+                                fadeIn(tween(300, delayMillis = 300)),
+                        exit = slideOutVertically(tween(300, delayMillis = 300)) { it } +
+                                fadeOut(tween(50))
+                    ),
+                elevation = 8.dp
+            ) {
+                Column {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 8.dp)
+                            .navigationBarsPadding(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        IconTonalButton(
+                            onClick = onSaveToggle,
+                            iconResId = if (isSaved) R.drawable.ic_save_fill_opsz48 else R.drawable.ic_save_opsz48,
+                            contentDescription = if (isSaved) "Save product" else "Remove from saved"
+                        )
+                        Spacer(modifier = Modifier.width(16.dp))
+                        BuyButton(
+                            price = price,
+                            onClick = onBuyClick,
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                }
             }
         }
     }
@@ -307,7 +376,7 @@ private fun BottomNavPreview() {
     CreamTheme {
         BottomBar(
             currentRoute = AppRoutes.MAIN_HOME,
-            navigateToRoute = { }
+            navigateToRoute = {}
         )
     }
 }
