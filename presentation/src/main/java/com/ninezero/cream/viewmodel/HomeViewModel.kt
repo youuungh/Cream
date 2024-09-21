@@ -9,6 +9,7 @@ import com.ninezero.cream.ui.home.HomeState
 import com.ninezero.domain.model.EntityWrapper
 import com.ninezero.domain.usecase.HomeUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import javax.inject.Inject
@@ -40,9 +41,7 @@ class HomeViewModel @Inject constructor(
             emit(
                 when (it) {
                     is EntityWrapper.Success -> HomeResult.HomeContent(it.entity)
-                    is EntityWrapper.Fail -> HomeResult.Error(
-                        it.error.message ?: "Unknown error occurred"
-                    )
+                    is EntityWrapper.Fail -> HomeResult.Error(it.error.message ?: "Unknown error occurred")
                 }
             )
         }

@@ -37,7 +37,7 @@ class HomeReducer @Inject constructor() : MviStateReducer<HomeState, HomeResult>
             is HomeResult.Loading -> HomeState.Loading
             is HomeResult.HomeContent -> HomeState.Content(result.homeData)
             is HomeResult.Error -> HomeState.Error(result.message)
-            is HomeEvent.NavigateToProductDetail -> this
+            is HomeEvent -> this
         }
     }
 }

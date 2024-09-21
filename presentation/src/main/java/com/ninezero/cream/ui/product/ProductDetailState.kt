@@ -5,6 +5,7 @@ import com.ninezero.cream.base.MviEvent
 import com.ninezero.cream.base.MviResult
 import com.ninezero.cream.base.MviStateReducer
 import com.ninezero.cream.base.MviViewState
+import com.ninezero.cream.ui.category.CategoryEvent
 import com.ninezero.domain.model.Product
 import javax.inject.Inject
 
@@ -21,7 +22,8 @@ sealed class ProductDetailResult : MviResult {
     data class SaveToggled(val isSaved: Boolean) : ProductDetailResult()
 }
 
-sealed class ProductDetailEvent : MviEvent {}
+sealed class ProductDetailEvent : MviEvent, MviResult {
+}
 
 sealed class ProductDetailState : MviViewState {
     data object Loading : ProductDetailState()

@@ -11,6 +11,7 @@ import com.ninezero.cream.ui.navigation.AppRoutes
 import com.ninezero.domain.model.EntityWrapper
 import com.ninezero.domain.usecase.CategoryUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import javax.inject.Inject

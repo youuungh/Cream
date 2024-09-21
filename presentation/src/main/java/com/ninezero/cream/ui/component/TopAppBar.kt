@@ -96,7 +96,8 @@ fun DetailsAppBar(
     title: String?,
     onBackClick: () -> Unit,
     onCartClick: () -> Unit,
-    alpha: Float = 1f
+    alpha: Float = 1f,
+    showCartButton: Boolean = true
 ) {
     Box(
         modifier = modifier
@@ -127,13 +128,15 @@ fun DetailsAppBar(
                     textAlign = TextAlign.Center
                 )
             }
-            IconButton(
-                onClick = onCartClick
-            ) {
-                Icon(
-                    painter = painterResource(id = R.drawable.ic_bag),
-                    contentDescription = "Cart"
-                )
+            if (showCartButton) {
+                IconButton(
+                    onClick = onCartClick
+                ) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.ic_bag),
+                        contentDescription = "Cart"
+                    )
+                }
             }
         }
     }

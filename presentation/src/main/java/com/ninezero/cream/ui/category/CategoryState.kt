@@ -5,6 +5,7 @@ import com.ninezero.cream.base.MviEvent
 import com.ninezero.cream.base.MviResult
 import com.ninezero.cream.base.MviStateReducer
 import com.ninezero.cream.base.MviViewState
+import com.ninezero.cream.ui.home.HomeEvent
 import com.ninezero.domain.model.Category
 import javax.inject.Inject
 

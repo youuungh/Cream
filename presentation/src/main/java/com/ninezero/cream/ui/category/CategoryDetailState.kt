@@ -35,12 +35,8 @@ class CategoryDetailReducer @Inject constructor() : MviStateReducer<CategoryDeta
         return when (result) {
             is CategoryDetailResult.Loading -> CategoryDetailState.Loading
             is CategoryDetailResult.CategoryDetailContent -> CategoryDetailState.Content(result.categoryDetails)
-            is CategoryDetailResult.Error -> CategoryDetailState.Error(
-                result.message,
-                result.categoryId,
-                result.categoryName
-            )
-            is CategoryDetailEvent.NavigateToProductDetail -> this
+            is CategoryDetailResult.Error -> CategoryDetailState.Error(result.message, result.categoryId, result.categoryName)
+            is CategoryDetailEvent -> this
         }
     }
 }

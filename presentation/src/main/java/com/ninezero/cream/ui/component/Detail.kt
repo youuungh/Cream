@@ -23,6 +23,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -41,7 +42,6 @@ import com.ninezero.cream.utils.CONTENT_OVERLAP
 import com.ninezero.cream.utils.DETAIL_BOTTOM_BAR_HEIGHT
 import com.ninezero.cream.utils.IMAGE_HEIGHT
 import com.ninezero.cream.utils.MAX_CORNER_RADIUS
-import com.ninezero.cream.utils.NumUtils
 import com.ninezero.cream.utils.NumUtils.calculatePriceDiff
 import com.ninezero.cream.utils.NumUtils.formatPriceWithCommas
 import com.ninezero.cream.utils.NumUtils.formatWithCommas
@@ -51,16 +51,13 @@ import com.ninezero.domain.model.Product
 @Composable
 fun ProductDetailContent(
     state: ProductDetailState.Content,
-    onNavigateBack: () -> Unit,
-    onCartClick: () -> Unit,
     onSaveToggle: () -> Unit,
-    onBuyClick: () -> Unit
+    onBuyClick: () -> Unit,
+    updateAppBarAlpha: (Float) -> Unit
 ) {
     val scrollState = rememberScrollState()
     val scrollThreshold =
         with(LocalDensity.current) { IMAGE_HEIGHT.dp.toPx() - SCROLL_THRESHOLD_OFFSET.dp.toPx() }
-
-    state.appBarAlpha = (scrollState.value / scrollThreshold).coerceIn(0f, 1f)
 
     val appBarAlpha by animateFloatAsState(
         targetValue = (scrollState.value / scrollThreshold).coerceIn(0f, 1f),
@@ -71,6 +68,10 @@ fun ProductDetailContent(
         targetValue = (1 - (scrollState.value / scrollThreshold).coerceIn(0f, 1f)) * MAX_CORNER_RADIUS.dp,
         label = "content_radius"
     )
+
+    LaunchedEffect(appBarAlpha) {
+        updateAppBarAlpha(appBarAlpha)
+    }
 
     Box(modifier = Modifier.fillMaxSize()) {
         Column(
@@ -107,14 +108,6 @@ fun ProductDetailContent(
                 }
             }
         }
-
-        DetailsAppBar(
-            title = "",
-            onBackClick = onNavigateBack,
-            onCartClick = onCartClick,
-            alpha = appBarAlpha,
-            modifier = Modifier.fillMaxWidth()
-        )
 
         ProductBottomBar(
             price = formatPriceWithCommas(state.product.price.instantBuyPrice),

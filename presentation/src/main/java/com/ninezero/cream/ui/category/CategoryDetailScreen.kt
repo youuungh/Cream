@@ -51,6 +51,7 @@ fun CategoryDetailScreen(
     viewModel: CategoryDetailViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.state.collectAsState()
+
     val sharedTransitionScope = LocalSharedTransitionScope.current
         ?: throw IllegalStateException("No SharedTransitionScope found")
     val animatedVisibilityScope = LocalNavAnimatedVisibilityScope.current

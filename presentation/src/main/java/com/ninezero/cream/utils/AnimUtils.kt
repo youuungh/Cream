@@ -20,18 +20,18 @@ data class AnimState (
 @Composable
 fun rememberSlideInOutAnimState(): AnimState {
     val enterTransition = remember {
-        fadeIn(animationSpec = tween(ENTER_ANIMATION_DURATION, easing = LinearOutSlowInEasing)) +
-                slideInVertically(
-                    initialOffsetY = { it / 20 },
-                    animationSpec = tween(ENTER_ANIMATION_DURATION, easing = FastOutSlowInEasing)
-                )
+        //fadeIn(animationSpec = tween(ANIMATION_DURATION, easing = LinearOutSlowInEasing)) +
+        slideInVertically(
+            initialOffsetY = { it / 10 },
+            animationSpec = tween(ANIMATION_DURATION, easing = FastOutSlowInEasing)
+        )
     }
     val exitTransition = remember {
-        fadeOut(animationSpec = tween(EXIT_ANIMATION_DURATION, easing = LinearOutSlowInEasing)) +
-                slideOutVertically(
-                    targetOffsetY = { it },
-                    animationSpec = tween(EXIT_ANIMATION_DURATION, easing = FastOutSlowInEasing)
-                )
+        //fadeOut(animationSpec = tween(ANIMATION_DURATION, easing = LinearOutSlowInEasing)) +
+        slideOutVertically(
+            targetOffsetY = { it / 10 },
+            animationSpec = tween(ANIMATION_DURATION, easing = FastOutSlowInEasing)
+        )
     }
 
     return remember { AnimState(enterTransition, exitTransition) }

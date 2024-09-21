@@ -4,15 +4,17 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.ninezero.cream.base.collectAsState
 import com.ninezero.cream.ui.component.DetailsAppBar
@@ -36,12 +38,22 @@ fun ProductDetailScreen(
     val animState = rememberSlideInOutAnimState()
     val coroutineScope = rememberCoroutineScope()
 
+    var appBarAlpha by remember { mutableFloatStateOf(0f) }
+
     LaunchedEffect(uiState) { if (uiState is ProductDetailState.Content) setVisible(true) }
+
+    val handleNavigateBack: () -> Unit = {
+        coroutineScope.launch {
+            setVisible(false)
+            delay(ANIMATION_DELAY.toLong())
+            onNavigateBack()
+        }
+    }
 
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.Transparent)
+            .background(MaterialTheme.colorScheme.background)
     ) {
         AnimatedVisibility(
             visible = visible,
@@ -54,16 +66,9 @@ fun ProductDetailScreen(
                 is ProductDetailState.Content -> {
                     ProductDetailContent(
                         state = state,
-                        onNavigateBack = {
-                            coroutineScope.launch {
-                                setVisible(false)
-                                delay(ANIMATION_DELAY.toLong())
-                                onNavigateBack()
-                            }
-                        },
-                        onCartClick = onCartClick,
                         onSaveToggle = { viewModel.action(ProductDetailAction.ToggleSave) },
-                        onBuyClick = { /*TODO*/ }
+                        onBuyClick = { /*TODO*/ },
+                        updateAppBarAlpha = { appBarAlpha = it }
                     )
                 }
 
@@ -73,4 +78,13 @@ fun ProductDetailScreen(
             }
         }
     }
+
+    DetailsAppBar(
+        title = "",
+        onBackClick = handleNavigateBack,
+        onCartClick = onCartClick,
+        alpha = appBarAlpha,
+        showCartButton = uiState !is ProductDetailState.Error,
+        modifier = Modifier.fillMaxWidth()
+    )
 }

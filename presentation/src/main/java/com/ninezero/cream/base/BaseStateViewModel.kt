@@ -68,3 +68,4 @@ abstract class BaseStateViewModel<Action : MviAction, Result : MviResult, Event 
         _fsmFlow.tryEmit(action)
     }
 }
+
