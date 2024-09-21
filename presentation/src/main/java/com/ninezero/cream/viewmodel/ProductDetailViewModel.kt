@@ -9,6 +9,7 @@ import com.ninezero.cream.ui.product.ProductDetailResult
 import com.ninezero.cream.ui.product.ProductDetailState
 import com.ninezero.cream.ui.navigation.AppRoutes
 import com.ninezero.domain.model.EntityWrapper
+import com.ninezero.domain.repository.NetworkRepository
 import com.ninezero.domain.usecase.ProductUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.delay
@@ -20,6 +21,7 @@ import javax.inject.Inject
 class ProductDetailViewModel @Inject constructor(
     private val productUseCase: ProductUseCase,
     reducer: ProductDetailReducer,
+    networkRepository: NetworkRepository,
     savedStateHandle: SavedStateHandle
 ) : BaseStateViewModel<ProductDetailAction, ProductDetailResult, ProductDetailEvent, ProductDetailState, ProductDetailReducer>(
     initialState = ProductDetailState.Loading,
@@ -28,6 +30,7 @@ class ProductDetailViewModel @Inject constructor(
     private val productId: String = checkNotNull(savedStateHandle[AppRoutes.PRODUCT_ID_KEY])
 
     init {
+        setNetworkRepository(networkRepository)
         action(ProductDetailAction.Fetch)
     }
 
@@ -40,15 +43,20 @@ class ProductDetailViewModel @Inject constructor(
 
     private fun fetchProductDetails(): Flow<ProductDetailResult> = flow {
         emit(ProductDetailResult.Loading)
-        productUseCase.getProductDetails(productId).collect {
-            emit(
-                when (it) {
-                    is EntityWrapper.Success -> ProductDetailResult.ProductContent(it.entity)
-                    is EntityWrapper.Fail -> ProductDetailResult.Error(
-                        it.error.message ?: "Unknown error occurred"
-                    )
-                }
-            )
+        if (!networkState.value) {
+            delay(3000)
+            emit(ProductDetailResult.Error("No internet connection"))
+        } else {
+            productUseCase.getProductDetails(productId).collect {
+                emit(
+                    when (it) {
+                        is EntityWrapper.Success -> ProductDetailResult.ProductContent(it.entity)
+                        is EntityWrapper.Fail -> ProductDetailResult.Error(
+                            it.error.message ?: "Unknown error occurred"
+                        )
+                    }
+                )
+            }
         }
     }
 
@@ -59,4 +67,6 @@ class ProductDetailViewModel @Inject constructor(
             emit(ProductDetailResult.SaveToggled(newSavedState))
         }
     }
+
+    override fun refreshData() { action(ProductDetailAction.Refresh) }
 }

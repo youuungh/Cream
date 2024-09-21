@@ -7,6 +7,7 @@ import com.ninezero.cream.ui.home.HomeReducer
 import com.ninezero.cream.ui.home.HomeResult
 import com.ninezero.cream.ui.home.HomeState
 import com.ninezero.domain.model.EntityWrapper
+import com.ninezero.domain.repository.NetworkRepository
 import com.ninezero.domain.usecase.HomeUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.delay
@@ -17,12 +18,14 @@ import javax.inject.Inject
 @HiltViewModel
 class HomeViewModel @Inject constructor(
     private val homeUseCase: HomeUseCase,
-    reducer: HomeReducer
+    reducer: HomeReducer,
+    networkRepository: NetworkRepository
 ) : BaseStateViewModel<HomeAction, HomeResult, HomeEvent, HomeState, HomeReducer>(
     initialState = HomeState.Loading,
     reducer = reducer
 ) {
     init {
+        setNetworkRepository(networkRepository)
         action(HomeAction.Fetch)
     }
 
@@ -37,13 +40,20 @@ class HomeViewModel @Inject constructor(
 
     private fun fetchHomeData(): Flow<HomeResult> = flow {
         emit(HomeResult.Loading)
-        homeUseCase().collect {
-            emit(
-                when (it) {
-                    is EntityWrapper.Success -> HomeResult.HomeContent(it.entity)
-                    is EntityWrapper.Fail -> HomeResult.Error(it.error.message ?: "Unknown error occurred")
-                }
-            )
+        if (!networkState.value) {
+            delay(3000)
+            emit(HomeResult.Error("No internet connection"))
+        } else {
+            homeUseCase().collect {
+                emit(
+                    when (it) {
+                        is EntityWrapper.Success -> HomeResult.HomeContent(it.entity)
+                        is EntityWrapper.Fail -> HomeResult.Error(it.error.message ?: "Unknown error occurred")
+                    }
+                )
+            }
         }
     }
+
+    override fun refreshData() { action(HomeAction.Refresh) }
 }

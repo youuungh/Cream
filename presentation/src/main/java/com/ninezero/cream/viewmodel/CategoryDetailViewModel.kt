@@ -9,6 +9,7 @@ import com.ninezero.cream.ui.category.CategoryDetailResult
 import com.ninezero.cream.ui.category.CategoryDetailState
 import com.ninezero.cream.ui.navigation.AppRoutes
 import com.ninezero.domain.model.EntityWrapper
+import com.ninezero.domain.repository.NetworkRepository
 import com.ninezero.domain.usecase.CategoryUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.delay
@@ -20,6 +21,7 @@ import javax.inject.Inject
 class CategoryDetailViewModel @Inject constructor(
     private val categoryUseCase: CategoryUseCase,
     reducer: CategoryDetailReducer,
+    networkRepository: NetworkRepository,
     savedStateHandle: SavedStateHandle
 ) : BaseStateViewModel<CategoryDetailAction, CategoryDetailResult, CategoryDetailEvent, CategoryDetailState, CategoryDetailReducer>(
     initialState = CategoryDetailState.Loading,
@@ -29,6 +31,7 @@ class CategoryDetailViewModel @Inject constructor(
     private val categoryName: String = checkNotNull(savedStateHandle[AppRoutes.CATEGORY_NAME_KEY])
 
     init {
+        setNetworkRepository(networkRepository)
         action(CategoryDetailAction.Fetch)
     }
 
@@ -43,17 +46,24 @@ class CategoryDetailViewModel @Inject constructor(
 
     private fun fetchCategoryDetails(): Flow<CategoryDetailResult> = flow {
         emit(CategoryDetailResult.Loading)
-        categoryUseCase.getCategoryDetails(categoryId).collect {
-            emit(
-                when (it) {
-                    is EntityWrapper.Success -> CategoryDetailResult.CategoryDetailContent(it.entity)
-                    is EntityWrapper.Fail -> CategoryDetailResult.Error(
-                        it.error.message ?: "Unknown error occurred",
-                        categoryId,
-                        categoryName
-                    )
-                }
-            )
+        if (!networkState.value) {
+            delay(3000)
+            emit(CategoryDetailResult.Error("No internet connection", categoryId, categoryName))
+        } else {
+            categoryUseCase.getCategoryDetails(categoryId).collect {
+                emit(
+                    when (it) {
+                        is EntityWrapper.Success -> CategoryDetailResult.CategoryDetailContent(it.entity)
+                        is EntityWrapper.Fail -> CategoryDetailResult.Error(
+                            it.error.message ?: "Unknown error occurred",
+                            categoryId,
+                            categoryName
+                        )
+                    }
+                )
+            }
         }
     }
+
+    override fun refreshData() { action(CategoryDetailAction.Refresh) }
 }

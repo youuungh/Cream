@@ -26,6 +26,7 @@ import com.ninezero.cream.utils.rememberSlideInOutAnimState
 import com.ninezero.cream.viewmodel.ProductDetailViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import timber.log.Timber
 
 @Composable
 fun ProductDetailScreen(
@@ -34,6 +35,7 @@ fun ProductDetailScreen(
     viewModel: ProductDetailViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.state.collectAsState()
+    val networkState by viewModel.networkState.collectAsState()
     val (visible, setVisible) = remember { mutableStateOf(false) }
     val animState = rememberSlideInOutAnimState()
     val coroutineScope = rememberCoroutineScope()
@@ -41,6 +43,10 @@ fun ProductDetailScreen(
     var appBarAlpha by remember { mutableFloatStateOf(0f) }
 
     LaunchedEffect(uiState) { if (uiState is ProductDetailState.Content) setVisible(true) }
+
+    LaunchedEffect(networkState) {
+        Timber.d("networkState: $networkState")
+    }
 
     val handleNavigateBack: () -> Unit = {
         coroutineScope.launch {
@@ -55,15 +61,23 @@ fun ProductDetailScreen(
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
     ) {
-        AnimatedVisibility(
-            visible = visible,
-            enter = animState.enterTransition,
-            exit = animState.exitTransition
-        ) {
-            when (val state = uiState) {
-                is ProductDetailState.Loading -> ProductDetailSkeleton()
+        when (val state = uiState) {
+            is ProductDetailState.Loading -> {
+                AnimatedVisibility(
+                    visible = !visible,
+                    enter = animState.enterTransition,
+                    exit = animState.exitTransition
+                ) {
+                    ProductDetailSkeleton()
+                }
+            }
 
-                is ProductDetailState.Content -> {
+            is ProductDetailState.Content -> {
+                AnimatedVisibility(
+                    visible = visible,
+                    enter = animState.enterTransition,
+                    exit = animState.exitTransition
+                ) {
                     ProductDetailContent(
                         state = state,
                         onSaveToggle = { viewModel.action(ProductDetailAction.ToggleSave) },
@@ -71,20 +85,31 @@ fun ProductDetailScreen(
                         updateAppBarAlpha = { appBarAlpha = it }
                     )
                 }
+            }
 
-                is ProductDetailState.Error -> ErrorScreen(
-                    onRetry = { viewModel.action(ProductDetailAction.Refresh) }
-                )
+            is ProductDetailState.Error -> {
+                AnimatedVisibility(
+                    visible = !visible,
+                    enter = animState.enterTransition,
+                    exit = animState.exitTransition
+                ) {
+                    ErrorScreen(
+                        onRetry = { viewModel.action(ProductDetailAction.Refresh) }
+                    )
+                }
             }
         }
-    }
 
-    DetailsAppBar(
-        title = "",
-        onBackClick = handleNavigateBack,
-        onCartClick = onCartClick,
-        alpha = appBarAlpha,
-        showCartButton = uiState !is ProductDetailState.Error,
-        modifier = Modifier.fillMaxWidth()
-    )
+        DetailsAppBar(
+            title = "",
+            onBackClick = handleNavigateBack,
+            onCartClick = onCartClick,
+            alpha = appBarAlpha,
+            showCartButton = when (uiState) {
+                is ProductDetailState.Content -> true
+                else -> false
+            },
+            modifier = Modifier.fillMaxWidth()
+        )
+    }
 }

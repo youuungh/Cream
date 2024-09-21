@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.ui.Modifier
@@ -23,6 +24,7 @@ import com.ninezero.cream.ui.component.CreamSurface
 import com.ninezero.cream.ui.component.CreamTopAppBar
 import com.ninezero.cream.viewmodel.CategoryViewModel
 import com.ninezero.di.R
+import timber.log.Timber
 
 @Composable
 fun CategoryScreen(
@@ -32,11 +34,16 @@ fun CategoryScreen(
     viewModel: CategoryViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.state.collectAsState()
+    val networkState by viewModel.networkState.collectAsState()
 
     viewModel.collectEvents {
         when (it) {
             is CategoryEvent.NavigateToCategoryDetail -> onCategoryClick(it.categoryId, it.categoryName)
         }
+    }
+
+    LaunchedEffect(networkState) {
+        Timber.d("networkState: $networkState")
     }
 
     CreamSurface(modifier = modifier.fillMaxSize()) {

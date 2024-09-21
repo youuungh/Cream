@@ -22,13 +22,14 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.ninezero.cream.base.collectAsState
 import com.ninezero.cream.ui.component.ErrorScreen
 import com.ninezero.cream.ui.component.ProductCard
 import com.ninezero.cream.ui.component.VerticalGridDetail
@@ -41,6 +42,7 @@ import com.ninezero.cream.utils.CategorySharedElementType
 import com.ninezero.cream.utils.detailBoundsTransform
 import com.ninezero.cream.utils.nonSpatialExpressiveSpring
 import com.ninezero.cream.viewmodel.CategoryDetailViewModel
+import timber.log.Timber
 
 @Composable
 fun CategoryDetailScreen(
@@ -51,6 +53,7 @@ fun CategoryDetailScreen(
     viewModel: CategoryDetailViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.state.collectAsState()
+    val networkState by viewModel.networkState.collectAsState()
 
     val sharedTransitionScope = LocalSharedTransitionScope.current
         ?: throw IllegalStateException("No SharedTransitionScope found")
@@ -72,6 +75,10 @@ fun CategoryDetailScreen(
         when (it) {
             is CategoryDetailEvent.NavigateToProductDetail -> onProductClick(it.productId)
         }
+    }
+
+    LaunchedEffect(networkState) {
+        Timber.d("networkState: $networkState")
     }
 
     with(sharedTransitionScope) {

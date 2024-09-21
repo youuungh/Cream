@@ -1,14 +1,19 @@
 package com.ninezero.data.di
 
+import android.content.Context
 import com.google.gson.Gson
 import com.ninezero.data.BuildConfig
+import com.ninezero.data.datasource.NetworkStatus
 import com.ninezero.data.remote.api.ApiService
 import com.ninezero.data.remote.retrofit.NetworkRequestFactory
 import com.ninezero.data.remote.retrofit.NetworkRequestFactoryImpl
 import com.ninezero.data.remote.retrofit.StringConverterFactory
+import com.ninezero.data.repository.NetworkRepositoryImpl
+import com.ninezero.domain.repository.NetworkRepository
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
+import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
@@ -70,6 +75,18 @@ class NetworkModule {
 
     @Provides
     @Singleton
-    fun bindNetworkRequestFactory(networkRequestFactory: NetworkRequestFactoryImpl): NetworkRequestFactory =
+    fun provideNetworkStatus(@ApplicationContext context: Context): NetworkStatus {
+        return NetworkStatus(context)
+    }
+
+    @Provides
+    @Singleton
+    fun provideNetworkRepository(networkStatus: NetworkStatus): NetworkRepository {
+        return NetworkRepositoryImpl(networkStatus)
+    }
+
+    @Provides
+    @Singleton
+    fun provideNetworkRequestFactory(networkRequestFactory: NetworkRequestFactoryImpl): NetworkRequestFactory =
         networkRequestFactory
 }

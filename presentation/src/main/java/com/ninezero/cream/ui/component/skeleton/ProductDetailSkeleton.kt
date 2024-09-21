@@ -18,13 +18,13 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Card
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
-import com.ninezero.cream.ui.component.CreamSurface
-import com.ninezero.cream.ui.component.Divider
 import com.ninezero.cream.ui.component.ShimmerBox
 import com.ninezero.cream.utils.CONTENT_OVERLAP
 import com.ninezero.cream.utils.IMAGE_HEIGHT
@@ -44,11 +44,12 @@ fun ProductDetailSkeleton(modifier: Modifier = Modifier) {
                     .background(MaterialTheme.colorScheme.surfaceVariant)
             )
 
-            CreamSurface(
+            Surface(
                 modifier = Modifier
                     .fillMaxWidth()
                     .offset(y = -CONTENT_OVERLAP.dp)
-                    .clip(RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp))
+                    .clip(RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp)),
+                color = MaterialTheme.colorScheme.surface
             ) {
                 Column(
                     modifier = Modifier
@@ -95,7 +96,11 @@ fun ProductDetailSkeleton(modifier: Modifier = Modifier) {
                         }
                     }
 
-                    Divider()
+                    HorizontalDivider(
+                        modifier = Modifier.padding(vertical = 16.dp),
+                        thickness = 1.dp,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f)
+                    )
 
                     ShimmerBox(
                         modifier = Modifier
@@ -123,7 +128,11 @@ fun ProductDetailSkeleton(modifier: Modifier = Modifier) {
                         }
                     }
 
-                    Divider()
+                    HorizontalDivider(
+                        modifier = Modifier.padding(vertical = 16.dp),
+                        thickness = 1.dp,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f)
+                    )
 
                     ShimmerBox(
                         modifier = Modifier

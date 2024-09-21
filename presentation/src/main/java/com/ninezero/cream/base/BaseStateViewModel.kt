@@ -2,6 +2,7 @@ package com.ninezero.cream.base
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.ninezero.domain.repository.NetworkRepository
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.Flow
@@ -9,6 +10,7 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.flatMapConcat
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.launchIn
@@ -20,6 +22,8 @@ abstract class BaseStateViewModel<Action : MviAction, Result : MviResult, Event 
     initialState: State,
     reducer: Reducer
 ) : ViewModel(), MviStateReducer<State, Result> by reducer {
+
+    private lateinit var networkRepository: NetworkRepository
 
     private val _fsmFlow = MutableSharedFlow<Action>(
         extraBufferCapacity = 20,
@@ -34,6 +38,9 @@ abstract class BaseStateViewModel<Action : MviAction, Result : MviResult, Event 
 
     private val _state = MutableStateFlow(initialState)
     val state: StateFlow<State> = _state
+
+    private val _networkState = MutableStateFlow(true)
+    val networkState: StateFlow<Boolean> = _networkState.asStateFlow()
 
     init {
         setupStateMachine()
@@ -58,6 +65,22 @@ abstract class BaseStateViewModel<Action : MviAction, Result : MviResult, Event 
             .launchIn(viewModelScope)
     }
 
+    fun setNetworkRepository(repository: NetworkRepository) {
+        networkRepository = repository
+        observeNetworkStatus()
+    }
+
+    private fun observeNetworkStatus() {
+        viewModelScope.launch {
+            networkRepository.isNetworkAvailable.collect { isAvailable ->
+                _networkState.value = isAvailable
+                if (isAvailable) {
+                    refreshData()
+                }
+            }
+        }
+    }
+
     protected abstract fun Action.process(): Flow<Result>
 
     protected fun emitResult(result: Result) = flow { emit(result) }
@@ -67,5 +90,7 @@ abstract class BaseStateViewModel<Action : MviAction, Result : MviResult, Event 
     fun action(action: Action) {
         _fsmFlow.tryEmit(action)
     }
+
+    abstract fun refreshData()
 }
 

@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.ui.Modifier
@@ -31,6 +32,7 @@ import com.ninezero.cream.ui.component.skeleton.HomeSkeleton
 import com.ninezero.cream.viewmodel.HomeViewModel
 import com.ninezero.di.R
 import com.ninezero.domain.model.HomeData
+import timber.log.Timber
 
 @Composable
 fun HomeScreen(
@@ -41,11 +43,16 @@ fun HomeScreen(
     viewModel: HomeViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.state.collectAsState()
+    val networkState by viewModel.networkState.collectAsState()
 
     viewModel.collectEvents {
         when (it) {
             is HomeEvent.NavigateToProductDetail -> onProductClick(it.productId)
         }
+    }
+
+    LaunchedEffect(networkState) {
+        Timber.d("networkState: $networkState")
     }
 
     CreamSurface(modifier = modifier.fillMaxSize()) {

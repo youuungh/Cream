@@ -7,6 +7,7 @@ import com.ninezero.cream.ui.category.CategoryReducer
 import com.ninezero.cream.ui.category.CategoryResult
 import com.ninezero.cream.ui.category.CategoryState
 import com.ninezero.domain.model.EntityWrapper
+import com.ninezero.domain.repository.NetworkRepository
 import com.ninezero.domain.usecase.CategoryUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.delay
@@ -17,12 +18,14 @@ import javax.inject.Inject
 @HiltViewModel
 class CategoryViewModel @Inject constructor(
     private val categoryUseCase: CategoryUseCase,
-    reducer: CategoryReducer
+    reducer: CategoryReducer,
+    networkRepository: NetworkRepository
 ) : BaseStateViewModel<CategoryAction, CategoryResult, CategoryEvent, CategoryState, CategoryReducer>(
     initialState = CategoryState.Loading,
     reducer = reducer
 ) {
     init {
+        setNetworkRepository(networkRepository)
         action(CategoryAction.Fetch)
     }
 
@@ -37,15 +40,22 @@ class CategoryViewModel @Inject constructor(
 
     private fun fetchCategories(): Flow<CategoryResult> = flow {
         emit(CategoryResult.Loading)
-        categoryUseCase().collect {
-            emit(
-                when (it) {
-                    is EntityWrapper.Success -> CategoryResult.CategoryContent(it.entity)
-                    is EntityWrapper.Fail -> CategoryResult.Error(
-                        it.error.message ?: "Unknown error occurred"
-                    )
-                }
-            )
+        if (!networkState.value) {
+            delay(3000)
+            emit(CategoryResult.Error("No internet connection"))
+        } else {
+            categoryUseCase().collect {
+                emit(
+                    when (it) {
+                        is EntityWrapper.Success -> CategoryResult.CategoryContent(it.entity)
+                        is EntityWrapper.Fail -> CategoryResult.Error(
+                            it.error.message ?: "Unknown error occurred"
+                        )
+                    }
+                )
+            }
         }
     }
+
+    override fun refreshData() { action(CategoryAction.Refresh) }
 }
