@@ -44,6 +44,16 @@ class RemoteDataSourceImpl @Inject constructor(
         }
     }
 
+    override suspend fun getProductsByBrand(brandId: String): ApiResult<List<ProductResponse>> {
+        return when (val response = fetchData().response) {
+            is ApiResponse.Success -> {
+                val products = response.data.products.filter { it.brand.brandId == brandId }
+                ApiResult(ApiResponse.Success(products))
+            }
+            is ApiResponse.Fail -> ApiResult(response)
+        }
+    }
+
     override suspend fun getCategories(): ApiResult<List<CategoryResponse>> {
         return when (val response = fetchData().response) {
             is ApiResponse.Success -> {

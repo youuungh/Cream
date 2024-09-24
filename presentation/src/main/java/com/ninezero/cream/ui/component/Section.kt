@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyHorizontalGrid
@@ -38,7 +39,8 @@ fun RowSection(
                 ProductCard(
                     product = it,
                     onClick = { onProductClick(it.productId) },
-                    onSaveClick = { /*TODO*/ }
+                    onSaveClick = { /*TODO*/ },
+                    modifier = Modifier.width(160.dp)
                 )
             }
         }

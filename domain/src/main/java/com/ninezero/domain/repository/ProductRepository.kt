@@ -6,4 +6,5 @@ import kotlinx.coroutines.flow.Flow
 
 interface ProductRepository {
     fun fetchProductDetails(productId: String): Flow<EntityWrapper<Product>>
+    fun fetchProductsByBrand(brandId: String): Flow<EntityWrapper<List<Product>>>
 }

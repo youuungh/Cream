@@ -1,113 +1,179 @@
+@file:OptIn(ExperimentalFoundationApi::class)
+
 package com.ninezero.cream.ui.component
 
-import androidx.compose.animation.core.animateDpAsState
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.background
-import androidx.compose.foundation.horizontalScroll
-import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Tab
+import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.State
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.times
-import coil.compose.AsyncImage
+import androidx.compose.ui.zIndex
 import com.ninezero.cream.ui.product.ProductDetailState
 import com.ninezero.cream.utils.CONTENT_OVERLAP
 import com.ninezero.cream.utils.DETAIL_BOTTOM_BAR_HEIGHT
 import com.ninezero.cream.utils.IMAGE_HEIGHT
 import com.ninezero.cream.utils.MAX_CORNER_RADIUS
-import com.ninezero.cream.utils.NumUtils.calculatePriceDiff
 import com.ninezero.cream.utils.NumUtils.formatPriceWithCommas
-import com.ninezero.cream.utils.NumUtils.formatWithCommas
+import com.ninezero.cream.utils.ProductDetailTab
 import com.ninezero.cream.utils.SCROLL_THRESHOLD_OFFSET
-import com.ninezero.domain.model.Product
+import kotlinx.coroutines.launch
+import timber.log.Timber
 
 @Composable
 fun ProductDetailContent(
     state: ProductDetailState.Content,
     onSaveToggle: () -> Unit,
+    onProductClick: (String) -> Unit,
     onBuyClick: () -> Unit,
-    updateAppBarAlpha: (Float) -> Unit
+    updateAppBarAlpha: (Float) -> Unit,
+    appBarHeight: Dp
 ) {
-    val scrollState = rememberScrollState()
-    val scrollThreshold =
-        with(LocalDensity.current) { IMAGE_HEIGHT.dp.toPx() - SCROLL_THRESHOLD_OFFSET.dp.toPx() }
+    val lazyListState = rememberLazyListState()
+    val appBarAlpha by rememberAppBarAlphaState(lazyListState)
+    val contentCornerRadius by rememberContentCornerRadiusState(lazyListState)
+    val density = LocalDensity.current
 
-    val appBarAlpha by animateFloatAsState(
-        targetValue = (scrollState.value / scrollThreshold).coerceIn(0f, 1f),
-        label = "appbar_alpha"
-    )
+    val tabKey = "product_detail_tab"
+    var tabHeight by remember { mutableStateOf(0.dp) }
 
-    val contentCornerRadius by animateDpAsState(
-        targetValue = (1 - (scrollState.value / scrollThreshold).coerceIn(0f, 1f)) * MAX_CORNER_RADIUS.dp,
-        label = "content_radius"
-    )
+    var selectedTabIndex by remember { mutableIntStateOf(0) }
+    val coroutineScope = rememberCoroutineScope()
 
-    LaunchedEffect(appBarAlpha) {
-        updateAppBarAlpha(appBarAlpha)
-    }
+    val tabVisibility by remember {
+        derivedStateOf {
+            val layoutInfo = lazyListState.layoutInfo
+            val visibleItemsInfo = layoutInfo.visibleItemsInfo
+            val tabItem = visibleItemsInfo.find { it.key == tabKey }
+            val tabIndex = layoutInfo.totalItemsCount - 3
 
-    Box(modifier = Modifier.fillMaxSize()) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .verticalScroll(scrollState)
-        ) {
-            ProductDetailImage(
-                imageUrl = state.product.imageUrl,
-                height = IMAGE_HEIGHT.dp
-            )
-            CreamSurface(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .offset(y = -CONTENT_OVERLAP.dp)
-                    .clip(
-                        RoundedCornerShape(
-                            topStart = contentCornerRadius,
-                            topEnd = contentCornerRadius
-                        )
-                    )
-            ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(start = 24.dp, end = 24.dp, top = 24.dp, bottom = DETAIL_BOTTOM_BAR_HEIGHT.dp)
-                ) {
-                    ProductDetailHeader(product = state.product)
-                    ProductDetailInfoCard(product = state.product)
-                    Divider()
-                    BenefitInfoContainer()
-                    Divider()
-                    ShippingInfoContainer()
-                }
+            when {
+                tabItem == null && lazyListState.firstVisibleItemIndex >= tabIndex -> 1f
+                tabItem == null -> 0f
+                tabItem.offset + tabItem.size <= with(density) { (appBarHeight + CONTENT_OVERLAP.dp + tabHeight).toPx() } -> 1f
+                else -> 0f
             }
         }
+    }
+
+    val scrollBasedTabIndex by remember {
+        derivedStateOf {
+            val adjustmentPx = with(density) { (appBarHeight + tabHeight + CONTENT_OVERLAP.dp).toPx() }
+            val layoutInfo = lazyListState.layoutInfo
+            val visibleItemsInfo = layoutInfo.visibleItemsInfo
+
+            val styleInfoIndex = 3
+            val recommendInfoIndex = 4
+
+            val styleInfoItem = visibleItemsInfo.find { it.index == styleInfoIndex }
+            val recommendInfoItem = visibleItemsInfo.find { it.index == recommendInfoIndex }
+
+            when {
+                recommendInfoItem != null && recommendInfoItem.offset - adjustmentPx <= 0 -> 1
+                styleInfoItem != null && styleInfoItem.offset - adjustmentPx <= 0 -> 0
+                else -> selectedTabIndex
+            }
+        }
+    }
+
+    LaunchedEffect(scrollBasedTabIndex) {
+        if (scrollBasedTabIndex != selectedTabIndex) {
+            selectedTabIndex = scrollBasedTabIndex
+        }
+    }
+
+    LaunchedEffect(appBarAlpha) { updateAppBarAlpha(appBarAlpha) }
+
+    Box(modifier = Modifier.fillMaxSize()) {
+        LazyColumn(
+            state = lazyListState,
+            modifier = Modifier.fillMaxSize()
+        ) {
+            item { ProductDetailImage(imageUrl = state.product.imageUrl) }
+            item {
+                ProductDetailBody(
+                    state = state,
+                    contentCornerRadius = contentCornerRadius
+                )
+            }
+            item(key = tabKey) {
+                ProductDetailTabs(
+                    selectedTabIndex = selectedTabIndex,
+                    onTabSelected = { index ->
+                        selectedTabIndex = index
+                        coroutineScope.launch {
+                            val adjustmentPx = with(density) { (appBarHeight + tabHeight).toPx() }.toInt()
+                            lazyListState.animateScrollToItem(
+                                index = when (index) {
+                                    0 -> 3  // StyleInfo
+                                    1 -> 4  // RecommendInfo
+                                    else -> 3
+                                },
+                                scrollOffset = -adjustmentPx
+                            )
+                        }
+                    },
+                    modifier = Modifier
+                        .offset(y = -CONTENT_OVERLAP.dp)
+                        .onGloballyPositioned {
+                            tabHeight = with(density) { it.size.height.toDp() }
+                        }
+                )
+            }
+            item { StyleInfo() }
+            item { RecommendInfo(state.relatedProducts, onProductClick) }
+        }
+
+        ProductDetailTabs(
+            selectedTabIndex = selectedTabIndex,
+            onTabSelected = { index ->
+                selectedTabIndex = index
+                coroutineScope.launch {
+                    val adjustmentPx = with(density) { (appBarHeight + tabHeight).toPx() }.toInt()
+                    lazyListState.animateScrollToItem(
+                        index = when (index) {
+                            0 -> 3  // StyleInfo
+                            1 -> 4  // RecommendInfo
+                            else -> 3
+                        },
+                        scrollOffset = -adjustmentPx
+                    )
+                }
+            },
+            modifier = Modifier
+                .fillMaxWidth()
+                .alpha(tabVisibility)
+                .padding(top = appBarHeight)
+        )
 
         ProductBottomBar(
             price = formatPriceWithCommas(state.product.price.instantBuyPrice),
@@ -120,123 +186,97 @@ fun ProductDetailContent(
 }
 
 @Composable
-fun ProductDetailHeader(product: Product) {
-    Text(
-        text = "즉시구매가",
-        style = MaterialTheme.typography.labelSmall.copy(
-            fontWeight = FontWeight.Normal
-        )
-    )
-    Text(
-        text = formatPriceWithCommas(product.price.instantBuyPrice),
-        style = MaterialTheme.typography.titleLarge.copy(
-            fontWeight = FontWeight.Bold
-        )
-    )
-    Spacer(modifier = Modifier.height(16.dp))
-    Text(
-        text = product.productName,
-        style = MaterialTheme.typography.titleMedium.copy(
-            fontWeight = FontWeight.Normal
-        )
-    )
-    Text(
-        text = product.ko,
-        style = MaterialTheme.typography.titleSmall.copy(
-            color = MaterialTheme.colorScheme.outline.copy(alpha = 0.6f),
-            fontWeight = FontWeight.Normal
-        )
-    )
-    Spacer(modifier = Modifier.height(16.dp))
-}
-
-@Composable
-fun ProductDetailImage(
-    imageUrl: String,
-    height: Dp
+fun ProductDetailBody(
+    state: ProductDetailState.Content,
+    contentCornerRadius: Dp
 ) {
-    Box(
+    CreamSurface(
         modifier = Modifier
             .fillMaxWidth()
-            .height(height)
-    ) {
-        AsyncImage(
-            model = imageUrl,
-            contentDescription = null,
-            modifier = Modifier
-                .fillMaxSize()
-                .clip(RoundedCornerShape(8.dp)),
-            contentScale = ContentScale.Crop
-        )
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(
-                    brush = Brush.verticalGradient(
-                        0f to Color.Transparent,
-                        0.9f to Color.Black.copy(alpha = 0.1f),
-                        1f to Color.Black.copy(alpha = 0.2f)
-                    )
+            .offset(y = -CONTENT_OVERLAP.dp)
+            .clip(
+                RoundedCornerShape(
+                    topStart = contentCornerRadius,
+                    topEnd = contentCornerRadius
                 )
-        )
+            ),
+        color = MaterialTheme.colorScheme.background
+    ) {
+        Column(modifier = Modifier.fillMaxWidth()) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(start = 24.dp, end = 24.dp, top = 24.dp, bottom = 16.dp)
+            ) {
+                ProductInfoHeader(product = state.product)
+                ProductInfoContainer(product = state.product)
+                Divider()
+                BenefitInfoContainer()
+                Divider()
+                ShippingInfoContainer()
+            }
+            ColorSpacer()
+            BrandInfoContainer(brand = state.product.brand)
+            ColorSpacer()
+        }
     }
 }
 
 @Composable
-fun ProductDetailInfoCard(product: Product) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 8.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface,
-        ),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.05f)),
-        shape = MaterialTheme.shapes.medium
+fun ProductDetailTabs(
+    selectedTabIndex: Int,
+    onTabSelected: (Int) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val tabs = ProductDetailTab.entries.toList()
+
+    Surface(
+        color = MaterialTheme.colorScheme.surface,
+        modifier = modifier
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .horizontalScroll(rememberScrollState())
-                .padding(16.dp),
-            horizontalArrangement = Arrangement.Start,
-            verticalAlignment = Alignment.Top
+        TabRow(
+            selectedTabIndex = selectedTabIndex,
+            modifier = Modifier.fillMaxWidth()
         ) {
-            ProductInfo(
-                title = "발매가",
-                value = formatPriceWithCommas(product.price.releasePrice),
-                diffInfo = calculatePriceDiff(product.price)
-            )
-            VerticalDivider(
-                modifier = Modifier
-                    .height(56.dp)
-                    .padding(horizontal = 16.dp),
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.05f)
-            )
-            ProductInfo(
-                title = "거래량",
-                value = formatWithCommas(product.tradingVolume)
-            )
-            VerticalDivider(
-                modifier = Modifier
-                    .height(56.dp)
-                    .padding(horizontal = 16.dp),
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.05f)
-            )
-            ProductInfo(
-                title = "출시일",
-                value = product.releaseDate
-            )
-            VerticalDivider(
-                modifier = Modifier
-                    .height(56.dp)
-                    .padding(horizontal = 16.dp),
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.05f)
-            )
-            ProductInfo(
-                title = "대표색상",
-                value = product.mainColor
-            )
+            tabs.forEachIndexed { index, tab ->
+                Tab(
+                    text = { Text(tab.title) },
+                    selected = selectedTabIndex == index,
+                    onClick = { onTabSelected(index) }
+                )
+            }
+        }
+    }
+}
+
+
+@Composable
+private fun rememberAppBarAlphaState(lazyListState: LazyListState): State<Float> {
+    val density = LocalDensity.current
+    val imageHeightPx = with(density) { IMAGE_HEIGHT.dp.toPx() }
+    val scrollThreshold = imageHeightPx - with(density) { SCROLL_THRESHOLD_OFFSET.dp.toPx() }
+
+    return remember {
+        derivedStateOf {
+            val scrollOffset = lazyListState.firstVisibleItemIndex * imageHeightPx +
+                    lazyListState.firstVisibleItemScrollOffset
+            (scrollOffset / scrollThreshold).coerceIn(0f, 1f)
+        }
+    }
+}
+
+@Composable
+private fun rememberContentCornerRadiusState(lazyListState: LazyListState): State<Dp> {
+    val density = LocalDensity.current
+    val imageHeightPx = with(density) { IMAGE_HEIGHT.dp.toPx() }
+    val scrollThreshold = imageHeightPx - with(density) { SCROLL_THRESHOLD_OFFSET.dp.toPx() }
+
+    return remember {
+        derivedStateOf {
+            val scrollOffset = lazyListState.firstVisibleItemIndex * imageHeightPx +
+                    lazyListState.firstVisibleItemScrollOffset
+            val progress = (scrollOffset / scrollThreshold).coerceIn(0f, 1f)
+            (1 - progress) * MAX_CORNER_RADIUS.dp
         }
     }
 }

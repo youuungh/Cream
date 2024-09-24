@@ -1,11 +1,8 @@
 package com.ninezero.cream.ui.product
 
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -15,6 +12,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.ninezero.cream.base.collectAsState
 import com.ninezero.cream.ui.component.DetailsAppBar
@@ -32,71 +32,85 @@ import timber.log.Timber
 fun ProductDetailScreen(
     onNavigateBack: () -> Unit,
     onCartClick: () -> Unit,
+    onProductClick: (String) -> Unit,
     viewModel: ProductDetailViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.state.collectAsState()
     val networkState by viewModel.networkState.collectAsState()
-    val (visible, setVisible) = remember { mutableStateOf(false) }
-    val animState = rememberSlideInOutAnimState()
-    val coroutineScope = rememberCoroutineScope()
 
-    var appBarAlpha by remember { mutableFloatStateOf(0f) }
-
-    LaunchedEffect(uiState) { if (uiState is ProductDetailState.Content) setVisible(true) }
+    AnimatedContent(
+        uiState = uiState,
+        onNavigateBack = onNavigateBack,
+        onCartClick = onCartClick,
+        onProductClick = onProductClick,
+        onRefresh = { viewModel.action(ProductDetailAction.Refresh) },
+        onSaveToggle = { viewModel.action(ProductDetailAction.ToggleSave) }
+    )
 
     LaunchedEffect(networkState) {
         Timber.d("networkState: $networkState")
     }
+}
 
+@Composable
+fun AnimatedContent(
+    uiState: ProductDetailState,
+    onNavigateBack: () -> Unit,
+    onCartClick: () -> Unit,
+    onProductClick: (String) -> Unit,
+    onRefresh: () -> Unit,
+    onSaveToggle: () -> Unit
+) {
+    var visible by remember { mutableStateOf(false) }
+    var appBarAlpha by remember { mutableFloatStateOf(0f) }
+    var appBarHeight by remember { mutableStateOf(0.dp) }
+    val density = LocalDensity.current
+
+    val animState = rememberSlideInOutAnimState()
+    val coroutineScope = rememberCoroutineScope()
     val handleNavigateBack: () -> Unit = {
         coroutineScope.launch {
-            setVisible(false)
+            visible = false
             delay(ANIMATION_DELAY.toLong())
             onNavigateBack()
         }
     }
 
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
-    ) {
-        when (val state = uiState) {
-            is ProductDetailState.Loading -> {
-                AnimatedVisibility(
-                    visible = !visible,
-                    enter = animState.enterTransition,
-                    exit = animState.exitTransition
-                ) {
-                    ProductDetailSkeleton()
-                }
+    LaunchedEffect(uiState) {
+        if (uiState is ProductDetailState.Content) visible = true
+    }
+
+    Box(modifier = Modifier.fillMaxSize()) {
+        when (uiState) {
+            is ProductDetailState.Loading -> AnimatedVisibility(
+                visible = !visible,
+                enter = animState.enterTransition,
+                exit = animState.exitTransition
+            ) {
+                ProductDetailSkeleton()
             }
 
-            is ProductDetailState.Content -> {
-                AnimatedVisibility(
-                    visible = visible,
-                    enter = animState.enterTransition,
-                    exit = animState.exitTransition
-                ) {
-                    ProductDetailContent(
-                        state = state,
-                        onSaveToggle = { viewModel.action(ProductDetailAction.ToggleSave) },
-                        onBuyClick = { /*TODO*/ },
-                        updateAppBarAlpha = { appBarAlpha = it }
-                    )
-                }
+            is ProductDetailState.Content -> AnimatedVisibility(
+                visible = visible,
+                enter = animState.enterTransition,
+                exit = animState.exitTransition
+            ) {
+                ProductDetailContent(
+                    state = uiState,
+                    onSaveToggle = onSaveToggle,
+                    onProductClick = onProductClick,
+                    onBuyClick = { /*TODO*/ },
+                    updateAppBarAlpha = { appBarAlpha = it },
+                    appBarHeight = appBarHeight
+                )
             }
 
-            is ProductDetailState.Error -> {
-                AnimatedVisibility(
-                    visible = !visible,
-                    enter = animState.enterTransition,
-                    exit = animState.exitTransition
-                ) {
-                    ErrorScreen(
-                        onRetry = { viewModel.action(ProductDetailAction.Refresh) }
-                    )
-                }
+            is ProductDetailState.Error -> AnimatedVisibility(
+                visible = !visible,
+                enter = animState.enterTransition,
+                exit = animState.exitTransition
+            ) {
+                ErrorScreen(onRetry = onRefresh)
             }
         }
 
@@ -105,11 +119,11 @@ fun ProductDetailScreen(
             onBackClick = handleNavigateBack,
             onCartClick = onCartClick,
             alpha = appBarAlpha,
-            showCartButton = when (uiState) {
-                is ProductDetailState.Content -> true
-                else -> false
-            },
-            modifier = Modifier.fillMaxWidth()
+            showCartButton = uiState is ProductDetailState.Content,
+            modifier = Modifier
+                .onGloballyPositioned {
+                    appBarHeight = with(density) { it.size.height.toDp() }
+                }
         )
     }
 }

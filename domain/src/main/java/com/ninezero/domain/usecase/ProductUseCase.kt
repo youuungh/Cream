@@ -12,4 +12,8 @@ class ProductUseCase @Inject constructor(
     fun getProductDetails(productId: String): Flow<EntityWrapper<Product>> {
         return productRepository.fetchProductDetails(productId)
     }
+
+    fun getProductsByBrand(brandId: String): Flow<EntityWrapper<List<Product>>> {
+        return productRepository.fetchProductsByBrand(brandId)
+    }
 }

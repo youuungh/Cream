@@ -1,5 +1,7 @@
 package com.ninezero.data.mapper
 
+import com.ninezero.data.remote.model.ApiResponse
+import com.ninezero.data.remote.model.ApiResult
 import com.ninezero.data.remote.model.BrandResponse
 import com.ninezero.data.remote.model.CategoryResponse
 import com.ninezero.data.remote.model.PriceResponse
@@ -22,6 +24,12 @@ class ProductMapper @Inject constructor() : BaseMapper<ProductResponse, Product>
     override fun getFailure(error: Throwable): EntityWrapper.Fail<Product> {
         return EntityWrapper.Fail(error)
     }
+
+    fun mapProductsByBrand(result: ApiResult<List<ProductResponse>>): EntityWrapper<List<Product>> =
+        when (result.response) {
+            is ApiResponse.Success -> EntityWrapper.Success(result.response.data.map { it.toDomain() })
+            is ApiResponse.Fail -> EntityWrapper.Fail(result.response.error)
+        }
 
     private fun ProductResponse.toDomain() = Product(
         productId = productId,

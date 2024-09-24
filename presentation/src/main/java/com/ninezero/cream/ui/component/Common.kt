@@ -12,6 +12,7 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -51,6 +52,19 @@ fun VerticalDivider(
         modifier
             .fillMaxHeight()
             .width(1.dp)
+            .background(color = color)
+    )
+}
+
+@Composable
+fun ColorSpacer(
+    height: Dp = 8.dp,
+    color: Color = MaterialTheme.colorScheme.surfaceVariant
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(height = height)
             .background(color = color)
     )
 }

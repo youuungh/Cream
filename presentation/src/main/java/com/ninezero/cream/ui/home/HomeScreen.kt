@@ -6,6 +6,7 @@ import androidx.compose.animation.SharedTransitionLayout
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
@@ -134,7 +135,8 @@ private fun HomeContent(
                     ProductCard(
                         product = it,
                         onClick = { onProductClick(it.productId) },
-                        onSaveClick = { /*TODO*/ }
+                        onSaveClick = { /*TODO*/ },
+                        modifier = Modifier.width(160.dp)
                     )
                 }
             }

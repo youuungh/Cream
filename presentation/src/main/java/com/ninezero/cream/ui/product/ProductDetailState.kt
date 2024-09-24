@@ -13,21 +13,26 @@ sealed class ProductDetailAction : MviAction {
     data object Fetch : ProductDetailAction()
     data object Refresh : ProductDetailAction()
     data object ToggleSave : ProductDetailAction()
+    data class FetchRelatedProducts(val brandId: String) : ProductDetailAction()
 }
 
 sealed class ProductDetailResult : MviResult {
     data object Loading : ProductDetailResult()
     data class ProductContent(val product: Product) : ProductDetailResult()
+    data class RelatedProducts(val relatedProducts: List<Product>) : ProductDetailResult()
     data class Error(val message: String) : ProductDetailResult()
     data class SaveToggled(val isSaved: Boolean) : ProductDetailResult()
 }
 
-sealed class ProductDetailEvent : MviEvent, MviResult {
-}
+sealed class ProductDetailEvent : MviEvent, MviResult
 
 sealed class ProductDetailState : MviViewState {
     data object Loading : ProductDetailState()
-    data class Content(val product: Product, var appBarAlpha: Float = 0f) : ProductDetailState()
+    data class Content(
+        val product: Product,
+        val relatedProducts: List<Product> = emptyList(),
+        var appBarAlpha: Float = 0f
+    ) : ProductDetailState()
     data class Error(val message: String) : ProductDetailState()
 }
 
@@ -36,12 +41,16 @@ class ProductDetailReducer @Inject constructor() : MviStateReducer<ProductDetail
         return when (result) {
             is ProductDetailResult.Loading -> ProductDetailState.Loading
             is ProductDetailResult.ProductContent -> ProductDetailState.Content(result.product)
+            is ProductDetailResult.RelatedProducts -> {
+                if (this is ProductDetailState.Content) {
+                    this.copy(relatedProducts = result.relatedProducts)
+                } else this
+            }
             is ProductDetailResult.Error -> ProductDetailState.Error(result.message)
             is ProductDetailResult.SaveToggled -> {
                 if (this is ProductDetailState.Content) {
                     this.copy(product = product.copy(isSaved = result.isSaved))
-                } else
-                    this
+                } else this
             }
         }
     }

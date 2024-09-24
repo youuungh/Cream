@@ -72,7 +72,10 @@ fun MainScreen() {
                 ) {
                     ProductDetailScreen(
                         onNavigateBack = navController::navigateBack,
-                        onCartClick = navController::navigateToCart
+                        onCartClick = navController::navigateToCart,
+                        onProductClick = { productId ->
+                            navController.navigateToProductDetail(productId = productId, it)
+                        }
                     )
                 }
 

@@ -14,9 +14,17 @@ class ProductRepositoryImpl @Inject constructor(
     private val remoteDataSource: RemoteDataSource,
     private val productMapper: ProductMapper
 ) : ProductRepository {
+
     override fun fetchProductDetails(productId: String): Flow<EntityWrapper<Product>> =
         flow {
             emit(productMapper.mapFromResult(remoteDataSource.getProductDetails(productId)))
+        }.catch { e ->
+            emit(EntityWrapper.Fail(e))
+        }
+
+    override fun fetchProductsByBrand(brandId: String): Flow<EntityWrapper<List<Product>>> =
+        flow {
+            emit(productMapper.mapProductsByBrand(remoteDataSource.getProductsByBrand(brandId)))
         }.catch { e ->
             emit(EntityWrapper.Fail(e))
         }

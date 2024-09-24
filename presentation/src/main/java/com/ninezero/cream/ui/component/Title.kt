@@ -62,9 +62,7 @@ fun ContainerTitle(
     ) {
         Text(
             text = title,
-            style = MaterialTheme.typography.titleMedium.copy(
-                fontWeight = FontWeight.Normal
-            )
+            style = MaterialTheme.typography.titleMedium
         )
         onMoreClick?.let {
             TextButton(

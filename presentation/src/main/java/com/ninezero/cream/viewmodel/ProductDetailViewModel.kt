@@ -37,6 +37,7 @@ class ProductDetailViewModel @Inject constructor(
     override fun ProductDetailAction.process(): Flow<ProductDetailResult> {
         return when (this) {
             ProductDetailAction.Fetch, ProductDetailAction.Refresh -> fetchProductDetails()
+            is ProductDetailAction.FetchRelatedProducts -> fetchRelatedProducts(this.brandId)
             is ProductDetailAction.ToggleSave -> toggleSave()
         }
     }
@@ -48,15 +49,29 @@ class ProductDetailViewModel @Inject constructor(
             emit(ProductDetailResult.Error("No internet connection"))
         } else {
             productUseCase.getProductDetails(productId).collect {
-                emit(
-                    when (it) {
-                        is EntityWrapper.Success -> ProductDetailResult.ProductContent(it.entity)
-                        is EntityWrapper.Fail -> ProductDetailResult.Error(
-                            it.error.message ?: "Unknown error occurred"
-                        )
+                when (it) {
+                    is EntityWrapper.Success -> {
+                        emit(ProductDetailResult.ProductContent(it.entity))
+                        action(ProductDetailAction.FetchRelatedProducts(it.entity.brand.brandId))
                     }
-                )
+                    is EntityWrapper.Fail -> emit(ProductDetailResult.Error(
+                        it.error.message ?: "Unknown error occurred"
+                    ))
+                }
             }
+        }
+    }
+
+    private fun fetchRelatedProducts(brandId: String): Flow<ProductDetailResult> = flow {
+        productUseCase.getProductsByBrand(brandId).collect {
+            emit(
+                when(it) {
+                    is EntityWrapper.Success -> ProductDetailResult.RelatedProducts(it.entity)
+                    is EntityWrapper.Fail -> ProductDetailResult.Error(
+                        it.error.message ?: "Unknown error occurred"
+                    )
+                }
+            )
         }
     }
 

@@ -60,11 +60,11 @@ import timber.log.Timber
 fun ProductCard(
     product: Product,
     onClick: () -> Unit,
-    onSaveClick: () -> Unit
+    onSaveClick: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
     Column(
-        modifier = Modifier
-            .width(160.dp)
+        modifier = modifier
             .clip(RoundedCornerShape(8.dp))
             .background(Color.Transparent)
             .clickable(onClick = onClick)

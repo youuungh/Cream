@@ -9,6 +9,7 @@ import com.ninezero.data.remote.model.ProductResponse
 interface RemoteDataSource {
     suspend fun fetchData(): ApiResult<HomeResponse>
     suspend fun getProductDetails(productId: String): ApiResult<ProductResponse>
+    suspend fun getProductsByBrand(brandId: String): ApiResult<List<ProductResponse>>
     suspend fun getCategories(): ApiResult<List<CategoryResponse>>
     suspend fun getCategoryDetails(categoryId: String): ApiResult<CategoryDetailsResponse>
 }
