@@ -6,8 +6,10 @@ import com.ninezero.data.repository.CategoryRepositoryImpl
 import com.ninezero.domain.repository.HomeRepository
 import com.ninezero.data.repository.HomeRepositoryImpl
 import com.ninezero.data.repository.ProductRepositoryImpl
+import com.ninezero.data.repository.SaveRepositoryImpl
 import com.ninezero.domain.repository.CategoryRepository
 import com.ninezero.domain.repository.ProductRepository
+import com.ninezero.domain.repository.SaveRepository
 import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn
@@ -33,4 +35,8 @@ interface DataModule {
     @Binds
     @Singleton
     fun bindCategoryRepository(categoryRepository: CategoryRepositoryImpl): CategoryRepository
+
+    @Binds
+    @Singleton
+    fun bindSaveRepository(saveRepositoryImpl: SaveRepositoryImpl): SaveRepository
 }
