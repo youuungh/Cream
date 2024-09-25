@@ -13,5 +13,6 @@ data class Product(
     val brand: Brand,
     val isNew: Boolean,
     val isFreeShipping: Boolean,
-    val isSaved: Boolean
+    val isSaved: Boolean = false,
+    val savedAt: Long? = null
 )

@@ -232,6 +232,7 @@ fun StyleInfo() {
 fun RecommendInfo(
     relatedProducts: List<Product>,
     onProductClick: (String) -> Unit,
+    onSaveToggle: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -253,7 +254,7 @@ fun RecommendInfo(
                     ProductCard(
                         product = product,
                         onClick = { onProductClick(product.productId) },
-                        onSaveClick = { /*todo*/ },
+                        onSaveToggle = onSaveToggle,
                         modifier = Modifier.weight(1f)
                     )
                 }

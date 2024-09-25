@@ -2,6 +2,13 @@
 
 package com.ninezero.cream.ui.component
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -52,11 +59,12 @@ import timber.log.Timber
 @Composable
 fun ProductDetailContent(
     state: ProductDetailState.Content,
-    onSaveToggle: () -> Unit,
     onProductClick: (String) -> Unit,
+    onSaveToggle: () -> Unit,
     onBuyClick: () -> Unit,
     updateAppBarAlpha: (Float) -> Unit,
-    appBarHeight: Dp
+    appBarHeight: Dp,
+    tabVisible: Boolean
 ) {
     val lazyListState = rememberLazyListState()
     val appBarAlpha by rememberAppBarAlphaState(lazyListState)
@@ -146,11 +154,12 @@ fun ProductDetailContent(
                         .offset(y = -CONTENT_OVERLAP.dp)
                         .onGloballyPositioned {
                             tabHeight = with(density) { it.size.height.toDp() }
-                        }
+                        },
+                    visible = tabVisible
                 )
             }
             item { StyleInfo() }
-            item { RecommendInfo(state.relatedProducts, onProductClick) }
+            item { RecommendInfo(state.relatedProducts, onProductClick, onSaveToggle) }
         }
 
         ProductDetailTabs(
@@ -172,7 +181,8 @@ fun ProductDetailContent(
             modifier = Modifier
                 .fillMaxWidth()
                 .alpha(tabVisibility)
-                .padding(top = appBarHeight)
+                .padding(top = appBarHeight),
+            visible = tabVisible
         )
 
         ProductBottomBar(
@@ -226,24 +236,41 @@ fun ProductDetailBody(
 fun ProductDetailTabs(
     selectedTabIndex: Int,
     onTabSelected: (Int) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    visible: Boolean
 ) {
     val tabs = ProductDetailTab.entries.toList()
 
-    Surface(
-        color = MaterialTheme.colorScheme.surface,
-        modifier = modifier
+    AnimatedVisibility(
+        visible = visible,
+        enter = slideInVertically(
+            initialOffsetY = { -it },
+            animationSpec = tween(durationMillis = 300)
+        ) + fadeIn(
+            animationSpec = tween(durationMillis = 300)
+        ),
+        exit = slideOutVertically(
+            targetOffsetY = { -it },
+            animationSpec = tween(durationMillis = 300)
+        ) + fadeOut(
+            animationSpec = tween(durationMillis = 300)
+        )
     ) {
-        TabRow(
-            selectedTabIndex = selectedTabIndex,
-            modifier = Modifier.fillMaxWidth()
+        Surface(
+            color = MaterialTheme.colorScheme.surface,
+            modifier = modifier
         ) {
-            tabs.forEachIndexed { index, tab ->
-                Tab(
-                    text = { Text(tab.title) },
-                    selected = selectedTabIndex == index,
-                    onClick = { onTabSelected(index) }
-                )
+            TabRow(
+                selectedTabIndex = selectedTabIndex,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                tabs.forEachIndexed { index, tab ->
+                    Tab(
+                        text = { Text(tab.title) },
+                        selected = selectedTabIndex == index,
+                        onClick = { onTabSelected(index) }
+                    )
+                }
             }
         }
     }

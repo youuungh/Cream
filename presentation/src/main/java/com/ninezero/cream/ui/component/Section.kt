@@ -27,7 +27,7 @@ fun RowSection(
     subtitle: String,
     products: List<Product>,
     onProductClick: (String) -> Unit,
-    onSaveClick: (String) -> Unit
+    onSaveClick: (Product) -> Unit
 ) {
     Column(modifier = Modifier.padding(bottom = 16.dp)) {
         SectionTitle(title = title, subtitle = subtitle)
@@ -39,7 +39,7 @@ fun RowSection(
                 ProductCard(
                     product = it,
                     onClick = { onProductClick(it.productId) },
-                    onSaveClick = { /*TODO*/ },
+                    onSaveToggle = { onSaveClick(it) },
                     modifier = Modifier.width(160.dp)
                 )
             }

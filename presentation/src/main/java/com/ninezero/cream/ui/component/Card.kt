@@ -10,11 +10,14 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -31,6 +34,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -41,6 +45,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.ninezero.cream.ui.LocalNavAnimatedVisibilityScope
@@ -53,6 +58,8 @@ import com.ninezero.cream.utils.getCategoryImageResource
 import com.ninezero.di.R
 import com.ninezero.domain.model.Brand
 import com.ninezero.domain.model.Category
+import com.ninezero.domain.model.Price
+import com.ninezero.domain.model.PriceStatus
 import com.ninezero.domain.model.Product
 import timber.log.Timber
 
@@ -60,7 +67,7 @@ import timber.log.Timber
 fun ProductCard(
     product: Product,
     onClick: () -> Unit,
-    onSaveClick: () -> Unit,
+    onSaveToggle: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -95,15 +102,15 @@ fun ProductCard(
                 )
             }
             IconButton(
-                onClick = onSaveClick,
-                modifier = Modifier
-                    .align(Alignment.BottomEnd)
-                    .padding(4.dp)
+                onClick = onSaveToggle,
+                modifier = Modifier.align(Alignment.BottomEnd)
             ) {
                 Icon(
-                    painter = painterResource(id = R.drawable.ic_save_opsz48),
-                    contentDescription = "Saved",
-                    modifier = Modifier.size(24.dp)
+                    painter = painterResource(
+                        id = if (product.isSaved) R.drawable.ic_save_fill_opsz48 else R.drawable.ic_save_opsz48
+                    ),
+                    contentDescription = null,
+                    modifier = Modifier.size(30.dp)
                 )
             }
         }
@@ -133,6 +140,111 @@ fun ProductCard(
                     fontWeight = FontWeight.Normal
                 )
             )
+        }
+    }
+}
+
+@Composable
+fun SavedProductCard(
+    product: Product,
+    onClick: () -> Unit,
+    onSaveToggle: (Product) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(8.dp))
+            .background(Color.Transparent)
+            .clickable(onClick = onClick)
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxHeight()
+                .aspectRatio(1f)
+                .clip(RoundedCornerShape(8.dp))
+        ) {
+            AsyncImage(
+                model = product.imageUrl,
+                contentDescription = null,
+                modifier = Modifier.fillMaxSize(),
+                contentScale = ContentScale.Crop,
+                placeholder = painterResource(id = R.drawable.ic_placeholder)
+            )
+        }
+
+        Column(
+            modifier = Modifier
+                .fillMaxHeight()
+                .weight(1f)
+                .padding(start = 12.dp)
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 4.dp, end = 2.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.Top
+            ) {
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(top = 8.dp, end = 24.dp)
+                ) {
+                    Text(
+                        text = product.brand.brandName,
+                        style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    Text(
+                        text = product.productName,
+                        style = MaterialTheme.typography.bodySmall,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+
+                Box(
+                    modifier = Modifier
+                        .size(28.dp)
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null,
+                            onClick = {
+                                onSaveToggle(product)
+                                println("Save toggle clicked for product: ${product.productId}")
+                            }
+                        )
+                ) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.ic_save_fill_opsz48),
+                        contentDescription = null,
+                        modifier = Modifier.size(40.dp)
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.weight(1f))
+
+            Column(
+                modifier = Modifier.fillMaxWidth().padding(4.dp),
+                horizontalAlignment = Alignment.End
+            ) {
+                Text(
+                    text = "즉시구매가",
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                        fontWeight = FontWeight.Normal
+                    ),
+                    textAlign = TextAlign.End
+                )
+                Text(
+                    text = NumUtils.formatPriceWithCommas(product.price.instantBuyPrice),
+                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
+                    textAlign = TextAlign.End
+                )
+            }
         }
     }
 }
@@ -236,8 +348,6 @@ fun BrandCard(
     brand: Brand,
     onClick: () -> Unit
 ) {
-    Timber.d(brand.toString())
-
     Box(
         modifier = Modifier
             .size(80.dp)

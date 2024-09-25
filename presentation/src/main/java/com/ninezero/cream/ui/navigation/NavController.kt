@@ -25,6 +25,7 @@ import androidx.navigation.navDeepLink
 import com.ninezero.cream.ui.LocalNavAnimatedVisibilityScope
 import com.ninezero.cream.ui.category.CategoryScreen
 import com.ninezero.cream.ui.home.HomeScreen
+import com.ninezero.cream.ui.saved.SavedScreen
 import com.ninezero.cream.utils.nonSpatialExpressiveSpring
 
 @Composable
@@ -145,6 +146,19 @@ fun NavGraphBuilder.addMainGraph(
                 )
             },
             onCartClick = onCartClick,
+            modifier = modifier
+        )
+    }
+
+    composable(
+        route = AppRoutes.MAIN_SAVED,
+        deepLinks = listOf(navDeepLink {
+            uriPattern = "${AppRoutes.DEEP_LINK_SCHEME}${AppRoutes.MAIN_SAVED}"
+        })
+    ) {
+        SavedScreen(
+            onCartClick = onCartClick,
+            onProductClick = onProductClick,
             modifier = modifier
         )
     }

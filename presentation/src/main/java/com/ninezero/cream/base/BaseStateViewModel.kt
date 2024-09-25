@@ -65,7 +65,7 @@ abstract class BaseStateViewModel<Action : MviAction, Result : MviResult, Event 
             .launchIn(viewModelScope)
     }
 
-    fun setNetworkRepository(repository: NetworkRepository) {
+    fun setNetworkStatus(repository: NetworkRepository) {
         networkRepository = repository
         observeNetworkStatus()
     }

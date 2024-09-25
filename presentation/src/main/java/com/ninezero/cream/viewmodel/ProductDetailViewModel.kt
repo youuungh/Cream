@@ -11,26 +11,29 @@ import com.ninezero.cream.ui.navigation.AppRoutes
 import com.ninezero.domain.model.EntityWrapper
 import com.ninezero.domain.repository.NetworkRepository
 import com.ninezero.domain.usecase.ProductUseCase
+import com.ninezero.domain.usecase.SaveUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
 import javax.inject.Inject
 
 @HiltViewModel
 class ProductDetailViewModel @Inject constructor(
     private val productUseCase: ProductUseCase,
+    private val saveUseCase: SaveUseCase,
     reducer: ProductDetailReducer,
     networkRepository: NetworkRepository,
     savedStateHandle: SavedStateHandle
 ) : BaseStateViewModel<ProductDetailAction, ProductDetailResult, ProductDetailEvent, ProductDetailState, ProductDetailReducer>(
-    initialState = ProductDetailState.Loading,
+    initialState = ProductDetailState.Fetching,
     reducer = reducer
 ) {
     private val productId: String = checkNotNull(savedStateHandle[AppRoutes.PRODUCT_ID_KEY])
 
     init {
-        setNetworkRepository(networkRepository)
+        setNetworkStatus(networkRepository)
         action(ProductDetailAction.Fetch)
     }
 
@@ -43,7 +46,7 @@ class ProductDetailViewModel @Inject constructor(
     }
 
     private fun fetchProductDetails(): Flow<ProductDetailResult> = flow {
-        emit(ProductDetailResult.Loading)
+        emit(ProductDetailResult.Fetching)
         if (!networkState.value) {
             delay(3000)
             emit(ProductDetailResult.Error("No internet connection"))
@@ -51,12 +54,12 @@ class ProductDetailViewModel @Inject constructor(
             productUseCase.getProductDetails(productId).collect {
                 when (it) {
                     is EntityWrapper.Success -> {
-                        emit(ProductDetailResult.ProductContent(it.entity))
-                        action(ProductDetailAction.FetchRelatedProducts(it.entity.brand.brandId))
+                        val product = it.entity
+                        val isSaved = saveUseCase.isSaved(product.productId).first()
+                        emit(ProductDetailResult.ProductContent(product.copy(isSaved = isSaved)))
+                        action(ProductDetailAction.FetchRelatedProducts(product.brand.brandId))
                     }
-                    is EntityWrapper.Fail -> emit(ProductDetailResult.Error(
-                        it.error.message ?: "Unknown error occurred"
-                    ))
+                    is EntityWrapper.Fail -> emit(ProductDetailResult.Error(it.error.message ?: "Unknown error occurred"))
                 }
             }
         }
@@ -78,10 +81,11 @@ class ProductDetailViewModel @Inject constructor(
     private fun toggleSave(): Flow<ProductDetailResult> = flow {
         val currentState = state.value
         if (currentState is ProductDetailState.Content) {
-            val newSavedState = !currentState.product.isSaved
-            emit(ProductDetailResult.SaveToggled(newSavedState))
+            val product = currentState.product
+            saveUseCase.toggleSave(product)
+            emit(ProductDetailResult.SaveToggled(!product.isSaved))
         }
     }
 
-    override fun refreshData() { action(ProductDetailAction.Refresh) }
+    override fun refreshData() = action(ProductDetailAction.Refresh)
 }

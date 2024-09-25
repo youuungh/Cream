@@ -136,7 +136,7 @@ fun CategoryDetailScreen(
                                     ProductCard(
                                         product = it,
                                         onClick = { onProductClick(it.productId) },
-                                        onSaveClick = { /* 저장 기능 */ }
+                                        onSaveToggle = { viewModel.action(CategoryDetailAction.ToggleSave(it)) }
                                     )
                                 }
                             }

@@ -5,7 +5,6 @@ import com.ninezero.cream.base.MviEvent
 import com.ninezero.cream.base.MviResult
 import com.ninezero.cream.base.MviStateReducer
 import com.ninezero.cream.base.MviViewState
-import com.ninezero.cream.ui.category.CategoryEvent
 import com.ninezero.domain.model.Product
 import javax.inject.Inject
 
@@ -17,17 +16,17 @@ sealed class ProductDetailAction : MviAction {
 }
 
 sealed class ProductDetailResult : MviResult {
-    data object Loading : ProductDetailResult()
+    data object Fetching : ProductDetailResult()
     data class ProductContent(val product: Product) : ProductDetailResult()
     data class RelatedProducts(val relatedProducts: List<Product>) : ProductDetailResult()
     data class Error(val message: String) : ProductDetailResult()
     data class SaveToggled(val isSaved: Boolean) : ProductDetailResult()
 }
 
-sealed class ProductDetailEvent : MviEvent, MviResult
+sealed class ProductDetailEvent : MviEvent
 
 sealed class ProductDetailState : MviViewState {
-    data object Loading : ProductDetailState()
+    data object Fetching : ProductDetailState()
     data class Content(
         val product: Product,
         val relatedProducts: List<Product> = emptyList(),
@@ -39,7 +38,7 @@ sealed class ProductDetailState : MviViewState {
 class ProductDetailReducer @Inject constructor() : MviStateReducer<ProductDetailState, ProductDetailResult> {
     override fun ProductDetailState.reduce(result: ProductDetailResult): ProductDetailState {
         return when (result) {
-            is ProductDetailResult.Loading -> ProductDetailState.Loading
+            is ProductDetailResult.Fetching -> ProductDetailState.Fetching
             is ProductDetailResult.ProductContent -> ProductDetailState.Content(result.product)
             is ProductDetailResult.RelatedProducts -> {
                 if (this is ProductDetailState.Content) {

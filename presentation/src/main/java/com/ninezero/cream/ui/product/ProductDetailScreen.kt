@@ -64,6 +64,7 @@ fun AnimatedContent(
     var visible by remember { mutableStateOf(false) }
     var appBarAlpha by remember { mutableFloatStateOf(0f) }
     var appBarHeight by remember { mutableStateOf(0.dp) }
+    var tabVisible by remember { mutableStateOf(false) }
     val density = LocalDensity.current
 
     val animState = rememberSlideInOutAnimState()
@@ -77,53 +78,48 @@ fun AnimatedContent(
     }
 
     LaunchedEffect(uiState) {
-        if (uiState is ProductDetailState.Content) visible = true
+        if (uiState is ProductDetailState.Content) {
+            visible = true
+            delay(ANIMATION_DELAY.toLong())
+            tabVisible = true
+        } else {
+            visible = false
+            tabVisible = false
+        }
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
-        when (uiState) {
-            is ProductDetailState.Loading -> AnimatedVisibility(
-                visible = !visible,
-                enter = animState.enterTransition,
-                exit = animState.exitTransition
-            ) {
-                ProductDetailSkeleton()
-            }
+        AnimatedVisibility(
+            visible = visible,
+            enter = animState.enterTransition,
+            exit = animState.exitTransition
+        ) {
+            Box {
+                when (uiState) {
+                    is ProductDetailState.Fetching -> ProductDetailSkeleton()
+                    is ProductDetailState.Content -> ProductDetailContent(
+                        state = uiState,
+                        onSaveToggle = onSaveToggle,
+                        onProductClick = onProductClick,
+                        onBuyClick = { /*TODO*/ },
+                        updateAppBarAlpha = { appBarAlpha = it },
+                        appBarHeight = appBarHeight,
+                        tabVisible = tabVisible,
+                    )
+                    is ProductDetailState.Error -> ErrorScreen(onRetry = onRefresh)
+                }
 
-            is ProductDetailState.Content -> AnimatedVisibility(
-                visible = visible,
-                enter = animState.enterTransition,
-                exit = animState.exitTransition
-            ) {
-                ProductDetailContent(
-                    state = uiState,
-                    onSaveToggle = onSaveToggle,
-                    onProductClick = onProductClick,
-                    onBuyClick = { /*TODO*/ },
-                    updateAppBarAlpha = { appBarAlpha = it },
-                    appBarHeight = appBarHeight
+                DetailsAppBar(
+                    title = "",
+                    onBackClick = handleNavigateBack,
+                    onCartClick = onCartClick,
+                    alpha = if (uiState is ProductDetailState.Content) appBarAlpha else 1f,
+                    showCartButton = uiState is ProductDetailState.Content,
+                    modifier = Modifier.onGloballyPositioned {
+                        appBarHeight = with(density) { it.size.height.toDp() }
+                    }
                 )
             }
-
-            is ProductDetailState.Error -> AnimatedVisibility(
-                visible = !visible,
-                enter = animState.enterTransition,
-                exit = animState.exitTransition
-            ) {
-                ErrorScreen(onRetry = onRefresh)
-            }
         }
-
-        DetailsAppBar(
-            title = "",
-            onBackClick = handleNavigateBack,
-            onCartClick = onCartClick,
-            alpha = appBarAlpha,
-            showCartButton = uiState is ProductDetailState.Content,
-            modifier = Modifier
-                .onGloballyPositioned {
-                    appBarHeight = with(density) { it.size.height.toDp() }
-                }
-        )
     }
 }

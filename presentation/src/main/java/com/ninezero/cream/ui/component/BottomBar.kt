@@ -177,7 +177,7 @@ fun ProductBottomBar(
                         IconTonalButton(
                             onClick = onSaveToggle,
                             iconResId = if (isSaved) R.drawable.ic_save_fill_opsz48 else R.drawable.ic_save_opsz48,
-                            contentDescription = if (isSaved) "Save product" else "Remove from saved"
+                            contentDescription = null
                         )
                         Spacer(modifier = Modifier.width(16.dp))
                         BuyButton(

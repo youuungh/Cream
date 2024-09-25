@@ -1,15 +1,16 @@
 <resources>
     <string name="app_name">Cream</string>
-    
+
+    <string name="sort">정렬</string>
     <string name="try_again">재시도</string>
+    <string name="cart">장바구니</string>
+    <string name="search">검색</string>
+    <string name="order_history">구매 내역</string>
     
     <string name="main_home">HOME</string>
     <string name="main_category">CATEGORY</string>
     <string name="main_saved">SAVED</string>
     <string name="main_my_page">MY PAGE</string>
-    <string name="cart">장바구니</string>
-    <string name="search">검색</string>
-    <string name="order_history">구매 내역</string>
 
     <string name="just_dropped">Just Dropped</string>
     <string name="just_dropped_subtitle">발매 상품</string>
@@ -19,6 +20,12 @@
     <string name="for_you_subtitle">추천 상품</string>
     <string name="top_brand">Top Brand</string>
     <string name="top_brand_subtitle">인기 탑 브랜드</string>
+
+    <string name="sort_by_saved_date">관심 등록순</string>
+    <string name="sort_by_price">즉시 구매가순</string>
+    <string name="total_items">전체 %d</string>
+
+    <string name="no_saved_items">관심 있는 상품을 저장해보세요</string>
 
     <string name="error_title">접속이 원활하지 않습니다</string>
     <string name="error_subtitle">네트워크 연결상태를 확인하거나\n잠시 후 다시 시도해주세요</string>

@@ -33,6 +33,7 @@ import com.ninezero.cream.ui.component.skeleton.HomeSkeleton
 import com.ninezero.cream.viewmodel.HomeViewModel
 import com.ninezero.di.R
 import com.ninezero.domain.model.HomeData
+import com.ninezero.domain.model.Product
 import timber.log.Timber
 
 @Composable
@@ -64,18 +65,14 @@ fun HomeScreen(
                 }
             ) { innerPadding ->
                 when (val state = uiState) {
-                    is HomeState.Loading -> HomeSkeleton(
-                        modifier = Modifier.padding(innerPadding)
-                    )
-
+                    is HomeState.Fetching -> HomeSkeleton(modifier = Modifier.padding(innerPadding))
                     is HomeState.Content -> HomeContent(
                         data = state.homeData,
                         onProductClick = { productId -> viewModel.action(HomeAction.ProductClicked(productId)) },
-                        onSaveClick = { /*TODO*/ },
+                        onSaveClick = { product -> viewModel.action(HomeAction.ToggleSave(product)) },
                         onBrandClick = { /*TODO*/ },
                         modifier = Modifier.padding(innerPadding)
                     )
-
                     is HomeState.Error -> ErrorScreen(
                         onRetry = { viewModel.action(HomeAction.Refresh) },
                         modifier = Modifier.padding(innerPadding)
@@ -90,7 +87,7 @@ fun HomeScreen(
 private fun HomeContent(
     data: HomeData,
     onProductClick: (String) -> Unit,
-    onSaveClick: (String) -> Unit,
+    onSaveClick: (Product) -> Unit,
     onBrandClick: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -135,7 +132,7 @@ private fun HomeContent(
                     ProductCard(
                         product = it,
                         onClick = { onProductClick(it.productId) },
-                        onSaveClick = { /*TODO*/ },
+                        onSaveToggle = { onSaveClick(it) },
                         modifier = Modifier.width(160.dp)
                     )
                 }

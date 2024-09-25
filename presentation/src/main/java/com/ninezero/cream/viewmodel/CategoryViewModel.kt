@@ -25,7 +25,7 @@ class CategoryViewModel @Inject constructor(
     reducer = reducer
 ) {
     init {
-        setNetworkRepository(networkRepository)
+        setNetworkStatus(networkRepository)
         action(CategoryAction.Fetch)
     }
 

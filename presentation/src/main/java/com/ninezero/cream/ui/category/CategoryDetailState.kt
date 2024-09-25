@@ -6,18 +6,22 @@ import com.ninezero.cream.base.MviResult
 import com.ninezero.cream.base.MviStateReducer
 import com.ninezero.cream.base.MviViewState
 import com.ninezero.domain.model.CategoryDetails
+import com.ninezero.domain.model.Product
 import javax.inject.Inject
 
 sealed class CategoryDetailAction : MviAction {
     data object Fetch : CategoryDetailAction()
     data object Refresh : CategoryDetailAction()
     data class ProductClicked(val productId: String) : CategoryDetailAction()
+    data class ToggleSave(val product: Product) : CategoryDetailAction()
+    data class UpdateSavedIds(val savedIds: Set<String>) : CategoryDetailAction()
 }
 
 sealed class CategoryDetailResult : MviResult {
     data object Loading : CategoryDetailResult()
-    data class CategoryDetailContent(val categoryDetails: CategoryDetails) : CategoryDetailResult()
+    data class CategoryDetailContent(val categoryDetails: CategoryDetails, val savedIds: Set<String>) : CategoryDetailResult()
     data class Error(val message: String, val categoryId: String, val categoryName: String) : CategoryDetailResult()
+    data class SaveToggled(val productId: String, val isSaved: Boolean) : CategoryDetailResult()
 }
 
 sealed class CategoryDetailEvent : MviEvent, CategoryDetailResult() {
@@ -26,7 +30,7 @@ sealed class CategoryDetailEvent : MviEvent, CategoryDetailResult() {
 
 sealed class CategoryDetailState : MviViewState {
     data object Loading : CategoryDetailState()
-    data class Content(val categoryDetails: CategoryDetails) : CategoryDetailState()
+    data class Content(val categoryDetails: CategoryDetails, val savedIds: Set<String>) : CategoryDetailState()
     data class Error(val message: String, val categoryId: String, val categoryName: String) : CategoryDetailState()
 }
 
@@ -34,8 +38,21 @@ class CategoryDetailReducer @Inject constructor() : MviStateReducer<CategoryDeta
     override fun CategoryDetailState.reduce(result: CategoryDetailResult): CategoryDetailState {
         return when (result) {
             is CategoryDetailResult.Loading -> CategoryDetailState.Loading
-            is CategoryDetailResult.CategoryDetailContent -> CategoryDetailState.Content(result.categoryDetails)
+            is CategoryDetailResult.CategoryDetailContent -> CategoryDetailState.Content(result.categoryDetails, result.savedIds)
             is CategoryDetailResult.Error -> CategoryDetailState.Error(result.message, result.categoryId, result.categoryName)
+            is CategoryDetailResult.SaveToggled -> {
+                if (this is CategoryDetailState.Content) {
+                    val updatedSavedIds = if (result.isSaved) {
+                        savedIds + result.productId
+                    } else {
+                        savedIds - result.productId
+                    }
+                    val updatedProducts = categoryDetails.products.map {
+                        if (it.productId == result.productId) it.copy(isSaved = result.isSaved) else it
+                    }
+                    CategoryDetailState.Content(categoryDetails.copy(products = updatedProducts), updatedSavedIds)
+                } else this
+            }
             is CategoryDetailEvent -> this
         }
     }
