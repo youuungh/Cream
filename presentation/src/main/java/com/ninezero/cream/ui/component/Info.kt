@@ -1,11 +1,13 @@
 package com.ninezero.cream.ui.component
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -15,6 +17,8 @@ import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
@@ -33,7 +37,9 @@ import coil.compose.AsyncImage
 import com.ninezero.cream.ui.theme.creamGreen
 import com.ninezero.cream.ui.theme.creamRed
 import com.ninezero.cream.utils.DETAIL_BOTTOM_BAR_HEIGHT
+import com.ninezero.cream.utils.IMAGE_HEIGHT
 import com.ninezero.cream.utils.PriceDiffInfo
+import com.ninezero.di.R
 import com.ninezero.domain.model.Brand
 import com.ninezero.domain.model.Product
 
@@ -213,11 +219,25 @@ fun StyleInfo() {
     ) {
         ContainerTitle(title = "스타일")
         Spacer(modifier = Modifier.height(16.dp))
-        Text(
-            text = "준비 중",
-            style = MaterialTheme.typography.bodyMedium
-        )
-        Spacer(modifier = Modifier.height(400.dp))
+        Card(
+            modifier = Modifier
+                .fillMaxSize()
+                .height(IMAGE_HEIGHT.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surface,
+            ),
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.05f)),
+            shape = MaterialTheme.shapes.medium
+        ) {
+            Image(
+                painter = painterResource(id = R.drawable.ic_placeholder),
+                contentDescription = null,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .clip(MaterialTheme.shapes.medium)
+            )
+        }
     }
     Box(
         modifier = Modifier
@@ -232,7 +252,7 @@ fun StyleInfo() {
 fun RecommendInfo(
     relatedProducts: List<Product>,
     onProductClick: (String) -> Unit,
-    onSaveToggle: () -> Unit,
+    onSaveToggle: (Product) -> Unit,
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -250,11 +270,11 @@ fun RecommendInfo(
                     .padding(bottom = 16.dp),
                 horizontalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                rowProducts.forEach { product ->
+                rowProducts.forEach {
                     ProductCard(
-                        product = product,
-                        onClick = { onProductClick(product.productId) },
-                        onSaveToggle = onSaveToggle,
+                        product = it,
+                        onClick = { onProductClick(it.productId) },
+                        onSaveToggle = { onSaveToggle(it) },
                         modifier = Modifier.weight(1f)
                     )
                 }

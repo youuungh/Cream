@@ -53,8 +53,7 @@ class SavedViewModel @Inject constructor(
             SavedResult.Error("No internet connection")
         } else {
             try {
-                val savedProducts = saveUseCase.fetchAll().first()
-                SavedResult.FetchSuccess(savedProducts)
+                SavedResult.FetchSuccess(saveUseCase.fetchAll().first())
             } catch (e: Exception) {
                 SavedResult.Error(e.message ?: "Unknown error occurred")
             }

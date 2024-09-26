@@ -1,6 +1,9 @@
 package com.ninezero.cream.ui.component
 
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.interaction.collectIsDraggedAsState
@@ -16,59 +19,64 @@ import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.times
 import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import coil.compose.AsyncImage
-import coil.request.ImageRequest
+import com.ninezero.cream.base.collectAsState
+import com.ninezero.cream.utils.AUTO_SCROLL_DELAY
+import com.ninezero.cream.utils.BANNER_DURATION
+import com.ninezero.cream.utils.IMAGE_HEIGHT
 import com.ninezero.domain.model.Banner
 import com.ninezero.domain.model.TopBanner
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 @Composable
 fun TopBanner(banners: List<TopBanner>) {
-    val maxPages = Int.MAX_VALUE
-    val initPage = remember { maxPages / 2 - (maxPages / 2) % banners.size }
-    val pagerState = rememberPagerState(initialPage = initPage) { maxPages }
+    val bannerCount = banners.size
+    val maxPageCount = Int.MAX_VALUE
+    val initPage = remember { maxPageCount / 2 - (maxPageCount / 2) % bannerCount }
+
+    val pagerState = rememberPagerState(initialPage = initPage) { maxPageCount }
     val screenWidth = LocalConfiguration.current.screenWidthDp.dp
     val indicatorWidth = remember { (screenWidth - 32.dp) / banners.size }
-    val isDragged by pagerState.interactionSource.collectIsDraggedAsState()
-    var autoScroll by remember { mutableStateOf(true) }
+
     val lifecycleOwner = LocalLifecycleOwner.current
+    val lifecycleState by lifecycleOwner.lifecycle.currentStateFlow.collectAsState()
 
-    DisposableEffect(lifecycleOwner) {
-        val observer = LifecycleEventObserver { _, event ->
-            autoScroll = event == Lifecycle.Event.ON_RESUME
-        }
-        lifecycleOwner.lifecycle.addObserver(observer)
-        onDispose {
-            lifecycleOwner.lifecycle.removeObserver(observer)
+    val coroutineScope = rememberCoroutineScope()
+
+    fun adjustPage() {
+        coroutineScope.launch {
+            val targetPage = (pagerState.currentPage + (if (pagerState.currentPageOffsetFraction > 0.5f) 1 else 0))
+                .coerceIn(0, maxPageCount - 1)
+            pagerState.animateScrollToPage(
+                page = targetPage,
+                animationSpec = tween(durationMillis = BANNER_DURATION, easing = FastOutSlowInEasing)
+            )
         }
     }
 
-    LaunchedEffect(isDragged, autoScroll) {
-        if (!isDragged && autoScroll) {
-            while (true) {
-                delay(3000)
-                pagerState.animateScrollToPage(pagerState.currentPage + 1)
-            }
+    LaunchedEffect(lifecycleState) {
+        when (lifecycleState) {
+            Lifecycle.State.RESUMED -> adjustPage()
+            else -> {}
         }
     }
+
+    AutoScroll(pagerState)
 
     Box(
         modifier = Modifier
@@ -79,18 +87,11 @@ fun TopBanner(banners: List<TopBanner>) {
             state = pagerState,
             modifier = Modifier
                 .fillMaxWidth()
-                .height(400.dp),
-            key = { banners[it % banners.size].bannerId }
+                .height(IMAGE_HEIGHT.dp),
+            key = { it }
         ) { page ->
-            AsyncImage(
-                model = ImageRequest.Builder(LocalContext.current)
-                    .data(banners[page % banners.size].imageUrl.firstOrNull())
-                    .crossfade(true)
-                    .build(),
-                contentDescription = null,
-                contentScale = ContentScale.Crop,
-                modifier = Modifier.fillMaxSize()
-            )
+            val bannerIndex = remember(page) { page.mod(bannerCount) }
+            TopBannerImage(banners[bannerIndex])
         }
         IndicatorBar(
             modifier = Modifier.align(Alignment.BottomCenter),
@@ -98,6 +99,23 @@ fun TopBanner(banners: List<TopBanner>) {
             bannerCount = banners.size,
             indicatorWidth = indicatorWidth
         )
+    }
+}
+
+@Composable
+private fun AutoScroll(pagerState: PagerState) {
+    val isDragged by pagerState.interactionSource.collectIsDraggedAsState()
+
+    LaunchedEffect(isDragged) {
+        if (!isDragged) {
+            while (true) {
+                delay(AUTO_SCROLL_DELAY)
+                pagerState.animateScrollToPage(
+                    page = pagerState.currentPage + 1,
+                    animationSpec = tween(durationMillis = BANNER_DURATION, easing = FastOutSlowInEasing)
+                )
+            }
+        }
     }
 }
 
@@ -116,9 +134,10 @@ private fun IndicatorBar(
             .background(Color.White.copy(alpha = 0.3f))
     ) {
         val currentPage = pagerState.currentPage % bannerCount
+
         val indicatorOffset by animateDpAsState(
             targetValue = currentPage * indicatorWidth,
-            animationSpec = tween(durationMillis = 150),
+            animationSpec = spring(stiffness = Spring.StiffnessLow),
             label = "indicator_offset"
         )
 

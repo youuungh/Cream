@@ -60,6 +60,7 @@ fun SavedScreen(
     modifier: Modifier = Modifier,
     onCartClick: () -> Unit,
     onProductClick: (String) -> Unit,
+    onNavigateToHome: () -> Unit,
     viewModel: SavedViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.state.collectAsState()
@@ -81,14 +82,16 @@ fun SavedScreen(
                     title = stringResource(R.string.main_saved),
                     onCartClick = onCartClick
                 )
-            },
-            contentWindowInsets = WindowInsets(0, 0, 0, 0)
+            }
         ) { innerPadding ->
             when (val state = uiState) {
                 is SavedState.Fetching -> { /*todo*/ } // SavedSkeleton()
                 is SavedState.Content -> {
                     if (state.savedProducts.isEmpty()) {
-                        EmptyScreen()
+                        EmptyScreen(
+                            onNavigateToHome = onNavigateToHome,
+                            modifier = Modifier.padding(innerPadding)
+                        )
                     } else {
                         SavedContent(
                             savedProducts = state.savedProducts,

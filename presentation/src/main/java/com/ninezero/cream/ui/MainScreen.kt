@@ -6,6 +6,10 @@ import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionLayout
 import androidx.compose.animation.SharedTransitionScope
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
@@ -68,7 +72,26 @@ fun MainScreen() {
                     route = "${AppRoutes.PRODUCT_DETAIL}/{${AppRoutes.PRODUCT_ID_KEY}}",
                     arguments = listOf(
                         navArgument(AppRoutes.PRODUCT_ID_KEY) { type = NavType.StringType }
-                    )
+                    ),
+                    enterTransition = {
+                        fadeIn(animationSpec = tween(durationMillis = 300)) +
+                                slideInVertically(
+                                    animationSpec = spring(
+                                        dampingRatio = Spring.DampingRatioLowBouncy,
+                                        stiffness = Spring.StiffnessLow
+                                    )
+                                ) { it }
+
+                    },
+                    exitTransition = {
+                        fadeOut(animationSpec = tween(durationMillis = 300)) +
+                                slideOutVertically(
+                                    animationSpec = spring(
+                                        dampingRatio = Spring.DampingRatioLowBouncy,
+                                        stiffness = Spring.StiffnessLow
+                                    )
+                                ) { it / 10 }
+                    }
                 ) {
                     ProductDetailScreen(
                         onNavigateBack = navController::navigateBack,
@@ -166,6 +189,7 @@ fun MainContent(
                 onSearchClick = onSearchClick,
                 onProductClick = onProductClick,
                 onCategoryClick = onCategoryClick,
+                onNavigateToHome = nestedNavController::navigateToHome,
                 modifier = Modifier
                     .padding(innerPadding)
                     .consumeWindowInsets(innerPadding)

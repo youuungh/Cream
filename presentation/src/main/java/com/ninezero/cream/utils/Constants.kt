@@ -1,5 +1,7 @@
 package com.ninezero.cream.utils
 
+const val AUTO_SCROLL_DELAY = 3000L
+const val BANNER_DURATION = 500
 const val ANIMATION_DURATION = 300
 const val ANIMATION_DELAY = 80
 const val IMAGE_HEIGHT = 400

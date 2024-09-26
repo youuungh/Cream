@@ -42,6 +42,10 @@ class AppNavController(val navController: NavHostController) {
         navController.navigateUp()
     }
 
+    fun navigateToHome() {
+        navController.navigate(AppRoutes.MAIN_HOME)
+    }
+
     fun navigateToCart() {
         navController.navigate(AppRoutes.CART)
     }
@@ -115,6 +119,7 @@ fun NavGraphBuilder.addMainGraph(
     onSearchClick: () -> Unit,
     onProductClick: (String) -> Unit,
     onCategoryClick: (String, String, NavBackStackEntry) -> Unit,
+    onNavigateToHome: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     composable(
@@ -159,6 +164,7 @@ fun NavGraphBuilder.addMainGraph(
         SavedScreen(
             onCartClick = onCartClick,
             onProductClick = onProductClick,
+            onNavigateToHome = onNavigateToHome,
             modifier = modifier
         )
     }

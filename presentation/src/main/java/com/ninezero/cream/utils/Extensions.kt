@@ -1,4 +1,5 @@
 @file:OptIn(ExperimentalSharedTransitionApi::class)
+
 package com.ninezero.cream.utils
 
 import androidx.compose.animation.BoundsTransform
@@ -6,8 +7,11 @@ import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.runtime.Composable
@@ -37,7 +41,7 @@ data class CategorySharedElementKey(
     val type: CategorySharedElementType
 )
 
-data class AnimState (
+data class AnimState(
     val enterTransition: EnterTransition,
     val exitTransition: ExitTransition
 )
@@ -45,18 +49,22 @@ data class AnimState (
 @Composable
 fun rememberSlideInOutAnimState(): AnimState {
     val enterTransition = remember {
-        //fadeIn(animationSpec = tween(ANIMATION_DURATION, easing = LinearOutSlowInEasing)) +
-        slideInVertically(
-            initialOffsetY = { it / 10 },
-            animationSpec = tween(ANIMATION_DURATION, easing = FastOutSlowInEasing)
-        )
+        fadeIn(animationSpec = tween(durationMillis = 300)) +
+                slideInVertically(
+                    animationSpec = spring(
+                        dampingRatio = Spring.DampingRatioLowBouncy,
+                        stiffness = Spring.StiffnessLow
+                    )
+                ) { it / 10 }
     }
     val exitTransition = remember {
-        //fadeOut(animationSpec = tween(ANIMATION_DURATION, easing = LinearOutSlowInEasing)) +
-        slideOutVertically(
-            targetOffsetY = { it / 10 },
-            animationSpec = tween(ANIMATION_DURATION, easing = FastOutSlowInEasing)
-        )
+        fadeOut(animationSpec = tween(durationMillis = 300)) +
+                slideOutVertically(
+                    animationSpec = spring(
+                        dampingRatio = Spring.DampingRatioLowBouncy,
+                        stiffness = Spring.StiffnessLow
+                    )
+                ) { it / 10 }
     }
 
     return remember { AnimState(enterTransition, exitTransition) }
@@ -72,4 +80,5 @@ fun <T> nonSpatialExpressiveSpring() = spring<T>(
     stiffness = 1600f
 )
 
-fun getCategoryImageResource(categoryId: String) = R.drawable::class.java.getField("category_img_$categoryId").getInt(null)
+fun getCategoryImageResource(categoryId: String) =
+    R.drawable::class.java.getField("category_img_$categoryId").getInt(null)

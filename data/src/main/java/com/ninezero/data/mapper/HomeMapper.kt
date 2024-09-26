@@ -39,6 +39,7 @@ class HomeMapper @Inject constructor() : BaseMapper<HomeResponse, HomeData>() {
                 forYou = model?.products
                     ?.asSequence()
                     ?.shuffled()
+                    ?.take(30)
                     ?.map { it.toDomain() }
                     ?.toList() ?: emptyList(),
                 brands = model?.products

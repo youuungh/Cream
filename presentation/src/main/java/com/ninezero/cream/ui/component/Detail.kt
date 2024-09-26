@@ -3,7 +3,6 @@
 package com.ninezero.cream.ui.component
 
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -39,28 +38,27 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.times
-import androidx.compose.ui.zIndex
 import com.ninezero.cream.ui.product.ProductDetailState
 import com.ninezero.cream.utils.CONTENT_OVERLAP
-import com.ninezero.cream.utils.DETAIL_BOTTOM_BAR_HEIGHT
 import com.ninezero.cream.utils.IMAGE_HEIGHT
 import com.ninezero.cream.utils.MAX_CORNER_RADIUS
 import com.ninezero.cream.utils.NumUtils.formatPriceWithCommas
 import com.ninezero.cream.utils.ProductDetailTab
 import com.ninezero.cream.utils.SCROLL_THRESHOLD_OFFSET
+import com.ninezero.domain.model.Product
 import kotlinx.coroutines.launch
-import timber.log.Timber
 
 @Composable
 fun ProductDetailContent(
     state: ProductDetailState.Content,
     onProductClick: (String) -> Unit,
-    onSaveToggle: () -> Unit,
+    onSaveToggle: (Product) -> Unit,
     onBuyClick: () -> Unit,
     updateAppBarAlpha: (Float) -> Unit,
     appBarHeight: Dp,
@@ -95,7 +93,8 @@ fun ProductDetailContent(
 
     val scrollBasedTabIndex by remember {
         derivedStateOf {
-            val adjustmentPx = with(density) { (appBarHeight + tabHeight + CONTENT_OVERLAP.dp).toPx() }
+            val adjustmentPx =
+                with(density) { (appBarHeight + tabHeight + CONTENT_OVERLAP.dp).toPx() }
             val layoutInfo = lazyListState.layoutInfo
             val visibleItemsInfo = layoutInfo.visibleItemsInfo
 
@@ -139,7 +138,8 @@ fun ProductDetailContent(
                     onTabSelected = { index ->
                         selectedTabIndex = index
                         coroutineScope.launch {
-                            val adjustmentPx = with(density) { (appBarHeight + tabHeight).toPx() }.toInt()
+                            val adjustmentPx =
+                                with(density) { (appBarHeight + tabHeight).toPx() }.toInt()
                             lazyListState.animateScrollToItem(
                                 index = when (index) {
                                     0 -> 3  // StyleInfo
@@ -159,7 +159,13 @@ fun ProductDetailContent(
                 )
             }
             item { StyleInfo() }
-            item { RecommendInfo(state.relatedProducts, onProductClick, onSaveToggle) }
+            item {
+                RecommendInfo(
+                    relatedProducts = state.relatedProducts,
+                    onProductClick = onProductClick,
+                    onSaveToggle = onSaveToggle
+                )
+            }
         }
 
         ProductDetailTabs(
@@ -188,7 +194,7 @@ fun ProductDetailContent(
         ProductBottomBar(
             price = formatPriceWithCommas(state.product.price.instantBuyPrice),
             isSaved = state.product.isSaved,
-            onSaveToggle = onSaveToggle,
+            onSaveToggle = { onSaveToggle(state.product) },
             onBuyClick = onBuyClick,
             modifier = Modifier.align(Alignment.BottomCenter)
         )
@@ -258,7 +264,7 @@ fun ProductDetailTabs(
     ) {
         Surface(
             color = MaterialTheme.colorScheme.surface,
-            modifier = modifier
+            modifier = modifier.shadow(4.dp)
         ) {
             TabRow(
                 selectedTabIndex = selectedTabIndex,
