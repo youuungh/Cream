@@ -9,11 +9,9 @@ import javax.inject.Inject
 class ProductUseCase @Inject constructor(
     private val productRepository: ProductRepository
 ) {
-    fun getProductDetails(productId: String): Flow<EntityWrapper<Product>> {
-        return productRepository.fetchProductDetails(productId)
-    }
+    fun getProductDetails(productId: String): Flow<EntityWrapper<Product>> =
+        productRepository.fetchProductDetails(productId)
 
-    fun getProductsByBrand(brandId: String): Flow<EntityWrapper<List<Product>>> {
-        return productRepository.fetchProductsByBrand(brandId)
-    }
+    fun getProductsByBrand(brandId: String): Flow<EntityWrapper<List<Product>>> =
+        productRepository.fetchProductsByBrand(brandId)
 }

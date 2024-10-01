@@ -3,8 +3,6 @@ package com.ninezero.domain.usecase
 import com.ninezero.domain.model.Product
 import com.ninezero.domain.repository.SaveRepository
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject

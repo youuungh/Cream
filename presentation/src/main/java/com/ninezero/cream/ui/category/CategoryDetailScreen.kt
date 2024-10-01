@@ -9,18 +9,15 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -137,7 +134,7 @@ fun CategoryDetailScreen(
                 snackbarHostState = creamScaffoldState.snackBarHostState,
             ) { innerPadding ->
                 when (val state = uiState) {
-                    is CategoryDetailState.Loading -> CategoryDetailSkeleton(
+                    is CategoryDetailState.Fetching -> CategoryDetailSkeleton(
                         modifier = Modifier.padding(innerPadding)
                     )
 
@@ -160,7 +157,7 @@ fun CategoryDetailScreen(
                     }
 
                     is CategoryDetailState.Error -> ErrorScreen(
-                        onRetry = { viewModel.action(CategoryDetailAction.Refresh) },
+                        onRetry = { viewModel.action(CategoryDetailAction.Fetch) },
                         modifier = Modifier.padding(innerPadding)
                     )
                 }

@@ -9,20 +9,19 @@ import com.ninezero.domain.model.Product
 import javax.inject.Inject
 
 sealed class SavedAction : MviAction {
-    data object Fetch : SavedAction()
-    data object Refresh : SavedAction()
+    object Fetch : SavedAction()
     data class Remove(val product: Product) : SavedAction()
-    data object RemoveAll : SavedAction()
-    data object SortBySavedDate : SavedAction()
-    data object SortByPrice : SavedAction()
+    object RemoveAll : SavedAction()
+    object SortBySavedDate : SavedAction()
+    object SortByPrice : SavedAction()
     data class UpdateProducts(val products: List<Product>) : SavedAction()
 }
 
 sealed class SavedResult : MviResult {
-    data object Fetching : SavedResult()
+    object Fetching : SavedResult()
     data class FetchSuccess(val products: List<Product>) : SavedResult()
     data class Remove(val productId: String) : SavedResult()
-    data object RemoveAll : SavedResult()
+    object RemoveAll : SavedResult()
     data class Sorted(val sortedProducts: List<Product>) : SavedResult()
     data class Error(val message: String) : SavedResult()
 }
@@ -32,7 +31,7 @@ sealed class SavedEvent : MviEvent, SavedResult() {
 }
 
 sealed class SavedState : MviViewState {
-    data object Fetching : SavedState()
+    object Fetching : SavedState()
     data class Content(val savedProducts: List<Product>) : SavedState()
     data class Error(val message: String) : SavedState()
 }

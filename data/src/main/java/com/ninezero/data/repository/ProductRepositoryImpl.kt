@@ -6,26 +6,20 @@ import com.ninezero.domain.model.EntityWrapper
 import com.ninezero.domain.model.Product
 import com.ninezero.domain.repository.ProductRepository
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.catch
-import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 
 class ProductRepositoryImpl @Inject constructor(
     private val remoteDataSource: RemoteDataSource,
     private val productMapper: ProductMapper
 ) : ProductRepository {
-
     override fun fetchProductDetails(productId: String): Flow<EntityWrapper<Product>> =
-        flow {
-            emit(productMapper.mapFromResult(remoteDataSource.getProductDetails(productId)))
-        }.catch { e ->
-            emit(EntityWrapper.Fail(e))
+        remoteDataSource.getProductDetails(productId).map { apiResult ->
+            productMapper.mapFromResult(apiResult)
         }
 
     override fun fetchProductsByBrand(brandId: String): Flow<EntityWrapper<List<Product>>> =
-        flow {
-            emit(productMapper.mapProductsByBrand(remoteDataSource.getProductsByBrand(brandId)))
-        }.catch { e ->
-            emit(EntityWrapper.Fail(e))
+        remoteDataSource.getProductsByBrand(brandId).map { apiResult ->
+            productMapper.mapProductsByBrand(apiResult)
         }
 }

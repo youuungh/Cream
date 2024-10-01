@@ -9,6 +9,8 @@ import com.ninezero.data.remote.model.NetworkRequestInfo
 import com.ninezero.data.remote.model.ProductResponse
 import com.ninezero.data.remote.model.RequestType
 import com.ninezero.data.remote.retrofit.NetworkRequestFactory
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
 import javax.inject.Inject
 
 class RemoteDataSourceImpl @Inject constructor(
@@ -16,67 +18,75 @@ class RemoteDataSourceImpl @Inject constructor(
 ) : RemoteDataSource {
     private var cachedHomeResponse: HomeResponse? = null
 
-    override suspend fun fetchData(): ApiResult<HomeResponse> {
-        cachedHomeResponse?.let { return ApiResult(ApiResponse.Success(it)) }
+    override fun fetchData(): Flow<ApiResult<HomeResponse>> = flow {
+        cachedHomeResponse?.let {
+            emit(ApiResult(ApiResponse.Success(it)))
+            return@flow
+        }
 
-        return networkRequestFactory.create<HomeResponse>(
+        val result = networkRequestFactory.create<HomeResponse>(
             url = "cream.json",
             requestInfo = NetworkRequestInfo.Builder(RequestType.GET).build(),
             type = HomeResponse::class.java
-        ).also {
-            if (it.response is ApiResponse.Success) {
-                cachedHomeResponse = it.response.data
-            }
-        }
+        )
+
+        if (result.response is ApiResponse.Success)
+            cachedHomeResponse = result.response.data
+
+        emit(result)
     }
 
-    override suspend fun getProductDetails(productId: String): ApiResult<ProductResponse> {
-        return when (val response = fetchData().response) {
-            is ApiResponse.Success -> {
-                val product = response.data.products.find { it.productId == productId }
-                if (product != null) {
-                    ApiResult(ApiResponse.Success(product))
-                } else {
-                    ApiResult(ApiResponse.Fail(Exception("Product not found")))
+    override fun getProductDetails(productId: String): Flow<ApiResult<ProductResponse>> = flow {
+        fetchData().collect { result ->
+            when (val response = result.response) {
+                is ApiResponse.Success -> {
+                    val product = response.data.products.find { it.productId == productId }
+                    if (product != null) {
+                        emit(ApiResult(ApiResponse.Success(product)))
+                    } else {
+                        emit(ApiResult(ApiResponse.Fail(Throwable("Product not found"))))
+                    }
                 }
+                is ApiResponse.Fail -> emit(ApiResult(response))
             }
-            is ApiResponse.Fail -> ApiResult(response)
+
         }
     }
 
-    override suspend fun getProductsByBrand(brandId: String): ApiResult<List<ProductResponse>> {
-        return when (val response = fetchData().response) {
-            is ApiResponse.Success -> {
-                val products = response.data.products.filter { it.brand.brandId == brandId }
-                ApiResult(ApiResponse.Success(products))
+    override fun getProductsByBrand(brandId: String): Flow<ApiResult<List<ProductResponse>>> = flow {
+        fetchData().collect { result ->
+            when (val response = result.response) {
+                is ApiResponse.Success -> {
+                    val products = response.data.products.filter { it.brand.brandId == brandId }
+                    emit(ApiResult(ApiResponse.Success(products)))
+                }
+                is ApiResponse.Fail -> emit(ApiResult(response))
             }
-            is ApiResponse.Fail -> ApiResult(response)
         }
     }
 
-    override suspend fun getCategories(): ApiResult<List<CategoryResponse>> {
-        return when (val response = fetchData().response) {
-            is ApiResponse.Success -> {
-                val categories =
-                    response.data.products.map { it.category }.distinctBy { it.categoryId }
-                ApiResult(ApiResponse.Success(categories))
+    override fun getCategories(): Flow<ApiResult<List<CategoryResponse>>> = flow {
+        fetchData().collect { result ->
+            when (val response = result.response) {
+                is ApiResponse.Success -> {
+                    val categories = response.data.products.map { it.category }.distinctBy { it.categoryId }
+                    emit(ApiResult(ApiResponse.Success(categories)))
+                }
+                is ApiResponse.Fail -> emit(ApiResult(response))
             }
-
-            is ApiResponse.Fail -> ApiResult(response)
         }
     }
 
-    override suspend fun getCategoryDetails(categoryId: String): ApiResult<CategoryDetailsResponse> {
-        return when (val response = fetchData().response) {
-            is ApiResponse.Success -> {
-                val category =
-                    response.data.products.first { it.category.categoryId == categoryId }.category
-                val products =
-                    response.data.products.filter { it.category.categoryId == categoryId }
-                ApiResult(ApiResponse.Success(CategoryDetailsResponse(category, products)))
+    override fun getCategoryDetails(categoryId: String): Flow<ApiResult<CategoryDetailsResponse>> = flow {
+        fetchData().collect { result ->
+            when (val response = result.response) {
+                is ApiResponse.Success -> {
+                    val category = response.data.products.first { it.category.categoryId == categoryId }.category
+                    val products = response.data.products.filter { it.category.categoryId == categoryId }
+                    emit(ApiResult(ApiResponse.Success(CategoryDetailsResponse(category, products))))
+                }
+                is ApiResponse.Fail -> emit(ApiResult(response))
             }
-
-            is ApiResponse.Fail -> ApiResult(response)
         }
     }
 }

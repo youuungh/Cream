@@ -56,7 +56,7 @@ fun CategoryScreen(
                 }
             ) { innerPadding ->
                 when (val state = uiState) {
-                    is CategoryState.Loading -> CategorySkeleton(
+                    is CategoryState.Fetching -> CategorySkeleton(
                         modifier = Modifier.padding(innerPadding)
                     )
 
@@ -78,7 +78,7 @@ fun CategoryScreen(
                     }
 
                     is CategoryState.Error -> ErrorScreen(
-                        onRetry = { viewModel.action(CategoryAction.Refresh) },
+                        onRetry = { viewModel.action(CategoryAction.Fetch) },
                         modifier = Modifier.padding(innerPadding)
                     )
                 }

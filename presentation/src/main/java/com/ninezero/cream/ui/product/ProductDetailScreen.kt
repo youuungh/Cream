@@ -91,7 +91,7 @@ fun ProductDetailScreen(
                 )
 
                 is ProductDetailState.Error -> ErrorScreen(
-                    onRetry = { viewModel.action(ProductDetailAction.Refresh) }
+                    onRetry = { viewModel.action(ProductDetailAction.Fetch) }
                 )
             }
 

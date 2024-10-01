@@ -9,6 +9,7 @@ import com.ninezero.cream.ui.product.ProductDetailReducer
 import com.ninezero.cream.ui.product.ProductDetailResult
 import com.ninezero.cream.ui.product.ProductDetailState
 import com.ninezero.cream.ui.navigation.Routes
+import com.ninezero.cream.utils.ErrorHandler
 import com.ninezero.cream.utils.SnackbarUtils.showSnack
 import com.ninezero.di.R
 import com.ninezero.domain.model.EntityWrapper
@@ -17,7 +18,6 @@ import com.ninezero.domain.repository.NetworkRepository
 import com.ninezero.domain.usecase.ProductUseCase
 import com.ninezero.domain.usecase.SaveUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.FlowCollector
 import kotlinx.coroutines.flow.first
@@ -39,7 +39,7 @@ class ProductDetailViewModel @Inject constructor(
     private val productId: String = checkNotNull(savedStateHandle[Routes.PRODUCT_ID_KEY])
 
     init {
-        setNetworkStatus(networkRepository)
+        setNetworkRepository(networkRepository)
         action(ProductDetailAction.Fetch)
         viewModelScope.launch {
             saveUseCase.fetchProductIds().collect { savedIds ->
@@ -50,7 +50,7 @@ class ProductDetailViewModel @Inject constructor(
 
     override fun ProductDetailAction.process(): Flow<ProductDetailResult> = flow {
         when (this@process) {
-            ProductDetailAction.Fetch, ProductDetailAction.Refresh -> fetchProductDetails()
+            ProductDetailAction.Fetch -> fetchProductDetails()
             is ProductDetailAction.FetchRelatedProducts -> fetchRelatedProducts(brandId)
             is ProductDetailAction.ToggleSave -> toggleSave(product)
             is ProductDetailAction.UpdateSavedIds -> updateSavedIds(savedIds)
@@ -60,47 +60,31 @@ class ProductDetailViewModel @Inject constructor(
 
     private suspend fun FlowCollector<ProductDetailResult>.fetchProductDetails() {
         emit(ProductDetailResult.Fetching)
-        if (!networkState.value) {
-            delay(3000)
-            emit(ProductDetailResult.Error("No internet connection"))
-        } else {
-            productUseCase.getProductDetails(productId).collect {
-                when (it) {
-                    is EntityWrapper.Success -> {
-                        val product = it.entity
-                        val savedIds = saveUseCase.fetchProductIds().first()
-                        emit(
-                            ProductDetailResult.ProductContent(
-                                product.copy(isSaved = product.productId in savedIds),
-                                savedIds
-                            )
-                        )
-                        action(ProductDetailAction.FetchRelatedProducts(product.brand.brandId))
-                    }
-
-                    is EntityWrapper.Fail -> emit(
-                        ProductDetailResult.Error(
-                            it.error.message ?: "Unknown error occurred"
-                        )
-                    )
+        handleNetworkCallback { productUseCase.getProductDetails(productId) }.collect {
+            when (it) {
+                is EntityWrapper.Success -> {
+                    val product = it.entity
+                    val savedIds = saveUseCase.fetchProductIds().first()
+                    emit(ProductDetailResult.ProductContent(product.copy(isSaved = product.productId in savedIds), savedIds))
+                    action(ProductDetailAction.FetchRelatedProducts(product.brand.brandId))
                 }
+                is EntityWrapper.Fail -> emit(
+                    ProductDetailResult.Error(ErrorHandler.getErrorMessage(it.error))
+                )
             }
         }
     }
 
     private suspend fun FlowCollector<ProductDetailResult>.fetchRelatedProducts(brandId: String) {
-        productUseCase.getProductsByBrand(brandId).collect {
+        handleNetworkCallback { productUseCase.getProductsByBrand(brandId) }.collect {
             when (it) {
                 is EntityWrapper.Success -> {
                     val savedIds = saveUseCase.fetchProductIds().first()
                     val updatedProducts = updateSaveStatus(it.entity, savedIds)
                     emit(ProductDetailResult.RelatedProducts(updatedProducts))
                 }
-
                 is EntityWrapper.Fail -> emit(
-                    ProductDetailResult.Error(
-                        it.error.message ?: "Unknown error occurred"
-                    )
+                    ProductDetailResult.Error(ErrorHandler.getErrorMessage(it.error))
                 )
             }
         }
@@ -133,5 +117,5 @@ class ProductDetailViewModel @Inject constructor(
         return products.map { it.copy(isSaved = it.productId in savedIds) }
     }
 
-    override fun refreshData() = action(ProductDetailAction.Refresh)
+    override fun refreshData() = action(ProductDetailAction.Fetch)
 }

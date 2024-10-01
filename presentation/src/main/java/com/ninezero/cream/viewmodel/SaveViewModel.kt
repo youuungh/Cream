@@ -36,7 +36,7 @@ class SavedViewModel @Inject constructor(
     val sortType: StateFlow<Int> = _sortType.asStateFlow()
 
     init {
-        setNetworkStatus(networkRepository)
+        setNetworkRepository(networkRepository)
         action(SavedAction.Fetch)
         updateData()
     }
@@ -45,16 +45,14 @@ class SavedViewModel @Inject constructor(
         viewModelScope.launch {
             saveUseCase.fetchAll()
                 .collect { products ->
-                    if (networkState.value) {
-                        action(SavedAction.UpdateProducts(products))
-                    }
+                    if (networkState.value) action(SavedAction.UpdateProducts(products))
                 }
         }
     }
 
     override fun SavedAction.process(): Flow<SavedResult> = flow {
         when (this@process) {
-            SavedAction.Fetch, SavedAction.Refresh -> fetchAll()
+            SavedAction.Fetch -> fetchAll()
             is SavedAction.UpdateProducts -> {
                 if (networkState.value) emit(SavedResult.FetchSuccess(products))
             }

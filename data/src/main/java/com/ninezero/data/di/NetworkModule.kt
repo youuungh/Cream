@@ -27,42 +27,31 @@ class NetworkModule {
 
     @Provides
     @Singleton
-    fun provideHttpLoggingInterceptor(): HttpLoggingInterceptor {
-        return HttpLoggingInterceptor().apply {
-            level = HttpLoggingInterceptor.Level.BODY
+    fun provideHttpLoggingInterceptor(): HttpLoggingInterceptor =
+        HttpLoggingInterceptor().apply {
+            level = if (BuildConfig.DEBUG) HttpLoggingInterceptor.Level.BODY
+            else HttpLoggingInterceptor.Level.NONE
         }
-    }
 
     @Provides
     @Singleton
-    fun provideOkHttpClient(
-        interceptor: HttpLoggingInterceptor
-    ): OkHttpClient {
-        val builder = OkHttpClient.Builder()
-        if (BuildConfig.DEBUG) {
-            builder.addInterceptor(interceptor)
-        }
-        return builder.build()
-    }
+    fun provideOkHttpClient(loggingInterceptor: HttpLoggingInterceptor): OkHttpClient =
+        OkHttpClient.Builder()
+            .addInterceptor(loggingInterceptor)
+            .build()
 
     @Provides
     @Singleton
-    fun provideGson(): Gson {
-        return Gson()
-    }
+    fun provideGson(): Gson = Gson()
 
     @Provides
     @Singleton
-    fun provideRetrofit(
-        okHttpClient: OkHttpClient,
-        gson: Gson
-    ): Retrofit {
-        return Retrofit.Builder()
+    fun provideRetrofit(okHttpClient: OkHttpClient, gson: Gson): Retrofit =
+        Retrofit.Builder()
             .client(okHttpClient)
-            .baseUrl(logBaseUrl(baseUrl = "https://gist.githubusercontent.com/youuungh/12862d93521f807a474b75f9a1341c13/raw/59d26f39cf5ab47d381f05efaddfcf909bd5f09b/"))
+            .baseUrl(logBaseUrl("https://gist.githubusercontent.com/youuungh/12862d93521f807a474b75f9a1341c13/raw/59d26f39cf5ab47d381f05efaddfcf909bd5f09b/"))
             .addConverterFactory(StringConverterFactory(gson))
             .build()
-    }
 
     private fun logBaseUrl(baseUrl: String): String {
         Timber.d("baseUrl $baseUrl")
@@ -75,15 +64,13 @@ class NetworkModule {
 
     @Provides
     @Singleton
-    fun provideNetworkStatus(@ApplicationContext context: Context): NetworkStatus {
-        return NetworkStatus(context)
-    }
+    fun provideNetworkStatus(@ApplicationContext context: Context): NetworkStatus =
+        NetworkStatus(context)
 
     @Provides
     @Singleton
-    fun provideNetworkRepository(networkStatus: NetworkStatus): NetworkRepository {
-        return NetworkRepositoryImpl(networkStatus)
-    }
+    fun provideNetworkRepository(networkStatus: NetworkStatus): NetworkRepository =
+        NetworkRepositoryImpl(networkStatus)
 
     @Provides
     @Singleton

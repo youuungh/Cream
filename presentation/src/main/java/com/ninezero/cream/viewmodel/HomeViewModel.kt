@@ -7,6 +7,7 @@ import com.ninezero.cream.ui.home.HomeEvent
 import com.ninezero.cream.ui.home.HomeReducer
 import com.ninezero.cream.ui.home.HomeResult
 import com.ninezero.cream.ui.home.HomeState
+import com.ninezero.cream.utils.ErrorHandler
 import com.ninezero.cream.utils.SnackbarUtils.showSnack
 import com.ninezero.di.R
 import com.ninezero.domain.model.EntityWrapper
@@ -33,7 +34,7 @@ class HomeViewModel @Inject constructor(
     reducer = reducer
 ) {
     init {
-        setNetworkStatus(networkRepository)
+        setNetworkRepository(networkRepository)
         action(HomeAction.Fetch)
         viewModelScope.launch {
             saveUseCase.fetchProductIds().collect { action(HomeAction.UpdateSavedIds(it)) }
@@ -42,7 +43,7 @@ class HomeViewModel @Inject constructor(
 
     override fun HomeAction.process(): Flow<HomeResult> = flow {
         when (this@process) {
-            HomeAction.Fetch, HomeAction.Refresh -> fetchHomeData()
+            HomeAction.Fetch -> fetchHomeData()
             is HomeAction.ProductClicked -> emit(HomeEvent.NavigateToProductDetail(productId))
             is HomeAction.ToggleSave -> toggleSave(product)
             is HomeAction.UpdateSavedIds -> updateSavedIds(savedIds)
@@ -52,23 +53,18 @@ class HomeViewModel @Inject constructor(
 
     private suspend fun FlowCollector<HomeResult>.fetchHomeData() {
         emit(HomeResult.Fetching)
-        if (!networkState.value) {
-            delay(3000)
-            emit(HomeResult.Error("No internet connection"))
-        } else {
-            homeUseCase().collect {
-                when (it) {
-                    is EntityWrapper.Success -> {
-                        val savedIds = (state.value as? HomeState.Content)?.savedIds ?: emptySet()
-                        val updateHomeData = it.entity.copy(
-                            justDropped = updateSaveStatus(it.entity.justDropped, savedIds),
-                            mostPopular = updateSaveStatus(it.entity.mostPopular, savedIds),
-                            forYou = updateSaveStatus(it.entity.forYou, savedIds)
-                        )
-                        emit(HomeResult.HomeContent(updateHomeData, savedIds))
-                    }
-                    is EntityWrapper.Fail -> emit(HomeResult.Error(it.error.message ?: "Unknown error occurred"))
+        handleNetworkCallback { homeUseCase() }.collect {
+            when (it) {
+                is EntityWrapper.Success -> {
+                    val savedIds = (state.value as? HomeState.Content)?.savedIds ?: emptySet()
+                    val updatedHomeData = it.entity.copy(
+                        justDropped = updateSaveStatus(it.entity.justDropped, savedIds),
+                        mostPopular = updateSaveStatus(it.entity.mostPopular, savedIds),
+                        forYou = updateSaveStatus(it.entity.forYou, savedIds)
+                    )
+                    emit(HomeResult.HomeContent(updatedHomeData, savedIds))
                 }
+                is EntityWrapper.Fail -> emit(HomeResult.Error(ErrorHandler.getErrorMessage(it.error)))
             }
         }
     }
@@ -101,5 +97,5 @@ class HomeViewModel @Inject constructor(
         }
     }
 
-    override fun refreshData() = action(HomeAction.Refresh)
+    override fun refreshData() = action(HomeAction.Fetch)
 }

@@ -9,16 +9,15 @@ import com.ninezero.domain.model.Product
 import javax.inject.Inject
 
 sealed class ProductDetailAction : MviAction {
-    data object Fetch : ProductDetailAction()
-    data object Refresh : ProductDetailAction()
+    object Fetch : ProductDetailAction()
     data class ToggleSave(val product: Product) : ProductDetailAction()
     data class FetchRelatedProducts(val brandId: String) : ProductDetailAction()
     data class UpdateSavedIds(val savedIds: Set<String>) : ProductDetailAction()
-    data object NavigateToSaved : ProductDetailAction()
+    object NavigateToSaved : ProductDetailAction()
 }
 
 sealed class ProductDetailResult : MviResult {
-    data object Fetching : ProductDetailResult()
+    object Fetching : ProductDetailResult()
     data class ProductContent(val product: Product, val savedIds: Set<String>) : ProductDetailResult()
     data class RelatedProducts(val relatedProducts: List<Product>) : ProductDetailResult()
     data class Error(val message: String) : ProductDetailResult()
@@ -26,11 +25,11 @@ sealed class ProductDetailResult : MviResult {
 }
 
 sealed class ProductDetailEvent : MviEvent, ProductDetailResult() {
-    data object NavigateToSaved : ProductDetailEvent()
+    object NavigateToSaved : ProductDetailEvent()
 }
 
 sealed class ProductDetailState : MviViewState {
-    data object Fetching : ProductDetailState()
+    object Fetching : ProductDetailState()
     data class Content(
         val product: Product,
         val relatedProducts: List<Product> = emptyList(),

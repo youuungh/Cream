@@ -10,16 +10,15 @@ import com.ninezero.domain.model.Product
 import javax.inject.Inject
 
 sealed class CategoryDetailAction : MviAction {
-    data object Fetch : CategoryDetailAction()
-    data object Refresh : CategoryDetailAction()
+    object Fetch : CategoryDetailAction()
     data class ProductClicked(val productId: String) : CategoryDetailAction()
     data class ToggleSave(val product: Product) : CategoryDetailAction()
     data class UpdateSavedIds(val savedIds: Set<String>) : CategoryDetailAction()
-    data object NavigateToSaved : CategoryDetailAction()
+    object NavigateToSaved : CategoryDetailAction()
 }
 
 sealed class CategoryDetailResult : MviResult {
-    data object Loading : CategoryDetailResult()
+    object Fetching : CategoryDetailResult()
     data class CategoryDetailContent(val categoryDetails: CategoryDetails, val savedIds: Set<String>) : CategoryDetailResult()
     data class Error(val message: String, val categoryId: String, val categoryName: String) : CategoryDetailResult()
     data class SaveToggled(val productId: String, val isSaved: Boolean) : CategoryDetailResult()
@@ -27,11 +26,11 @@ sealed class CategoryDetailResult : MviResult {
 
 sealed class CategoryDetailEvent : MviEvent, CategoryDetailResult() {
     data class NavigateToProductDetail(val productId: String) : CategoryDetailEvent()
-    data object NavigateToSaved : CategoryDetailEvent()
+    object NavigateToSaved : CategoryDetailEvent()
 }
 
 sealed class CategoryDetailState : MviViewState {
-    data object Loading : CategoryDetailState()
+    object Fetching : CategoryDetailState()
     data class Content(val categoryDetails: CategoryDetails, val savedIds: Set<String>) : CategoryDetailState()
     data class Error(val message: String, val categoryId: String, val categoryName: String) : CategoryDetailState()
 }
@@ -39,7 +38,7 @@ sealed class CategoryDetailState : MviViewState {
 class CategoryDetailReducer @Inject constructor() : MviStateReducer<CategoryDetailState, CategoryDetailResult> {
     override fun CategoryDetailState.reduce(result: CategoryDetailResult): CategoryDetailState {
         return when (result) {
-            is CategoryDetailResult.Loading -> CategoryDetailState.Loading
+            is CategoryDetailResult.Fetching -> CategoryDetailState.Fetching
             is CategoryDetailResult.CategoryDetailContent -> CategoryDetailState.Content(result.categoryDetails, result.savedIds)
             is CategoryDetailResult.Error -> CategoryDetailState.Error(result.message, result.categoryId, result.categoryName)
             is CategoryDetailResult.SaveToggled -> {

@@ -6,6 +6,7 @@ import com.ninezero.cream.ui.category.CategoryEvent
 import com.ninezero.cream.ui.category.CategoryReducer
 import com.ninezero.cream.ui.category.CategoryResult
 import com.ninezero.cream.ui.category.CategoryState
+import com.ninezero.cream.utils.ErrorHandler
 import com.ninezero.domain.model.EntityWrapper
 import com.ninezero.domain.repository.NetworkRepository
 import com.ninezero.domain.usecase.CategoryUseCase
@@ -21,17 +22,17 @@ class CategoryViewModel @Inject constructor(
     reducer: CategoryReducer,
     networkRepository: NetworkRepository
 ) : BaseStateViewModel<CategoryAction, CategoryResult, CategoryEvent, CategoryState, CategoryReducer>(
-    initialState = CategoryState.Loading,
+    initialState = CategoryState.Fetching,
     reducer = reducer
 ) {
     init {
-        setNetworkStatus(networkRepository)
+        setNetworkRepository(networkRepository)
         action(CategoryAction.Fetch)
     }
 
     override fun CategoryAction.process(): Flow<CategoryResult> {
         return when (this) {
-            CategoryAction.Fetch, CategoryAction.Refresh -> fetchCategories()
+            CategoryAction.Fetch -> fetchCategories()
             is CategoryAction.CategoryClicked -> flow {
                 emit(CategoryEvent.NavigateToCategoryDetail(categoryId, categoryName))
             }
@@ -39,23 +40,16 @@ class CategoryViewModel @Inject constructor(
     }
 
     private fun fetchCategories(): Flow<CategoryResult> = flow {
-        emit(CategoryResult.Loading)
-        if (!networkState.value) {
-            delay(3000)
-            emit(CategoryResult.Error("No internet connection"))
-        } else {
-            categoryUseCase().collect {
-                emit(
-                    when (it) {
-                        is EntityWrapper.Success -> CategoryResult.CategoryContent(it.entity)
-                        is EntityWrapper.Fail -> CategoryResult.Error(
-                            it.error.message ?: "Unknown error occurred"
-                        )
-                    }
-                )
-            }
+        emit(CategoryResult.Fetching)
+        handleNetworkCallback { categoryUseCase() }.collect {
+            emit(
+                when (it) {
+                    is EntityWrapper.Success -> CategoryResult.CategoryContent(it.entity)
+                    is EntityWrapper.Fail -> CategoryResult.Error(ErrorHandler.getErrorMessage(it.error))
+                }
+            )
         }
     }
 
-    override fun refreshData() { action(CategoryAction.Refresh) }
+    override fun refreshData() { action(CategoryAction.Fetch) }
 }

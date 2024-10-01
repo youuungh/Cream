@@ -110,7 +110,7 @@ fun SavedScreen(
                     }
                 }
                 is SavedState.Error -> ErrorScreen(
-                    onRetry = { viewModel.action(SavedAction.Refresh) },
+                    onRetry = { viewModel.action(SavedAction.Fetch) },
                     modifier = Modifier.padding(innerPadding)
                 )
             }

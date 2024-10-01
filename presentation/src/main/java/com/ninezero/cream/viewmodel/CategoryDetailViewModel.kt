@@ -9,6 +9,7 @@ import com.ninezero.cream.ui.category.CategoryDetailReducer
 import com.ninezero.cream.ui.category.CategoryDetailResult
 import com.ninezero.cream.ui.category.CategoryDetailState
 import com.ninezero.cream.ui.navigation.Routes
+import com.ninezero.cream.utils.ErrorHandler
 import com.ninezero.cream.utils.SnackbarUtils.showSnack
 import com.ninezero.di.R
 import com.ninezero.domain.model.EntityWrapper
@@ -20,6 +21,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.FlowCollector
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -32,14 +34,14 @@ class CategoryDetailViewModel @Inject constructor(
     networkRepository: NetworkRepository,
     savedStateHandle: SavedStateHandle
 ) : BaseStateViewModel<CategoryDetailAction, CategoryDetailResult, CategoryDetailEvent, CategoryDetailState, CategoryDetailReducer>(
-    initialState = CategoryDetailState.Loading,
+    initialState = CategoryDetailState.Fetching,
     reducer = reducer
 ) {
     private val categoryId: String = checkNotNull(savedStateHandle[Routes.CATEGORY_ID_KEY])
     private val categoryName: String = checkNotNull(savedStateHandle[Routes.CATEGORY_NAME_KEY])
 
     init {
-        setNetworkStatus(networkRepository)
+        setNetworkRepository(networkRepository)
         action(CategoryDetailAction.Fetch)
         viewModelScope.launch {
             saveUseCase.fetchProductIds().collect { savedIds ->
@@ -50,11 +52,8 @@ class CategoryDetailViewModel @Inject constructor(
 
     override fun CategoryDetailAction.process(): Flow<CategoryDetailResult> = flow {
         when (this@process) {
-            CategoryDetailAction.Fetch, CategoryDetailAction.Refresh -> fetchCategoryDetails()
-            is CategoryDetailAction.ProductClicked -> flow {
-                emit(CategoryDetailEvent.NavigateToProductDetail(productId))
-            }
-
+            CategoryDetailAction.Fetch -> fetchCategoryDetails()
+            is CategoryDetailAction.ProductClicked -> emit(CategoryDetailEvent.NavigateToProductDetail(productId))
             is CategoryDetailAction.ToggleSave -> toggleSave(product)
             is CategoryDetailAction.UpdateSavedIds -> updateSavedIds(savedIds)
             is CategoryDetailAction.NavigateToSaved -> emit(CategoryDetailEvent.NavigateToSaved)
@@ -62,32 +61,15 @@ class CategoryDetailViewModel @Inject constructor(
     }
 
     private suspend fun FlowCollector<CategoryDetailResult>.fetchCategoryDetails() {
-        emit(CategoryDetailResult.Loading)
-        if (!networkState.value) {
-            delay(3000)
-            emit(CategoryDetailResult.Error("No internet connection", categoryId, categoryName))
-        } else {
-            categoryUseCase.getCategoryDetails(categoryId).collect {
-                when (it) {
-                    is EntityWrapper.Success -> {
-                        val savedIds = (state.value as? CategoryDetailState.Content)?.savedIds ?: emptySet()
-                        val updatedProducts = updateSaveStatus(it.entity.products, savedIds)
-                        emit(
-                            CategoryDetailResult.CategoryDetailContent(
-                                it.entity.copy(products = updatedProducts),
-                                savedIds
-                            )
-                        )
-                    }
-
-                    is EntityWrapper.Fail -> emit(
-                        CategoryDetailResult.Error(
-                            it.error.message ?: "Unknown error occurred",
-                            categoryId,
-                            categoryName
-                        )
-                    )
+        emit(CategoryDetailResult.Fetching)
+        handleNetworkCallback { categoryUseCase.getCategoryDetails(categoryId) }.collect {
+            when (it) {
+                is EntityWrapper.Success -> {
+                    val savedIds = (state.value as? CategoryDetailState.Content)?.savedIds ?: emptySet()
+                    val updatedProducts = updateSaveStatus(it.entity.products, savedIds)
+                    emit(CategoryDetailResult.CategoryDetailContent(it.entity.copy(products = updatedProducts), savedIds))
                 }
+                is EntityWrapper.Fail -> emit(CategoryDetailResult.Error(ErrorHandler.getErrorMessage(it.error), categoryId, categoryName))
             }
         }
     }
@@ -123,6 +105,6 @@ class CategoryDetailViewModel @Inject constructor(
     }
 
     override fun refreshData() {
-        action(CategoryDetailAction.Refresh)
+        action(CategoryDetailAction.Fetch)
     }
 }

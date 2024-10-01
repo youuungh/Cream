@@ -5,11 +5,12 @@ import com.ninezero.data.remote.model.CategoryDetailsResponse
 import com.ninezero.data.remote.model.CategoryResponse
 import com.ninezero.data.remote.model.HomeResponse
 import com.ninezero.data.remote.model.ProductResponse
+import kotlinx.coroutines.flow.Flow
 
 interface RemoteDataSource {
-    suspend fun fetchData(): ApiResult<HomeResponse>
-    suspend fun getProductDetails(productId: String): ApiResult<ProductResponse>
-    suspend fun getProductsByBrand(brandId: String): ApiResult<List<ProductResponse>>
-    suspend fun getCategories(): ApiResult<List<CategoryResponse>>
-    suspend fun getCategoryDetails(categoryId: String): ApiResult<CategoryDetailsResponse>
+    fun fetchData(): Flow<ApiResult<HomeResponse>>
+    fun getProductDetails(productId: String): Flow<ApiResult<ProductResponse>>
+    fun getProductsByBrand(brandId: String): Flow<ApiResult<List<ProductResponse>>>
+    fun getCategories(): Flow<ApiResult<List<CategoryResponse>>>
+    fun getCategoryDetails(categoryId: String): Flow<ApiResult<CategoryDetailsResponse>>
 }

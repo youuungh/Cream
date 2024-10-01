@@ -7,8 +7,7 @@ import com.ninezero.domain.model.CategoryDetails
 import com.ninezero.domain.model.EntityWrapper
 import com.ninezero.domain.repository.CategoryRepository
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.catch
-import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 
 class CategoryRepositoryImpl @Inject constructor(
@@ -16,16 +15,12 @@ class CategoryRepositoryImpl @Inject constructor(
     private val categoryMapper: CategoryMapper
 ) : CategoryRepository {
     override fun fetchCategories(): Flow<EntityWrapper<List<Category>>> =
-        flow {
-            emit(categoryMapper.mapFromResult(remoteDataSource.getCategories()))
-        }.catch { e ->
-            emit(EntityWrapper.Fail(e))
+        remoteDataSource.getCategories().map { apiResult ->
+            categoryMapper.mapFromResult(apiResult)
         }
 
     override fun fetchCategoryDetails(categoryId: String): Flow<EntityWrapper<CategoryDetails>> =
-        flow {
-            emit(categoryMapper.mapCategoryDetails(remoteDataSource.getCategoryDetails(categoryId)))
-        }.catch { e ->
-            emit(EntityWrapper.Fail(e))
+        remoteDataSource.getCategoryDetails(categoryId).map { apiResult ->
+            categoryMapper.mapCategoryDetails(apiResult)
         }
 }

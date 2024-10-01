@@ -76,7 +76,7 @@ fun HomeScreen(
                         modifier = Modifier.padding(innerPadding)
                     )
                     is HomeState.Error -> ErrorScreen(
-                        onRetry = { viewModel.action(HomeAction.Refresh) },
+                        onRetry = { viewModel.action(HomeAction.Fetch) },
                         modifier = Modifier.padding(innerPadding)
                     )
                 }

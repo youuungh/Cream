@@ -41,7 +41,7 @@ import coil.compose.AsyncImage
 import com.ninezero.cream.base.collectAsState
 import com.ninezero.cream.utils.BANNER_DELAY
 import com.ninezero.cream.utils.BANNER_DURATION
-import com.ninezero.cream.utils.IMAGE_HEIGHT
+import com.ninezero.cream.utils.BANNER_HEIGHT
 import com.ninezero.domain.model.Banner
 import com.ninezero.domain.model.TopBanner
 import kotlinx.coroutines.Job
@@ -53,7 +53,6 @@ fun TopBanner(banners: List<TopBanner>) {
     val bannerCount = banners.size
     val maxPageCount = Int.MAX_VALUE
     val initPage = remember { maxPageCount / 2 - (maxPageCount / 2) % bannerCount }
-
     val pagerState = rememberPagerState(initialPage = initPage) { maxPageCount }
 
     val screenWidth = LocalConfiguration.current.screenWidthDp.dp
@@ -64,6 +63,7 @@ fun TopBanner(banners: List<TopBanner>) {
 
     val coroutineScope = rememberCoroutineScope()
     var isUserInteracting by remember { mutableStateOf(false) }
+    var isAutoScrolling by remember { mutableStateOf(false) }
     var autoScrollJob by remember { mutableStateOf<Job?>(null) }
 
     fun startAutoScroll() {
@@ -72,11 +72,13 @@ fun TopBanner(banners: List<TopBanner>) {
             while (true) {
                 delay(BANNER_DELAY)
                 if (!isUserInteracting) {
+                    isAutoScrolling = true
                     val nextPage = (pagerState.currentPage + 1) % maxPageCount
                     pagerState.animateScrollToPage(
                         page = nextPage,
                         animationSpec = tween(durationMillis = BANNER_DURATION, easing = FastOutSlowInEasing)
                     )
+                    isAutoScrolling = false
                 }
             }
         }
@@ -88,21 +90,13 @@ fun TopBanner(banners: List<TopBanner>) {
                 pagerState.scrollToPage(pagerState.currentPage)
                 startAutoScroll()
             }
-            else -> {}
-        }
-    }
-
-    LaunchedEffect(isUserInteracting) {
-        if (!isUserInteracting) {
-            startAutoScroll()
-        } else {
-            autoScrollJob?.cancel()
+            else -> autoScrollJob?.cancel()
         }
     }
 
     LaunchedEffect(pagerState) {
         snapshotFlow { pagerState.isScrollInProgress }.collect { isScrolling ->
-            isUserInteracting = isScrolling
+            if (!isAutoScrolling) isUserInteracting = isScrolling
         }
     }
 
@@ -115,7 +109,7 @@ fun TopBanner(banners: List<TopBanner>) {
             state = pagerState,
             modifier = Modifier
                 .fillMaxWidth()
-                .height(IMAGE_HEIGHT.dp)
+                .height(BANNER_HEIGHT.dp)
                 .pointerInput(Unit) {
                     detectTapGestures(
                         onPress = {
