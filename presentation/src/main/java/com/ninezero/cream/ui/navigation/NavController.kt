@@ -38,47 +38,43 @@ fun rememberAppNavController(
 @Stable
 class AppNavController(val navController: NavHostController) {
 
-    fun navigateBack() {
-        navController.navigateUp()
-    }
+    fun navigateBack() = navController.navigateUp()
 
-    fun navigateToHome() {
-        navController.navigate(AppRoutes.MAIN_HOME)
-    }
-
-    fun navigateToCart() {
-        navController.navigate(AppRoutes.CART)
-    }
-
-    fun navigateToSearch() {
-        navController.navigate(AppRoutes.SEARCH)
+    fun navigateToMain() = navController.navigate(Routes.MAIN) {
+        popUpTo(navController.graph.id) { inclusive = true }
     }
 
     fun navigateToBottomBarRoute(route: String) {
         if (route != navController.currentDestination?.route) {
             navController.navigate(route) {
-                launchSingleTop = true
-                restoreState = true
                 popUpTo(findStartDestination(navController.graph).id) {
                     saveState = true
                 }
+                launchSingleTop = true
+                restoreState = true
             }
         }
     }
 
-    fun navigateToCategoryDetail(
-        categoryId: String,
-        categoryName: String,
-        from: NavBackStackEntry
-    ) {
+    fun navigateToHome() = navigateToBottomBarRoute(Routes.MAIN_HOME)
+    fun navigateToSaved() = navigateToBottomBarRoute(Routes.MAIN_SAVED)
+
+    fun navigateToCart() = navController.navigate(Routes.CART)
+    fun navigateToSearch() = navController.navigate(Routes.SEARCH)
+
+    fun navigateToCategoryDetail(categoryId: String, categoryName: String, from: NavBackStackEntry) {
         if (from.lifecycleIsResumed()) {
-            navController.navigate("${AppRoutes.CATEGORY_DETAIL}/$categoryId/$categoryName")
+            navController.navigate(Routes.categoryDetailRoute(categoryId, categoryName))
         }
     }
 
     fun navigateToProductDetail(productId: String, from: NavBackStackEntry) {
         if (from.lifecycleIsResumed()) {
-            navController.navigate("${AppRoutes.PRODUCT_DETAIL}/$productId")
+            navController.navigate(Routes.productDetailRoute(productId)) {
+                popUpTo("${Routes.PRODUCT_DETAIL}/{${Routes.PRODUCT_ID_KEY}}") {
+                    inclusive = true
+                }
+            }
         }
     }
 }
@@ -120,26 +116,28 @@ fun NavGraphBuilder.addMainGraph(
     onProductClick: (String) -> Unit,
     onCategoryClick: (String, String, NavBackStackEntry) -> Unit,
     onNavigateToHome: () -> Unit,
+    onNavigateToSaved: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     composable(
-        route = AppRoutes.MAIN_HOME,
+        route = Routes.MAIN_HOME,
         deepLinks = listOf(navDeepLink {
-            uriPattern = "${AppRoutes.DEEP_LINK_SCHEME}${AppRoutes.MAIN_HOME}"
+            uriPattern = "${Routes.DEEP_LINK_SCHEME}${Routes.MAIN_HOME}"
         })
     ) {
         HomeScreen(
             onCartClick = onCartClick,
             onSearchClick = onSearchClick,
             onProductClick = onProductClick,
+            onNavigateToSaved = onNavigateToSaved,
             modifier = modifier
         )
     }
 
     composable(
-        route = AppRoutes.MAIN_CATEGORY,
+        route = Routes.MAIN_CATEGORY,
         deepLinks = listOf(navDeepLink {
-            uriPattern = "${AppRoutes.DEEP_LINK_SCHEME}${AppRoutes.MAIN_CATEGORY}"
+            uriPattern = "${Routes.DEEP_LINK_SCHEME}${Routes.MAIN_CATEGORY}"
         })
     ) {
         CategoryScreen(
@@ -156,9 +154,9 @@ fun NavGraphBuilder.addMainGraph(
     }
 
     composable(
-        route = AppRoutes.MAIN_SAVED,
+        route = Routes.MAIN_SAVED,
         deepLinks = listOf(navDeepLink {
-            uriPattern = "${AppRoutes.DEEP_LINK_SCHEME}${AppRoutes.MAIN_SAVED}"
+            uriPattern = "${Routes.DEEP_LINK_SCHEME}${Routes.MAIN_SAVED}"
         })
     ) {
         SavedScreen(

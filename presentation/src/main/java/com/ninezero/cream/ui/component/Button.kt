@@ -97,7 +97,10 @@ fun FilledButton(
         enabled = enabled,
         colors = ButtonDefaults.buttonColors()
     ) {
-        Text(text = text)
+        Text(
+            text = text,
+            style = MaterialTheme.typography.titleMedium
+        )
     }
 }
 
@@ -113,7 +116,10 @@ fun OutlinedButton(
         onClick = onClick,
         enabled = enabled
     ) {
-        Text(text = text)
+        Text(
+            text = text,
+            style = MaterialTheme.typography.titleMedium
+        )
     }
 }
 

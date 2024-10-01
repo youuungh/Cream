@@ -7,6 +7,8 @@ import com.ninezero.cream.ui.home.HomeEvent
 import com.ninezero.cream.ui.home.HomeReducer
 import com.ninezero.cream.ui.home.HomeResult
 import com.ninezero.cream.ui.home.HomeState
+import com.ninezero.cream.utils.SnackbarUtils.showSnack
+import com.ninezero.di.R
 import com.ninezero.domain.model.EntityWrapper
 import com.ninezero.domain.model.Product
 import com.ninezero.domain.repository.NetworkRepository
@@ -16,12 +18,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.FlowCollector
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -49,10 +46,11 @@ class HomeViewModel @Inject constructor(
             is HomeAction.ProductClicked -> emit(HomeEvent.NavigateToProductDetail(productId))
             is HomeAction.ToggleSave -> toggleSave(product)
             is HomeAction.UpdateSavedIds -> updateSavedIds(savedIds)
+            is HomeAction.NavigateToSaved -> emit(HomeEvent.NavigateToSaved)
         }
     }
 
-    private suspend fun FlowCollector<HomeResult>.fetchHomeData()  {
+    private suspend fun FlowCollector<HomeResult>.fetchHomeData() {
         emit(HomeResult.Fetching)
         if (!networkState.value) {
             delay(3000)
@@ -82,6 +80,13 @@ class HomeViewModel @Inject constructor(
     private suspend fun FlowCollector<HomeResult>.toggleSave(product: Product) {
         saveUseCase.toggleSave(product)
         emit(HomeResult.SaveToggled(product.productId, !product.isSaved))
+        if (!product.isSaved) {
+            showSnack(
+                messageTextId = R.string.saved_item_added,
+                actionLabelId = R.string.view_saved,
+                onAction = { action(HomeAction.NavigateToSaved) }
+            )
+        }
     }
 
     private suspend fun FlowCollector<HomeResult>.updateSavedIds(savedIds: Set<String>) {

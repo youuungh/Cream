@@ -2,6 +2,7 @@
 
 package com.ninezero.cream.utils
 
+import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.BoundsTransform
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
@@ -16,6 +17,7 @@ import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import androidx.navigation.NavBackStackEntry
 import com.ninezero.di.R
 
 val detailBoundsTransform = BoundsTransform { _, _ ->
@@ -46,16 +48,29 @@ data class AnimState(
     val exitTransition: ExitTransition
 )
 
+fun <T> spatialExpressiveSpring() = spring<T>(
+    dampingRatio = 0.8f,
+    stiffness = 380f
+)
+
+fun <T> nonSpatialExpressiveSpring() = spring<T>(
+    dampingRatio = 1f,
+    stiffness = 1600f
+)
+
+fun getCategoryImageResource(categoryId: String) =
+    R.drawable::class.java.getField("category_img_$categoryId").getInt(null)
+
 @Composable
 fun rememberSlideInOutAnimState(): AnimState {
     val enterTransition = remember {
-        fadeIn(animationSpec = tween(durationMillis = 300)) +
+        fadeIn(animationSpec = tween(durationMillis = 150)) +
                 slideInVertically(
                     animationSpec = spring(
                         dampingRatio = Spring.DampingRatioLowBouncy,
                         stiffness = Spring.StiffnessLow
                     )
-                ) { it / 10 }
+                ) { it }
     }
     val exitTransition = remember {
         fadeOut(animationSpec = tween(durationMillis = 300)) +
@@ -70,15 +85,29 @@ fun rememberSlideInOutAnimState(): AnimState {
     return remember { AnimState(enterTransition, exitTransition) }
 }
 
-fun <T> spatialExpressiveSpring() = spring<T>(
-    dampingRatio = 0.8f,
-    stiffness = 380f
-)
+@Composable
+fun rememberProductDetailAnimState(): Pair<
+        AnimatedContentTransitionScope<NavBackStackEntry>.() -> EnterTransition,
+        AnimatedContentTransitionScope<NavBackStackEntry>.() -> ExitTransition
+        > {
+    val enterTransition: AnimatedContentTransitionScope<NavBackStackEntry>.() -> EnterTransition = {
+        fadeIn(animationSpec = tween(durationMillis = 150)) +
+                slideInVertically(
+                    animationSpec = spring(
+                        dampingRatio = Spring.DampingRatioLowBouncy,
+                        stiffness = Spring.StiffnessLow
+                    )
+                ) { it }
+    }
+    val exitTransition: AnimatedContentTransitionScope<NavBackStackEntry>.() -> ExitTransition = {
+        fadeOut(animationSpec = tween(durationMillis = 300)) +
+                slideOutVertically(
+                    animationSpec = spring(
+                        dampingRatio = Spring.DampingRatioLowBouncy,
+                        stiffness = Spring.StiffnessLow
+                    )
+                ) { it / 10 }
+    }
 
-fun <T> nonSpatialExpressiveSpring() = spring<T>(
-    dampingRatio = 1f,
-    stiffness = 1600f
-)
-
-fun getCategoryImageResource(categoryId: String) =
-    R.drawable::class.java.getField("category_img_$categoryId").getInt(null)
+    return remember { enterTransition to exitTransition }
+}

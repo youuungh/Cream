@@ -3,6 +3,9 @@
 package com.ninezero.cream.ui.saved
 
 import androidx.annotation.StringRes
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -16,6 +19,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
@@ -49,7 +53,9 @@ import com.ninezero.cream.ui.component.CreamTopAppBar
 import com.ninezero.cream.ui.component.Divider
 import com.ninezero.cream.ui.component.EmptyScreen
 import com.ninezero.cream.ui.component.ErrorScreen
+import com.ninezero.cream.ui.component.SaveBottomSheet
 import com.ninezero.cream.ui.component.SavedProductCard
+import com.ninezero.cream.ui.component.skeleton.SavedScreenSkeleton
 import com.ninezero.cream.viewmodel.SavedViewModel
 import com.ninezero.di.R
 import com.ninezero.domain.model.Product
@@ -64,10 +70,9 @@ fun SavedScreen(
     viewModel: SavedViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.state.collectAsState()
+    val sortType by viewModel.sortType.collectAsState()
     val scope = rememberCoroutineScope()
-    val bottomSheetState = rememberModalBottomSheetState()
-    var showBottomSheet by remember { mutableStateOf(false) }
-    var sortType by remember { mutableIntStateOf(R.string.sort_by_saved_date) }
+    val showBottomSheet = remember { mutableStateOf(false) }
 
     viewModel.collectEvents {
         when (it) {
@@ -85,7 +90,8 @@ fun SavedScreen(
             }
         ) { innerPadding ->
             when (val state = uiState) {
-                is SavedState.Fetching -> { /*todo*/ } // SavedSkeleton()
+                is SavedState.Fetching -> SavedScreenSkeleton(modifier = Modifier.padding(innerPadding))
+
                 is SavedState.Content -> {
                     if (state.savedProducts.isEmpty()) {
                         EmptyScreen(
@@ -98,7 +104,7 @@ fun SavedScreen(
                             sortType = sortType,
                             onProductClick = onProductClick,
                             onRemoveClick = { product -> viewModel.action(SavedAction.Remove(product)) },
-                            onSortClick = { showBottomSheet = true },
+                            onSortClick = { showBottomSheet.value = true },
                             modifier = Modifier.padding(innerPadding)
                         )
                     }
@@ -110,28 +116,13 @@ fun SavedScreen(
             }
         }
 
-        if (showBottomSheet) {
-            ModalBottomSheet(
-                onDismissRequest = { showBottomSheet = false },
-                sheetState = bottomSheetState
-            ) {
-                SortOptions(
-                    onSortBySavedDate = {
-                        sortType = R.string.sort_by_saved_date
-                        viewModel.action(SavedAction.SortBySavedDate)
-                        scope.launch { bottomSheetState.hide() }.invokeOnCompletion {
-                            if (!bottomSheetState.isVisible) showBottomSheet = false
-                        }
-                    },
-                    onSortByPrice = {
-                        sortType = R.string.sort_by_price
-                        viewModel.action(SavedAction.SortByPrice)
-                        scope.launch { bottomSheetState.hide() }.invokeOnCompletion {
-                            if (!bottomSheetState.isVisible) showBottomSheet = false
-                        }
-                    }
-                )
-            }
+        if (showBottomSheet.value) {
+            SaveBottomSheet(
+                showBottomSheet = showBottomSheet,
+                coroutineScope = scope,
+                selectedOption = remember { mutableIntStateOf(sortType) },
+                onOptionSelected = { viewModel.updateSortType(it) }
+            )
         }
     }
 }
@@ -193,39 +184,39 @@ fun SavedContent(
             }
         }
 
-        itemsIndexed(savedProducts) { index, product ->
-            SavedProductCard(
-                product = product,
-                onClick = { onProductClick(product.productId) },
-                onSaveToggle = onRemoveClick,
-                modifier = Modifier.height(130.dp)
-            )
-
-            if (index < savedProducts.size - 1) { Divider() }
-        }
+        animatedItems(
+            items = savedProducts,
+            onProductClick = onProductClick,
+            onRemoveClick = onRemoveClick
+        )
     }
 }
 
-@Composable
-fun SortOptions(
-    onSortBySavedDate: () -> Unit,
-    onSortByPrice: () -> Unit
+fun LazyListScope.animatedItems(
+    items: List<Product>,
+    onProductClick: (String) -> Unit,
+    onRemoveClick: (Product) -> Unit
 ) {
-    Column(modifier = Modifier.padding(16.dp)) {
-        Text(stringResource(R.string.sort), style = MaterialTheme.typography.titleLarge)
-        Spacer(modifier = Modifier.height(16.dp))
-        Button(
-            onClick = onSortBySavedDate,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text(stringResource(R.string.sort_by_saved_date))
-        }
-        Spacer(modifier = Modifier.height(8.dp))
-        Button(
-            onClick = onSortByPrice,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text(stringResource(R.string.sort_by_price))
-        }
+    itemsIndexed(
+        items = items,
+        key = { _, product -> product.productId }
+    ) { index, product ->
+        SavedProductCard(
+            product = product,
+            onClick = { onProductClick(product.productId) },
+            onSaveToggle = onRemoveClick,
+            modifier = Modifier
+                .height(130.dp)
+                .animateItem(
+                    fadeInSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy),
+                    fadeOutSpec = spring(dampingRatio = Spring.DampingRatioNoBouncy),
+                    placementSpec = spring(
+                    dampingRatio = Spring.DampingRatioLowBouncy,
+                    stiffness = Spring.StiffnessLow
+                )
+            )
+        )
+
+        if (index < items.size - 1) { Divider() }
     }
 }

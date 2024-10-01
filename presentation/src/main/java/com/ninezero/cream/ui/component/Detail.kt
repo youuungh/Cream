@@ -59,10 +59,11 @@ fun ProductDetailContent(
     state: ProductDetailState.Content,
     onProductClick: (String) -> Unit,
     onSaveToggle: (Product) -> Unit,
-    onBuyClick: () -> Unit,
+    onBuyNow: () -> Unit,
     updateAppBarAlpha: (Float) -> Unit,
     appBarHeight: Dp,
-    tabVisible: Boolean
+    tabVisible: Boolean,
+    modifier: Modifier = Modifier
 ) {
     val lazyListState = rememberLazyListState()
     val appBarAlpha by rememberAppBarAlphaState(lazyListState)
@@ -71,9 +72,10 @@ fun ProductDetailContent(
 
     val tabKey = "product_detail_tab"
     var tabHeight by remember { mutableStateOf(0.dp) }
-
     var selectedTabIndex by remember { mutableIntStateOf(0) }
-    val coroutineScope = rememberCoroutineScope()
+
+    val scope = rememberCoroutineScope()
+    val showBottomSheet = remember { mutableStateOf(false) }
 
     val tabVisibility by remember {
         derivedStateOf {
@@ -120,7 +122,7 @@ fun ProductDetailContent(
 
     LaunchedEffect(appBarAlpha) { updateAppBarAlpha(appBarAlpha) }
 
-    Box(modifier = Modifier.fillMaxSize()) {
+    Box(modifier = modifier.fillMaxSize()) {
         LazyColumn(
             state = lazyListState,
             modifier = Modifier.fillMaxSize()
@@ -137,7 +139,7 @@ fun ProductDetailContent(
                     selectedTabIndex = selectedTabIndex,
                     onTabSelected = { index ->
                         selectedTabIndex = index
-                        coroutineScope.launch {
+                        scope.launch {
                             val adjustmentPx =
                                 with(density) { (appBarHeight + tabHeight).toPx() }.toInt()
                             lazyListState.animateScrollToItem(
@@ -172,7 +174,7 @@ fun ProductDetailContent(
             selectedTabIndex = selectedTabIndex,
             onTabSelected = { index ->
                 selectedTabIndex = index
-                coroutineScope.launch {
+                scope.launch {
                     val adjustmentPx = with(density) { (appBarHeight + tabHeight).toPx() }.toInt()
                     lazyListState.animateScrollToItem(
                         index = when (index) {
@@ -195,9 +197,21 @@ fun ProductDetailContent(
             price = formatPriceWithCommas(state.product.price.instantBuyPrice),
             isSaved = state.product.isSaved,
             onSaveToggle = { onSaveToggle(state.product) },
-            onBuyClick = onBuyClick,
+            onBuyClick = { showBottomSheet.value = true },
             modifier = Modifier.align(Alignment.BottomCenter)
         )
+
+        if (showBottomSheet.value) {
+            DetailBottomSheet(
+                showBottomSheet = showBottomSheet,
+                coroutineScope = scope,
+                productImageUrl = state.product.imageUrl,
+                productName = state.product.productName,
+                productKo = state.product.ko,
+                onAddToCart = { /*todo*/ },
+                onBuyNow = { /*todo*/ }
+            )
+        }
     }
 }
 

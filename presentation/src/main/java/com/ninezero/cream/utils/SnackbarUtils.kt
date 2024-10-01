@@ -7,19 +7,34 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
-import java.util.UUID
 
 object SnackbarUtils {
     private val _messages: MutableStateFlow<List<Message>> = MutableStateFlow(emptyList())
     val messages: StateFlow<List<Message>> get() = _messages.asStateFlow()
 
-    fun showMessage(@StringRes messageTextId: Int, duration: SnackbarDuration = SnackbarDuration.Short) {
+    fun showSnack(
+        @StringRes messageTextId: Int,
+        duration: SnackbarDuration = SnackbarDuration.Short,
+        @StringRes actionLabelId: Int? = null,
+        onAction: (() -> Unit)? = null
+    ) {
         _messages.update { currentMessages ->
-            currentMessages + Message(messageId = messageTextId, duration = duration)
+            val newMessage = Message(
+                messageId = messageTextId,
+                duration = duration,
+                actionLabelId = actionLabelId,
+                onAction = onAction
+            )
+
+            if (currentMessages.none { it.messageId == messageTextId }) {
+                currentMessages + newMessage
+            } else {
+                currentMessages
+            }
         }
     }
 
-    fun setMessageShown(messageId: Long) {
-        _messages.update { currentMessages -> currentMessages.filterNot { it.id == messageId } }
+    fun setSnackShown(messageId: Long) {
+        _messages.update { currentMessages -> currentMessages.filterNot { it.id == messageId }.take(3) }
     }
 }

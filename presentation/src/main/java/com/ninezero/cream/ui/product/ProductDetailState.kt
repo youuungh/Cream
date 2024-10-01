@@ -14,6 +14,7 @@ sealed class ProductDetailAction : MviAction {
     data class ToggleSave(val product: Product) : ProductDetailAction()
     data class FetchRelatedProducts(val brandId: String) : ProductDetailAction()
     data class UpdateSavedIds(val savedIds: Set<String>) : ProductDetailAction()
+    data object NavigateToSaved : ProductDetailAction()
 }
 
 sealed class ProductDetailResult : MviResult {
@@ -24,7 +25,9 @@ sealed class ProductDetailResult : MviResult {
     data class SaveToggled(val productId: String, val isSaved: Boolean) : ProductDetailResult()
 }
 
-sealed class ProductDetailEvent : MviEvent
+sealed class ProductDetailEvent : MviEvent, ProductDetailResult() {
+    data object NavigateToSaved : ProductDetailEvent()
+}
 
 sealed class ProductDetailState : MviViewState {
     data object Fetching : ProductDetailState()
@@ -68,6 +71,7 @@ class ProductDetailReducer @Inject constructor() : MviStateReducer<ProductDetail
                     this.copy(product = updatedProduct, relatedProducts = updatedRelatedProducts, savedIds = updatedSavedIds)
                 } else this
             }
+            is ProductDetailEvent -> this
         }
     }
 }

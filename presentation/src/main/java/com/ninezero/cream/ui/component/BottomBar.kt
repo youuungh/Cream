@@ -56,7 +56,6 @@ import androidx.compose.ui.util.lerp
 import androidx.core.os.ConfigurationCompat
 import com.ninezero.cream.ui.LocalNavAnimatedVisibilityScope
 import com.ninezero.cream.ui.LocalSharedTransitionScope
-import com.ninezero.cream.ui.navigation.AppRoutes
 import com.ninezero.cream.ui.navigation.MainRoute
 import com.ninezero.cream.ui.theme.CreamTheme
 import com.ninezero.cream.utils.spatialExpressiveSpring
@@ -375,7 +374,7 @@ private fun BottomNavIndicator(
 private fun BottomNavPreview() {
     CreamTheme {
         BottomBar(
-            currentRoute = AppRoutes.MAIN_HOME,
+            currentRoute = MainRoute.Home.route,
             navigateToRoute = {}
         )
     }

@@ -7,12 +7,17 @@ import com.ninezero.cream.ui.saved.SavedEvent
 import com.ninezero.cream.ui.saved.SavedReducer
 import com.ninezero.cream.ui.saved.SavedResult
 import com.ninezero.cream.ui.saved.SavedState
+import com.ninezero.di.R
 import com.ninezero.domain.model.Product
 import com.ninezero.domain.repository.NetworkRepository
 import com.ninezero.domain.usecase.SaveUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.FlowCollector
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.launch
@@ -27,64 +32,76 @@ class SavedViewModel @Inject constructor(
     initialState = SavedState.Fetching,
     reducer = reducer
 ) {
+    private val _sortType = MutableStateFlow(R.string.sort_by_saved_date)
+    val sortType: StateFlow<Int> = _sortType.asStateFlow()
+
     init {
         setNetworkStatus(networkRepository)
+        action(SavedAction.Fetch)
+        updateData()
+    }
+
+    private fun updateData() {
         viewModelScope.launch {
-            saveUseCase.fetchAll().collect { products ->
-                action(SavedAction.UpdateProducts(products))
-            }
+            saveUseCase.fetchAll()
+                .collect { products ->
+                    if (networkState.value) {
+                        action(SavedAction.UpdateProducts(products))
+                    }
+                }
         }
     }
 
     override fun SavedAction.process(): Flow<SavedResult> = flow {
         when (this@process) {
-            is SavedAction.UpdateProducts -> emit(SavedResult.FetchSuccess(products))
-            SavedAction.Fetch, SavedAction.Refresh -> emit(fetchAll())
-            is SavedAction.Remove -> emit(removeSavedProduct(product))
-            is SavedAction.RemoveAll -> emit(removeAll())
-            is SavedAction.SortBySavedDate -> emit(sortBySavedDate())
-            is SavedAction.SortByPrice -> emit(sortByPrice())
+            SavedAction.Fetch, SavedAction.Refresh -> fetchAll()
+            is SavedAction.UpdateProducts -> {
+                if (networkState.value) emit(SavedResult.FetchSuccess(products))
+            }
+            is SavedAction.Remove -> removeSavedProduct(product)
+            is SavedAction.RemoveAll -> removeAll()
+            is SavedAction.SortBySavedDate -> sortProducts { it.sortedByDescending { product -> product.savedAt } }
+            is SavedAction.SortByPrice -> sortProducts { it.sortedByDescending { product -> product.price.instantBuyPrice } }
         }
     }
 
-    private suspend fun fetchAll(): SavedResult {
-        return if (!networkState.value) {
+    private suspend fun FlowCollector<SavedResult>.fetchAll() {
+        emit(SavedResult.Fetching)
+        if (!networkState.value) {
             delay(3000)
-            SavedResult.Error("No internet connection")
+            emit(SavedResult.Error("No internet connection"))
         } else {
             try {
-                SavedResult.FetchSuccess(saveUseCase.fetchAll().first())
+                val products = saveUseCase.fetchAll().first()
+                emit(SavedResult.FetchSuccess(products))
             } catch (e: Exception) {
-                SavedResult.Error(e.message ?: "Unknown error occurred")
+                emit(SavedResult.Error(e.message ?: "Unknown error occurred"))
             }
         }
     }
 
-    private suspend fun removeSavedProduct(product: Product): SavedResult {
+    private suspend fun FlowCollector<SavedResult>.removeSavedProduct(product: Product) {
         saveUseCase.toggleSave(product)
-        return SavedResult.Remove(product.productId)
+        emit(SavedResult.Remove(product.productId))
     }
 
-    private suspend fun removeAll(): SavedResult {
+    private suspend fun FlowCollector<SavedResult>.removeAll() {
         saveUseCase.removeAll()
-        return SavedResult.RemoveAll
+        emit(SavedResult.RemoveAll)
     }
 
-    private fun sortBySavedDate(): SavedResult {
+    private suspend fun FlowCollector<SavedResult>.sortProducts(sorter: (List<Product>) -> List<Product>) {
         val currentState = state.value
-        return if (currentState is SavedState.Content) {
-            SavedResult.Sorted(currentState.savedProducts.sortedByDescending { it.savedAt })
-        } else {
-            SavedResult.Sorted(emptyList())
+        if (currentState is SavedState.Content) {
+            emit(SavedResult.Sorted(sorter(currentState.savedProducts)))
         }
     }
 
-    private fun sortByPrice(): SavedResult {
-        val currentState = state.value
-        return if (currentState is SavedState.Content) {
-            SavedResult.Sorted(currentState.savedProducts.sortedByDescending { it.price.instantBuyPrice })
-        } else {
-            SavedResult.Sorted(emptyList())
+    fun updateSortType(newSortType: Int) {
+        _sortType.value = newSortType
+        when (newSortType) {
+            R.string.sort_by_saved_date -> action(SavedAction.SortBySavedDate)
+            R.string.sort_by_price -> action(SavedAction.SortByPrice)
         }
     }
 

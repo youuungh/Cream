@@ -15,6 +15,7 @@ sealed class HomeAction : MviAction {
     data class ProductClicked(val productId: String) : HomeAction()
     data class ToggleSave(val product: Product) : HomeAction()
     data class UpdateSavedIds(val savedIds: Set<String>) : HomeAction()
+    data object NavigateToSaved : HomeAction()
 }
 
 sealed class HomeResult : MviResult {
@@ -26,6 +27,7 @@ sealed class HomeResult : MviResult {
 
 sealed class HomeEvent : MviEvent, HomeResult() {
     data class NavigateToProductDetail(val productId: String) : HomeEvent()
+    data object NavigateToSaved : HomeEvent()
 }
 
 sealed class HomeState : MviViewState {

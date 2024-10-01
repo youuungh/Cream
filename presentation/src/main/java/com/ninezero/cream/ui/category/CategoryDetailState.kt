@@ -15,6 +15,7 @@ sealed class CategoryDetailAction : MviAction {
     data class ProductClicked(val productId: String) : CategoryDetailAction()
     data class ToggleSave(val product: Product) : CategoryDetailAction()
     data class UpdateSavedIds(val savedIds: Set<String>) : CategoryDetailAction()
+    data object NavigateToSaved : CategoryDetailAction()
 }
 
 sealed class CategoryDetailResult : MviResult {
@@ -26,6 +27,7 @@ sealed class CategoryDetailResult : MviResult {
 
 sealed class CategoryDetailEvent : MviEvent, CategoryDetailResult() {
     data class NavigateToProductDetail(val productId: String) : CategoryDetailEvent()
+    data object NavigateToSaved : CategoryDetailEvent()
 }
 
 sealed class CategoryDetailState : MviViewState {

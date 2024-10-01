@@ -29,6 +29,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -238,6 +239,8 @@ fun StyleInfo() {
                     .clip(MaterialTheme.shapes.medium)
             )
         }
+        Spacer(modifier = Modifier.height(16.dp))
+        ExpandingText(description = stringResource(id = R.string.lorem_ipsum))
     }
     Box(
         modifier = Modifier

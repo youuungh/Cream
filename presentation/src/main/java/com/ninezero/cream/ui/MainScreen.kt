@@ -6,22 +6,21 @@ import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionLayout
 import androidx.compose.animation.SharedTransitionScope
-import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.spring
-import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavType
@@ -34,11 +33,12 @@ import com.ninezero.cream.ui.component.BottomBar
 import com.ninezero.cream.ui.component.CreamScaffold
 import com.ninezero.cream.ui.component.CustomSnackbar
 import com.ninezero.cream.ui.component.rememberCreamScaffoldState
-import com.ninezero.cream.ui.navigation.AppRoutes
+import com.ninezero.cream.ui.navigation.Routes
 import com.ninezero.cream.ui.navigation.addMainGraph
 import com.ninezero.cream.ui.navigation.composableWithCompositionLocal
 import com.ninezero.cream.ui.navigation.rememberAppNavController
 import com.ninezero.cream.utils.nonSpatialExpressiveSpring
+import com.ninezero.cream.utils.rememberProductDetailAnimState
 import com.ninezero.cream.utils.spatialExpressiveSpring
 
 val LocalNavAnimatedVisibilityScope = compositionLocalOf<AnimatedVisibilityScope?> { null }
@@ -48,78 +48,72 @@ val LocalSharedTransitionScope = compositionLocalOf<SharedTransitionScope?> { nu
 fun MainScreen() {
     //val viewModel = hiltViewModel<MainViewModel>()
     val navController = rememberAppNavController()
+    var navigateToSaved by remember { mutableStateOf(false) }
+    val animState = rememberProductDetailAnimState()
 
     SharedTransitionLayout {
-        CompositionLocalProvider(
-            LocalSharedTransitionScope provides this
-        ) {
+        CompositionLocalProvider(LocalSharedTransitionScope provides this) {
             NavHost(
                 navController = navController.navController,
-                startDestination = AppRoutes.MAIN
+                startDestination = Routes.MAIN
             ) {
-                composableWithCompositionLocal(route = AppRoutes.MAIN) {
+                composableWithCompositionLocal(route = Routes.MAIN) {
                     MainContent(
                         onCartClick = navController::navigateToCart,
                         onSearchClick = navController::navigateToSearch,
                         onProductClick = { productId ->
                             navController.navigateToProductDetail(productId = productId, it)
                         },
-                        onCategoryClick = navController::navigateToCategoryDetail
+                        onCategoryClick = navController::navigateToCategoryDetail,
+                        navigateToSaved = navigateToSaved,
+                        onNavigateToSavedConsumed = { navigateToSaved = false }
                     )
                 }
 
                 composableWithCompositionLocal(
-                    route = "${AppRoutes.PRODUCT_DETAIL}/{${AppRoutes.PRODUCT_ID_KEY}}",
+                    route = Routes.productDetailRoute("{${Routes.PRODUCT_ID_KEY}}"),
                     arguments = listOf(
-                        navArgument(AppRoutes.PRODUCT_ID_KEY) { type = NavType.StringType }
+                        navArgument(Routes.PRODUCT_ID_KEY) { type = NavType.StringType }
                     ),
-                    enterTransition = {
-                        fadeIn(animationSpec = tween(durationMillis = 300)) +
-                                slideInVertically(
-                                    animationSpec = spring(
-                                        dampingRatio = Spring.DampingRatioLowBouncy,
-                                        stiffness = Spring.StiffnessLow
-                                    )
-                                ) { it }
-
-                    },
-                    exitTransition = {
-                        fadeOut(animationSpec = tween(durationMillis = 300)) +
-                                slideOutVertically(
-                                    animationSpec = spring(
-                                        dampingRatio = Spring.DampingRatioLowBouncy,
-                                        stiffness = Spring.StiffnessLow
-                                    )
-                                ) { it / 10 }
-                    }
+                    enterTransition = animState.first,
+                    exitTransition = animState.second
                 ) {
                     ProductDetailScreen(
                         onNavigateBack = navController::navigateBack,
                         onCartClick = navController::navigateToCart,
                         onProductClick = { productId ->
                             navController.navigateToProductDetail(productId = productId, it)
+                        },
+                        onNavigateToSaved = {
+                            navigateToSaved = true
+                            navController.navigateToMain()
                         }
                     )
                 }
 
                 composableWithCompositionLocal(
-                    route = "${AppRoutes.CATEGORY_DETAIL}/{${AppRoutes.CATEGORY_ID_KEY}}/{${AppRoutes.CATEGORY_NAME_KEY}}",
+                    route = Routes.categoryDetailRoute(
+                        "{${Routes.CATEGORY_ID_KEY}}",
+                        "{${Routes.CATEGORY_NAME_KEY}}"
+                    ),
                     arguments = listOf(
-                        navArgument(AppRoutes.CATEGORY_ID_KEY) { type = NavType.StringType },
-                        navArgument(AppRoutes.CATEGORY_NAME_KEY) { type = NavType.StringType }
+                        navArgument(Routes.CATEGORY_ID_KEY) { type = NavType.StringType },
+                        navArgument(Routes.CATEGORY_NAME_KEY) { type = NavType.StringType }
                     )
                 ) {
                     val arguments = requireNotNull(it.arguments)
-                    val categoryId = arguments.getString(AppRoutes.CATEGORY_ID_KEY) ?: ""
-                    val categoryName = arguments.getString(AppRoutes.CATEGORY_NAME_KEY) ?: ""
 
                     CategoryDetailScreen(
-                        categoryId = categoryId,
-                        categoryName = categoryName,
+                        categoryId = arguments.getString(Routes.CATEGORY_ID_KEY).orEmpty(),
+                        categoryName = arguments.getString(Routes.CATEGORY_NAME_KEY).orEmpty(),
                         onProductClick = { productId ->
                             navController.navigateToProductDetail(productId = productId, it)
                         },
-                        onNavigateBack = navController::navigateBack
+                        onNavigateBack = navController::navigateBack,
+                        onNavigateToSaved = {
+                            navigateToSaved = true
+                            navController.navigateBack()
+                        }
                     )
                 }
             }
@@ -133,7 +127,9 @@ fun MainContent(
     onCartClick: () -> Unit,
     onSearchClick: () -> Unit,
     onProductClick: (String) -> Unit,
-    onCategoryClick: (String, String, NavBackStackEntry) -> Unit
+    onCategoryClick: (String, String, NavBackStackEntry) -> Unit,
+    navigateToSaved: Boolean,
+    onNavigateToSavedConsumed: () -> Unit
 ) {
     val creamScaffoldState = rememberCreamScaffoldState()
     val nestedNavController = rememberAppNavController()
@@ -145,26 +141,27 @@ fun MainContent(
     val animatedVisibilityScope = LocalNavAnimatedVisibilityScope.current
         ?: throw IllegalStateException("No SharedElementScope found")
 
+    LaunchedEffect(navigateToSaved) {
+        if (navigateToSaved) {
+            nestedNavController.navigateToSaved()
+            onNavigateToSavedConsumed()
+        }
+    }
+
     CreamScaffold(
         bottomBar = {
             with(animatedVisibilityScope) {
                 with(sharedTransitionScope) {
                     BottomBar(
-                        currentRoute = currentRoute ?: AppRoutes.MAIN_HOME,
+                        currentRoute = currentRoute ?: Routes.MAIN_HOME,
                         navigateToRoute = nestedNavController::navigateToBottomBarRoute,
                         modifier = Modifier
                             .renderInSharedTransitionScopeOverlay(zIndexInOverlay = 1f)
                             .animateEnterExit(
-                                enter = fadeIn(
-                                    nonSpatialExpressiveSpring()
-                                ) + slideInVertically(
-                                    spatialExpressiveSpring()
-                                ) { it },
-                                exit = fadeOut(
-                                    nonSpatialExpressiveSpring()
-                                ) + slideOutVertically(
-                                    spatialExpressiveSpring()
-                                ) { it }
+                                enter = fadeIn(nonSpatialExpressiveSpring())
+                                        + slideInVertically(spatialExpressiveSpring()) { it },
+                                exit = fadeOut(nonSpatialExpressiveSpring())
+                                        + slideOutVertically(spatialExpressiveSpring()) { it }
                             )
                     )
                 }
@@ -174,7 +171,6 @@ fun MainContent(
         snackbarHost = {
             SnackbarHost(
                 hostState = it,
-                modifier = Modifier.systemBarsPadding(),
                 snackbar = { snackbarData -> CustomSnackbar(snackbarData) }
             )
         },
@@ -182,7 +178,10 @@ fun MainContent(
     ) { innerPadding ->
         NavHost(
             navController = nestedNavController.navController,
-            startDestination = AppRoutes.MAIN_HOME
+            startDestination = Routes.MAIN_HOME,
+            modifier = Modifier
+                .padding(innerPadding)
+                .consumeWindowInsets(innerPadding)
         ) {
             addMainGraph(
                 onCartClick = onCartClick,
@@ -190,9 +189,7 @@ fun MainContent(
                 onProductClick = onProductClick,
                 onCategoryClick = onCategoryClick,
                 onNavigateToHome = nestedNavController::navigateToHome,
-                modifier = Modifier
-                    .padding(innerPadding)
-                    .consumeWindowInsets(innerPadding)
+                onNavigateToSaved = nestedNavController::navigateToSaved
             )
         }
     }

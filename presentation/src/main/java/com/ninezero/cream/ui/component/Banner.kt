@@ -6,7 +6,7 @@ import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
-import androidx.compose.foundation.interaction.collectIsDraggedAsState
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
@@ -21,11 +21,15 @@ import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.unit.Dp
@@ -35,11 +39,12 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import coil.compose.AsyncImage
 import com.ninezero.cream.base.collectAsState
-import com.ninezero.cream.utils.AUTO_SCROLL_DELAY
+import com.ninezero.cream.utils.BANNER_DELAY
 import com.ninezero.cream.utils.BANNER_DURATION
 import com.ninezero.cream.utils.IMAGE_HEIGHT
 import com.ninezero.domain.model.Banner
 import com.ninezero.domain.model.TopBanner
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -50,6 +55,7 @@ fun TopBanner(banners: List<TopBanner>) {
     val initPage = remember { maxPageCount / 2 - (maxPageCount / 2) % bannerCount }
 
     val pagerState = rememberPagerState(initialPage = initPage) { maxPageCount }
+
     val screenWidth = LocalConfiguration.current.screenWidthDp.dp
     val indicatorWidth = remember { (screenWidth - 32.dp) / banners.size }
 
@@ -57,26 +63,48 @@ fun TopBanner(banners: List<TopBanner>) {
     val lifecycleState by lifecycleOwner.lifecycle.currentStateFlow.collectAsState()
 
     val coroutineScope = rememberCoroutineScope()
+    var isUserInteracting by remember { mutableStateOf(false) }
+    var autoScrollJob by remember { mutableStateOf<Job?>(null) }
 
-    fun adjustPage() {
-        coroutineScope.launch {
-            val targetPage = (pagerState.currentPage + (if (pagerState.currentPageOffsetFraction > 0.5f) 1 else 0))
-                .coerceIn(0, maxPageCount - 1)
-            pagerState.animateScrollToPage(
-                page = targetPage,
-                animationSpec = tween(durationMillis = BANNER_DURATION, easing = FastOutSlowInEasing)
-            )
+    fun startAutoScroll() {
+        autoScrollJob?.cancel()
+        autoScrollJob = coroutineScope.launch {
+            while (true) {
+                delay(BANNER_DELAY)
+                if (!isUserInteracting) {
+                    val nextPage = (pagerState.currentPage + 1) % maxPageCount
+                    pagerState.animateScrollToPage(
+                        page = nextPage,
+                        animationSpec = tween(durationMillis = BANNER_DURATION, easing = FastOutSlowInEasing)
+                    )
+                }
+            }
         }
     }
 
     LaunchedEffect(lifecycleState) {
         when (lifecycleState) {
-            Lifecycle.State.RESUMED -> adjustPage()
+            Lifecycle.State.RESUMED -> {
+                pagerState.scrollToPage(pagerState.currentPage)
+                startAutoScroll()
+            }
             else -> {}
         }
     }
 
-    AutoScroll(pagerState)
+    LaunchedEffect(isUserInteracting) {
+        if (!isUserInteracting) {
+            startAutoScroll()
+        } else {
+            autoScrollJob?.cancel()
+        }
+    }
+
+    LaunchedEffect(pagerState) {
+        snapshotFlow { pagerState.isScrollInProgress }.collect { isScrolling ->
+            isUserInteracting = isScrolling
+        }
+    }
 
     Box(
         modifier = Modifier
@@ -87,8 +115,18 @@ fun TopBanner(banners: List<TopBanner>) {
             state = pagerState,
             modifier = Modifier
                 .fillMaxWidth()
-                .height(IMAGE_HEIGHT.dp),
-            key = { it }
+                .height(IMAGE_HEIGHT.dp)
+                .pointerInput(Unit) {
+                    detectTapGestures(
+                        onPress = {
+                            isUserInteracting = true
+                            tryAwaitRelease()
+                            isUserInteracting = false
+                        }
+                    )
+                },
+            key = { it },
+            beyondViewportPageCount = 1
         ) { page ->
             val bannerIndex = remember(page) { page.mod(bannerCount) }
             TopBannerImage(banners[bannerIndex])
@@ -99,23 +137,6 @@ fun TopBanner(banners: List<TopBanner>) {
             bannerCount = banners.size,
             indicatorWidth = indicatorWidth
         )
-    }
-}
-
-@Composable
-private fun AutoScroll(pagerState: PagerState) {
-    val isDragged by pagerState.interactionSource.collectIsDraggedAsState()
-
-    LaunchedEffect(isDragged) {
-        if (!isDragged) {
-            while (true) {
-                delay(AUTO_SCROLL_DELAY)
-                pagerState.animateScrollToPage(
-                    page = pagerState.currentPage + 1,
-                    animationSpec = tween(durationMillis = BANNER_DURATION, easing = FastOutSlowInEasing)
-                )
-            }
-        }
     }
 }
 

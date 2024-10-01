@@ -8,7 +8,9 @@ import com.ninezero.cream.ui.product.ProductDetailEvent
 import com.ninezero.cream.ui.product.ProductDetailReducer
 import com.ninezero.cream.ui.product.ProductDetailResult
 import com.ninezero.cream.ui.product.ProductDetailState
-import com.ninezero.cream.ui.navigation.AppRoutes
+import com.ninezero.cream.ui.navigation.Routes
+import com.ninezero.cream.utils.SnackbarUtils.showSnack
+import com.ninezero.di.R
 import com.ninezero.domain.model.EntityWrapper
 import com.ninezero.domain.model.Product
 import com.ninezero.domain.repository.NetworkRepository
@@ -17,6 +19,7 @@ import com.ninezero.domain.usecase.SaveUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.FlowCollector
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.launch
@@ -33,7 +36,7 @@ class ProductDetailViewModel @Inject constructor(
     initialState = ProductDetailState.Fetching,
     reducer = reducer
 ) {
-    private val productId: String = checkNotNull(savedStateHandle[AppRoutes.PRODUCT_ID_KEY])
+    private val productId: String = checkNotNull(savedStateHandle[Routes.PRODUCT_ID_KEY])
 
     init {
         setNetworkStatus(networkRepository)
@@ -45,16 +48,17 @@ class ProductDetailViewModel @Inject constructor(
         }
     }
 
-    override fun ProductDetailAction.process(): Flow<ProductDetailResult> {
-        return when (this) {
+    override fun ProductDetailAction.process(): Flow<ProductDetailResult> = flow {
+        when (this@process) {
             ProductDetailAction.Fetch, ProductDetailAction.Refresh -> fetchProductDetails()
-            is ProductDetailAction.FetchRelatedProducts -> fetchRelatedProducts(this.brandId)
-            is ProductDetailAction.ToggleSave -> toggleSave(this.product)
-            is ProductDetailAction.UpdateSavedIds -> updateSavedIds(this.savedIds)
+            is ProductDetailAction.FetchRelatedProducts -> fetchRelatedProducts(brandId)
+            is ProductDetailAction.ToggleSave -> toggleSave(product)
+            is ProductDetailAction.UpdateSavedIds -> updateSavedIds(savedIds)
+            is ProductDetailAction.NavigateToSaved -> emit(ProductDetailEvent.NavigateToSaved)
         }
     }
 
-    private fun fetchProductDetails(): Flow<ProductDetailResult> = flow {
+    private suspend fun FlowCollector<ProductDetailResult>.fetchProductDetails() {
         emit(ProductDetailResult.Fetching)
         if (!networkState.value) {
             delay(3000)
@@ -84,7 +88,7 @@ class ProductDetailViewModel @Inject constructor(
         }
     }
 
-    private fun fetchRelatedProducts(brandId: String): Flow<ProductDetailResult> = flow {
+    private suspend fun FlowCollector<ProductDetailResult>.fetchRelatedProducts(brandId: String) {
         productUseCase.getProductsByBrand(brandId).collect {
             when (it) {
                 is EntityWrapper.Success -> {
@@ -92,20 +96,33 @@ class ProductDetailViewModel @Inject constructor(
                     val updatedProducts = updateSaveStatus(it.entity, savedIds)
                     emit(ProductDetailResult.RelatedProducts(updatedProducts))
                 }
-                is EntityWrapper.Fail -> emit(ProductDetailResult.Error(it.error.message ?: "Unknown error occurred"))
+
+                is EntityWrapper.Fail -> emit(
+                    ProductDetailResult.Error(
+                        it.error.message ?: "Unknown error occurred"
+                    )
+                )
             }
         }
     }
 
-    private fun toggleSave(product: Product): Flow<ProductDetailResult> = flow {
+    private suspend fun FlowCollector<ProductDetailResult>.toggleSave(product: Product) {
         saveUseCase.toggleSave(product)
         emit(ProductDetailResult.SaveToggled(product.productId, !product.isSaved))
+        if (!product.isSaved) {
+            showSnack(
+                messageTextId = R.string.saved_item_added,
+                actionLabelId = R.string.view_saved,
+                onAction = { action(ProductDetailAction.NavigateToSaved) }
+            )
+        }
     }
 
-    private fun updateSavedIds(savedIds: Set<String>): Flow<ProductDetailResult> = flow {
+    private suspend fun FlowCollector<ProductDetailResult>.updateSavedIds(savedIds: Set<String>) {
         val currentState = state.value
         if (currentState is ProductDetailState.Content) {
-            val updatedProduct = currentState.product.copy(isSaved = currentState.product.productId in savedIds)
+            val updatedProduct =
+                currentState.product.copy(isSaved = currentState.product.productId in savedIds)
             val updatedRelatedProducts = updateSaveStatus(currentState.relatedProducts, savedIds)
             emit(ProductDetailResult.ProductContent(updatedProduct, savedIds))
             emit(ProductDetailResult.RelatedProducts(updatedRelatedProducts))

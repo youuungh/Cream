@@ -42,6 +42,7 @@ fun HomeScreen(
     onCartClick: () -> Unit,
     onSearchClick: () -> Unit,
     onProductClick: (String) -> Unit,
+    onNavigateToSaved: () -> Unit,
     viewModel: HomeViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.state.collectAsState()
@@ -50,6 +51,7 @@ fun HomeScreen(
     viewModel.collectEvents {
         when (it) {
             is HomeEvent.NavigateToProductDetail -> onProductClick(it.productId)
+            is HomeEvent.NavigateToSaved -> onNavigateToSaved()
         }
     }
 

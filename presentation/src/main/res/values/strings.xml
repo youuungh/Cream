@@ -6,7 +6,12 @@
     <string name="cart">장바구니</string>
     <string name="search">검색</string>
     <string name="order_history">구매 내역</string>
-    <string name="go_to_home">SHOP 바로가기</string>
+    <string name="view_home">SHOP 바로가기</string>
+    <string name="view_saved">보러가기</string>
+    <string name="bottom_sheet_buy">구매하기</string>
+    <string name="bottom_sheet_buy_label">(가격 단위: 원)</string>
+    <string name="bottom_sheet_add_to_cart">장바구니 담기</string>
+    <string name="bottom_sheet_buy_now">즉시 구매하기</string>
     
     <string name="main_home">HOME</string>
     <string name="main_category">CATEGORY</string>
@@ -27,12 +32,12 @@
     <string name="total_items">전체 %d</string>
 
     <string name="no_saved_items">관심 있는 상품을 저장해보세요</string>
+    <string name="saved_item_added">관심상품에 저장되었습니다</string>
 
     <string name="error_title">접속이 원활하지 않습니다</string>
     <string name="error_subtitle">네트워크 연결상태를 확인하거나\n잠시 후 다시 시도해주세요</string>
 
-    <string name="lorem_text">
-        Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.\n
-        Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
+    <string name="lorem_ipsum">
+        Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
     </string>
 </resources>
