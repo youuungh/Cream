@@ -7,6 +7,9 @@ import com.ninezero.cream.ui.saved.SavedEvent
 import com.ninezero.cream.ui.saved.SavedReducer
 import com.ninezero.cream.ui.saved.SavedResult
 import com.ninezero.cream.ui.saved.SavedState
+import com.ninezero.cream.utils.ErrorHandler
+import com.ninezero.cream.utils.NETWORK_DELAY
+import com.ninezero.cream.utils.NO_INTERNET_CONNECTION
 import com.ninezero.di.R
 import com.ninezero.domain.model.Product
 import com.ninezero.domain.repository.NetworkRepository
@@ -18,8 +21,9 @@ import kotlinx.coroutines.flow.FlowCollector
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -30,78 +34,92 @@ class SavedViewModel @Inject constructor(
     networkRepository: NetworkRepository
 ) : BaseStateViewModel<SavedAction, SavedResult, SavedEvent, SavedState, SavedReducer>(
     initialState = SavedState.Fetching,
-    reducer = reducer
+    reducer = reducer,
+    networkRepository = networkRepository
 ) {
     private val _sortType = MutableStateFlow(R.string.sort_by_saved_date)
     val sortType: StateFlow<Int> = _sortType.asStateFlow()
 
-    init {
-        setNetworkRepository(networkRepository)
-        action(SavedAction.Fetch)
-        updateData()
-    }
+    private val _savedProducts = MutableStateFlow<List<Product>>(emptyList())
 
-    private fun updateData() {
-        viewModelScope.launch {
-            saveUseCase.fetchAll()
-                .collect { products ->
-                    if (networkState.value) action(SavedAction.UpdateProducts(products))
-                }
-        }
+    init {
+        observeSavedProducts()
     }
 
     override fun SavedAction.process(): Flow<SavedResult> = flow {
         when (this@process) {
-            SavedAction.Fetch -> fetchAll()
-            is SavedAction.UpdateProducts -> {
-                if (networkState.value) emit(SavedResult.FetchSuccess(products))
-            }
+            is SavedAction.Fetch -> fetchAll()
             is SavedAction.Remove -> removeSavedProduct(product)
             is SavedAction.RemoveAll -> removeAll()
-            is SavedAction.SortBySavedDate -> sortProducts { it.sortedByDescending { product -> product.savedAt } }
-            is SavedAction.SortByPrice -> sortProducts { it.sortedByDescending { product -> product.price.instantBuyPrice } }
+            is SavedAction.UpdateSortType -> updateSortType(newSortType)
+            is SavedAction.UpdateProducts -> updateProducts(products)
+            is SavedAction.Error -> emit(SavedResult.Error(message))
         }
     }
 
     private suspend fun FlowCollector<SavedResult>.fetchAll() {
         emit(SavedResult.Fetching)
-        if (!networkState.value) {
-            delay(3000)
-            emit(SavedResult.Error("No internet connection"))
-        } else {
-            try {
-                val products = saveUseCase.fetchAll().first()
-                emit(SavedResult.FetchSuccess(products))
-            } catch (e: Exception) {
-                emit(SavedResult.Error(e.message ?: "Unknown error occurred"))
-            }
+        try {
+            handleNetworkCallback {
+                flow {
+                    val products = sortProducts(_savedProducts.value)
+                    emit(SavedResult.FetchSuccess(products))
+                }
+            }.collect { emit(it) }
+        } catch (e: Exception) {
+            emit(SavedResult.Error(ErrorHandler.getErrorMessage(e)))
         }
     }
 
     private suspend fun FlowCollector<SavedResult>.removeSavedProduct(product: Product) {
         saveUseCase.toggleSave(product)
+        val updatedProducts = _savedProducts.value.filter { it.productId != product.productId }
+        _savedProducts.value = updatedProducts
         emit(SavedResult.Remove(product.productId))
     }
 
     private suspend fun FlowCollector<SavedResult>.removeAll() {
         saveUseCase.removeAll()
+        _savedProducts.value = emptyList()
         emit(SavedResult.RemoveAll)
     }
 
-    private suspend fun FlowCollector<SavedResult>.sortProducts(sorter: (List<Product>) -> List<Product>) {
-        val currentState = state.value
-        if (currentState is SavedState.Content) {
-            emit(SavedResult.Sorted(sorter(currentState.savedProducts)))
-        }
-    }
-
-    fun updateSortType(newSortType: Int) {
+    private suspend fun FlowCollector<SavedResult>.updateSortType(newSortType: Int) {
         _sortType.value = newSortType
-        when (newSortType) {
-            R.string.sort_by_saved_date -> action(SavedAction.SortBySavedDate)
-            R.string.sort_by_price -> action(SavedAction.SortByPrice)
+        val sortedProducts = sortProducts(_savedProducts.value)
+        emit(SavedResult.FetchSuccess(sortedProducts))
+    }
+
+    private suspend fun FlowCollector<SavedResult>.updateProducts(products: List<Product>) {
+        val sortedProducts = sortProducts(products)
+        _savedProducts.value = sortedProducts
+        emit(SavedResult.FetchSuccess(sortedProducts))
+    }
+
+    private fun sortProducts(products: List<Product>): List<Product> {
+        return when (_sortType.value) {
+            R.string.sort_by_saved_date -> products.sortedByDescending { it.savedAt }
+            R.string.sort_by_price -> products.sortedByDescending { it.price.instantBuyPrice }
+            else -> products
         }
     }
 
+    private fun observeSavedProducts() {
+        viewModelScope.launch {
+            saveUseCase.fetchAll()
+                .map { products -> sortProducts(products) }
+                .collect { sortedProducts ->
+                    _savedProducts.value = sortedProducts
+                    if (networkState.value) {
+                        action(SavedAction.UpdateProducts(sortedProducts))
+                    } else {
+                        delay(NETWORK_DELAY)
+                        action(SavedAction.Error(NO_INTERNET_CONNECTION))
+                    }
+                }
+        }
+    }
+
+    override fun shouldRefreshOnConnect(): Boolean = state.value is SavedState.Error
     override fun refreshData() = action(SavedAction.Fetch)
 }

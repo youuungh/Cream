@@ -16,3 +16,7 @@ data class Product(
     val isSaved: Boolean = false,
     val savedAt: Long? = null
 )
+
+fun List<Product>.updateSaveStatus(saveIds: Set<String>): List<Product> {
+    return map { it.copy(isSaved = it.productId in saveIds) }
+}

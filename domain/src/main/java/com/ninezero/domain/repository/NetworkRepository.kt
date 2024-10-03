@@ -1,7 +1,7 @@
 package com.ninezero.domain.repository
 
-import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.StateFlow
 
 interface NetworkRepository {
-    val isNetworkAvailable: Flow<Boolean>
+    val isNetworkAvailable: StateFlow<Boolean>
 }

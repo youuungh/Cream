@@ -16,12 +16,10 @@ class NetworkStatus(context: Context) {
     val isNetworkAvailable: Flow<Boolean> = callbackFlow {
         val callback = object : ConnectivityManager.NetworkCallback() {
             override fun onAvailable(network: Network) {
-                super.onAvailable(network)
                 trySend(true)
             }
 
             override fun onLost(network: Network) {
-                super.onLost(network)
                 trySend(false)
             }
         }

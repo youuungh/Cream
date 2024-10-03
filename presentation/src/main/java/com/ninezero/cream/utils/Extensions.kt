@@ -22,10 +22,6 @@ import com.ninezero.di.R
 import com.ninezero.domain.model.EntityWrapper
 
 object ErrorHandler {
-    fun <T> handleError(e: Throwable): EntityWrapper.Fail<T> {
-        return EntityWrapper.Fail(e)
-    }
-
     fun getErrorMessage(e: Throwable): String {
         return e.message ?: UNKNOWN_ERROR
     }

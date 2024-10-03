@@ -12,7 +12,6 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flatMapConcat
 import kotlinx.coroutines.flow.flow
@@ -23,10 +22,9 @@ import kotlinx.coroutines.launch
 
 abstract class BaseStateViewModel<Action : MviAction, Result : MviResult, Event : MviEvent, State : MviViewState, Reducer : MviStateReducer<State, Result>>(
     initialState: State,
-    private val reducer: Reducer
+    private val reducer: Reducer,
+    private val networkRepository: NetworkRepository
 ) : ViewModel(), MviStateReducer<State, Result> by reducer {
-
-    private lateinit var networkRepository: NetworkRepository
 
     private val _fsmFlow = MutableSharedFlow<Action>(
         extraBufferCapacity = 20,
@@ -42,25 +40,19 @@ abstract class BaseStateViewModel<Action : MviAction, Result : MviResult, Event 
     private val _state = MutableStateFlow(initialState)
     val state: StateFlow<State> = _state
 
-    private val _networkState = MutableStateFlow(true)
-    val networkState: StateFlow<Boolean> = _networkState.asStateFlow()
+    val networkState: StateFlow<Boolean> = networkRepository.isNetworkAvailable
 
-    fun setNetworkRepository(repository: NetworkRepository) {
-        networkRepository = repository
+    init {
+        setupStateMachine()
         observeNetworkStatus()
     }
 
     private fun observeNetworkStatus() {
         viewModelScope.launch {
-            networkRepository.isNetworkAvailable.collect { isAvailable ->
-                _networkState.value = isAvailable
-                if (isAvailable) refreshData()
+            networkState.collect { isAvailable ->
+                if (isAvailable && shouldRefreshOnConnect()) refreshData()
             }
         }
-    }
-
-    init {
-        setupStateMachine()
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)
@@ -92,10 +84,9 @@ abstract class BaseStateViewModel<Action : MviAction, Result : MviResult, Event 
         _fsmFlow.tryEmit(action)
     }
 
+    protected open fun shouldRefreshOnConnect(): Boolean = false
+
     protected suspend fun <T> handleNetworkCallback(call: suspend () -> Flow<T>): Flow<T> = flow {
-        if (!::networkRepository.isInitialized) {
-            throw IllegalStateException("NetworkRepository is not initialized")
-        }
         if (!networkState.value) {
             kotlinx.coroutines.delay(NETWORK_DELAY)
             throw Exception(NO_INTERNET_CONNECTION)

@@ -14,6 +14,7 @@ sealed class ProductDetailAction : MviAction {
     data class FetchRelatedProducts(val brandId: String) : ProductDetailAction()
     data class UpdateSavedIds(val savedIds: Set<String>) : ProductDetailAction()
     object NavigateToSaved : ProductDetailAction()
+    object ObserveSavedIds : ProductDetailAction()
 }
 
 sealed class ProductDetailResult : MviResult {

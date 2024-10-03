@@ -15,6 +15,7 @@ sealed class HomeAction : MviAction {
     data class ToggleSave(val product: Product) : HomeAction()
     data class UpdateSavedIds(val savedIds: Set<String>) : HomeAction()
     object NavigateToSaved : HomeAction()
+    object ObserveSavedIds : HomeAction()
 }
 
 sealed class HomeResult : MviResult {
@@ -49,18 +50,14 @@ class HomeReducer @Inject constructor() : MviStateReducer<HomeState, HomeResult>
                         savedIds - result.productId
                     }
                     val updatedHomeData = homeData.copy(
-                        justDropped = updateSaveStatus(homeData.justDropped, updatedSavedIds),
-                        mostPopular = updateSaveStatus(homeData.mostPopular, updatedSavedIds),
-                        forYou = updateSaveStatus(homeData.forYou, updatedSavedIds)
+                        justDropped = homeData.justDropped.map { if (it.productId == result.productId) it.copy(isSaved = result.isSaved) else it },
+                        mostPopular = homeData.mostPopular.map { if (it.productId == result.productId) it.copy(isSaved = result.isSaved) else it },
+                        forYou = homeData.forYou.map { if (it.productId == result.productId) it.copy(isSaved = result.isSaved) else it }
                     )
                     HomeState.Content(updatedHomeData, updatedSavedIds)
                 } else this
             }
             is HomeEvent -> this
         }
-    }
-
-    private fun updateSaveStatus(products: List<Product>, savedIds: Set<String>): List<Product> {
-        return products.map { it.copy(isSaved = it.productId in savedIds) }
     }
 }

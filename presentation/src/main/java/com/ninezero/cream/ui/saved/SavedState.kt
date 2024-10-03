@@ -12,9 +12,9 @@ sealed class SavedAction : MviAction {
     object Fetch : SavedAction()
     data class Remove(val product: Product) : SavedAction()
     object RemoveAll : SavedAction()
-    object SortBySavedDate : SavedAction()
-    object SortByPrice : SavedAction()
+    data class UpdateSortType(val newSortType: Int) : SavedAction()
     data class UpdateProducts(val products: List<Product>) : SavedAction()
+    data class Error(val message: String) : SavedAction()
 }
 
 sealed class SavedResult : MviResult {
@@ -22,7 +22,6 @@ sealed class SavedResult : MviResult {
     data class FetchSuccess(val products: List<Product>) : SavedResult()
     data class Remove(val productId: String) : SavedResult()
     object RemoveAll : SavedResult()
-    data class Sorted(val sortedProducts: List<Product>) : SavedResult()
     data class Error(val message: String) : SavedResult()
 }
 
@@ -46,12 +45,7 @@ class SavedReducer @Inject constructor() : MviStateReducer<SavedState, SavedResu
             } else this
         }
         is SavedResult.RemoveAll -> SavedState.Content(emptyList())
-        is SavedResult.Sorted -> {
-            if (this is SavedState.Content) {
-                SavedState.Content(result.sortedProducts)
-            } else this
-        }
         is SavedResult.Error -> SavedState.Error(result.message)
-        is SavedEvent.NavigateToProductDetail -> this
+        is SavedEvent -> this
     }
 }

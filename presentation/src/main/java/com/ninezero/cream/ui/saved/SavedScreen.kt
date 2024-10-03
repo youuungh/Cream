@@ -121,7 +121,7 @@ fun SavedScreen(
                 showBottomSheet = showBottomSheet,
                 coroutineScope = scope,
                 selectedOption = remember { mutableIntStateOf(sortType) },
-                onOptionSelected = { viewModel.updateSortType(it) }
+                onOptionSelected = { viewModel.action(SavedAction.UpdateSortType(it)) }
             )
         }
     }
