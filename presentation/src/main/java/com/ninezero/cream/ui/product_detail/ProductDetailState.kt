@@ -1,4 +1,4 @@
-package com.ninezero.cream.ui.product
+package com.ninezero.cream.ui.product_detail
 
 import com.ninezero.cream.base.MviAction
 import com.ninezero.cream.base.MviEvent
@@ -14,7 +14,8 @@ sealed class ProductDetailAction : MviAction {
     data class FetchRelatedProducts(val brandId: String) : ProductDetailAction()
     data class UpdateSavedIds(val savedIds: Set<String>) : ProductDetailAction()
     object NavigateToSaved : ProductDetailAction()
-    object ObserveSavedIds : ProductDetailAction()
+    data class AddToCart(val product: Product) : ProductDetailAction()
+    object NavigateToCart : ProductDetailAction()
 }
 
 sealed class ProductDetailResult : MviResult {
@@ -23,10 +24,13 @@ sealed class ProductDetailResult : MviResult {
     data class RelatedProducts(val relatedProducts: List<Product>) : ProductDetailResult()
     data class Error(val message: String) : ProductDetailResult()
     data class SaveToggled(val productId: String, val isSaved: Boolean) : ProductDetailResult()
+    object AddToCartSuccess : ProductDetailResult()
+    object AlreadyInCart : ProductDetailResult()
 }
 
 sealed class ProductDetailEvent : MviEvent, ProductDetailResult() {
     object NavigateToSaved : ProductDetailEvent()
+    object NavigateToCart : ProductDetailEvent()
 }
 
 sealed class ProductDetailState : MviViewState {
@@ -71,6 +75,7 @@ class ProductDetailReducer @Inject constructor() : MviStateReducer<ProductDetail
                     this.copy(product = updatedProduct, relatedProducts = updatedRelatedProducts, savedIds = updatedSavedIds)
                 } else this
             }
+            is ProductDetailResult.AddToCartSuccess, is ProductDetailResult.AlreadyInCart -> this
             is ProductDetailEvent -> this
         }
     }

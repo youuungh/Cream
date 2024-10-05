@@ -27,7 +27,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -46,6 +45,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -89,6 +89,43 @@ fun ColorSpacer(
             .height(height = height)
             .background(color = color)
     )
+}
+
+@Composable
+fun CustomCheckbox(
+    modifier: Modifier = Modifier,
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit,
+    label: String? = null,
+) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = modifier
+            .clickable(
+                onClick = { onCheckedChange(!checked) },
+                indication = null,
+                interactionSource = remember { MutableInteractionSource() }
+            )
+            .padding(0.dp)
+    ) {
+        Icon(
+            painter = painterResource(
+                id = if (checked) R.drawable.ic_check_box else R.drawable.ic_check_box_blank
+            ),
+            contentDescription = null,
+            tint = if (checked) MaterialTheme.colorScheme.onBackground
+            else MaterialTheme.colorScheme.outline
+        )
+        label?.let {
+            Text(
+                text = label,
+                style = MaterialTheme.typography.bodyMedium.copy(
+                    fontWeight = FontWeight.Bold
+                ),
+                modifier = Modifier.padding(start = 8.dp, bottom = 2.dp)
+            )
+        }
+    }
 }
 
 @Composable
@@ -211,7 +248,7 @@ fun ErrorScreen(
         Text(
             text = stringResource(id = R.string.error_title),
             textAlign = TextAlign.Center,
-            style = MaterialTheme.typography.headlineSmall,
+            style = MaterialTheme.typography.titleLarge,
             modifier = Modifier.padding(bottom = 16.dp)
         )
         Text(
@@ -220,7 +257,7 @@ fun ErrorScreen(
             style = MaterialTheme.typography.bodyMedium,
             modifier = Modifier.padding(bottom = 16.dp)
         )
-        OutlinedButton(
+        RetryButton(
             onClick = onRetry,
             text = stringResource(id = R.string.try_again)
         )
@@ -229,8 +266,11 @@ fun ErrorScreen(
 
 @Composable
 fun EmptyScreen(
+    modifier: Modifier = Modifier,
     onNavigateToHome: () -> Unit,
-    modifier: Modifier = Modifier
+    title: String,
+    subtitle: String? = null,
+    label: String
 ) {
     Column(
         modifier = modifier.fillMaxSize(),
@@ -238,16 +278,25 @@ fun EmptyScreen(
         verticalArrangement = Arrangement.Center
     ) {
         Text(
-            text = stringResource(id = R.string.no_saved_items),
+            text = title,
             style = MaterialTheme.typography.bodyMedium.copy(
                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
                 fontWeight = FontWeight.Normal
             )
         )
+        subtitle?.let {
+            Text(
+                text = subtitle,
+                style = MaterialTheme.typography.bodyMedium.copy(
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                    fontWeight = FontWeight.Normal
+                )
+            )
+        }
         Spacer(modifier = Modifier.height(16.dp))
-        OutlinedButton(
+        RetryButton(
             onClick = onNavigateToHome,
-            text = stringResource(id = R.string.view_home)
+            text = label
         )
     }
 }

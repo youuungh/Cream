@@ -19,6 +19,10 @@ object NumUtils {
         return number?.let { NumberFormat.getNumberInstance(Locale.getDefault()).format(number) + "원" } ?: "-"
     }
 
+    fun formatPriceWithCommasDouble(number: Double?): String {
+        return number?.let { NumberFormat.getNumberInstance(Locale.getDefault()).format(number.toInt()) + "원" } ?: "-"
+    }
+
     fun formatWithCommas(number: Int?): String {
         return number?.let { NumberFormat.getNumberInstance(Locale.getDefault()).format(number) } ?: "-"
     }

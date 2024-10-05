@@ -2,11 +2,13 @@ package com.ninezero.di
 
 import com.ninezero.data.datasource.RemoteDataSource
 import com.ninezero.data.datasource.RemoteDataSourceImpl
+import com.ninezero.data.repository.CartRepositoryImpl
 import com.ninezero.data.repository.CategoryRepositoryImpl
 import com.ninezero.domain.repository.HomeRepository
 import com.ninezero.data.repository.HomeRepositoryImpl
 import com.ninezero.data.repository.ProductRepositoryImpl
 import com.ninezero.data.repository.SaveRepositoryImpl
+import com.ninezero.domain.repository.CartRepository
 import com.ninezero.domain.repository.CategoryRepository
 import com.ninezero.domain.repository.ProductRepository
 import com.ninezero.domain.repository.SaveRepository
@@ -39,4 +41,8 @@ interface DataModule {
     @Binds
     @Singleton
     fun bindSaveRepository(saveRepositoryImpl: SaveRepositoryImpl): SaveRepository
+
+    @Binds
+    @Singleton
+    fun bindCartRepository(cartRepositoryImpl: CartRepositoryImpl): CartRepository
 }

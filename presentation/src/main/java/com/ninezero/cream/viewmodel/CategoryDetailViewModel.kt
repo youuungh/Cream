@@ -3,13 +3,12 @@ package com.ninezero.cream.viewmodel
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
 import com.ninezero.cream.base.BaseStateViewModel
-import com.ninezero.cream.ui.category.CategoryDetailAction
-import com.ninezero.cream.ui.category.CategoryDetailEvent
-import com.ninezero.cream.ui.category.CategoryDetailReducer
-import com.ninezero.cream.ui.category.CategoryDetailResult
-import com.ninezero.cream.ui.category.CategoryDetailState
+import com.ninezero.cream.ui.category_detail.CategoryDetailAction
+import com.ninezero.cream.ui.category_detail.CategoryDetailEvent
+import com.ninezero.cream.ui.category_detail.CategoryDetailReducer
+import com.ninezero.cream.ui.category_detail.CategoryDetailResult
+import com.ninezero.cream.ui.category_detail.CategoryDetailState
 import com.ninezero.cream.ui.navigation.Routes
-import com.ninezero.cream.ui.saved.SavedState
 import com.ninezero.cream.utils.ErrorHandler
 import com.ninezero.cream.utils.SnackbarUtils.showSnack
 import com.ninezero.di.R
@@ -20,10 +19,7 @@ import com.ninezero.domain.repository.NetworkRepository
 import com.ninezero.domain.usecase.CategoryUseCase
 import com.ninezero.domain.usecase.SaveUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.FlowCollector
-import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -45,30 +41,28 @@ class CategoryDetailViewModel @Inject constructor(
 
     init {
         action(CategoryDetailAction.Fetch)
-        action(CategoryDetailAction.ObserveSavedIds)
+        observeSavedIds()
     }
 
-    override fun CategoryDetailAction.process(): Flow<CategoryDetailResult> = flow {
-        when (this@process) {
-            is CategoryDetailAction.Fetch -> fetchCategoryDetails()
-            is CategoryDetailAction.ProductClicked -> emit(CategoryDetailEvent.NavigateToProductDetail(productId))
-            is CategoryDetailAction.ToggleSave -> toggleSave(product)
-            is CategoryDetailAction.UpdateSavedIds -> updateSavedIds(savedIds)
-            is CategoryDetailAction.NavigateToSaved -> emit(CategoryDetailEvent.NavigateToSaved)
-            is CategoryDetailAction.ObserveSavedIds -> observeSavedIds()
-        }
+    override fun CategoryDetailAction.process(): Flow<CategoryDetailResult> = when (this@process) {
+        is CategoryDetailAction.Fetch -> fetchCategoryDetails()
+        is CategoryDetailAction.ProductClicked -> flow { emit(CategoryDetailEvent.NavigateToProductDetail(productId)) }
+        is CategoryDetailAction.ToggleSave -> toggleSave(product)
+        is CategoryDetailAction.UpdateSavedIds -> updateSavedIds(savedIds)
+        is CategoryDetailAction.NavigateToSaved -> flow { emit(CategoryDetailEvent.NavigateToSaved) }
     }
 
-    private suspend fun FlowCollector<CategoryDetailResult>.fetchCategoryDetails() {
+    private fun fetchCategoryDetails(): Flow<CategoryDetailResult> = flow {
         emit(CategoryDetailResult.Fetching)
         try {
             handleNetworkCallback { categoryUseCase.getCategoryDetails(categoryId) }.collect {
                 when (it) {
                     is EntityWrapper.Success -> {
-                        val savedIds = (state.value as? CategoryDetailState.Content)?.savedIds ?: emptySet()
+                        val savedIds = saveUseCase.savedProductIds.value
                         val updatedProducts = it.entity.products.updateSaveStatus(savedIds)
                         emit(CategoryDetailResult.CategoryDetailContent(it.entity.copy(products = updatedProducts), savedIds))
                     }
+
                     is EntityWrapper.Fail -> emit(CategoryDetailResult.Error(ErrorHandler.getErrorMessage(it.error), categoryId, categoryName))
                 }
             }
@@ -77,7 +71,7 @@ class CategoryDetailViewModel @Inject constructor(
         }
     }
 
-    private suspend fun FlowCollector<CategoryDetailResult>.toggleSave(product: Product) {
+    private fun toggleSave(product: Product): Flow<CategoryDetailResult> = flow {
         saveUseCase.toggleSave(product)
         emit(CategoryDetailResult.SaveToggled(product.productId, !product.isSaved))
         if (!product.isSaved) {
@@ -89,24 +83,17 @@ class CategoryDetailViewModel @Inject constructor(
         }
     }
 
-    private suspend fun FlowCollector<CategoryDetailResult>.updateSavedIds(savedIds: Set<String>) {
+    private fun updateSavedIds(savedIds: Set<String>): Flow<CategoryDetailResult> = flow {
         val currentState = state.value
         if (currentState is CategoryDetailState.Content) {
             val updatedProducts = currentState.categoryDetails.products.updateSaveStatus(savedIds)
-            emit(
-                CategoryDetailResult.CategoryDetailContent(
-                    currentState.categoryDetails.copy(products = updatedProducts),
-                    savedIds
-                )
-            )
+            emit(CategoryDetailResult.CategoryDetailContent(currentState.categoryDetails.copy(products = updatedProducts), savedIds))
         }
     }
 
     private fun observeSavedIds() {
         viewModelScope.launch {
-            saveUseCase.fetchProductIds().collect { savedIds ->
-                action(CategoryDetailAction.UpdateSavedIds(savedIds))
-            }
+            saveUseCase.savedProductIds.collect { action(CategoryDetailAction.UpdateSavedIds(it)) }
         }
     }
 

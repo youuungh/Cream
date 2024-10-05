@@ -58,6 +58,7 @@ import com.ninezero.cream.ui.LocalNavAnimatedVisibilityScope
 import com.ninezero.cream.ui.LocalSharedTransitionScope
 import com.ninezero.cream.ui.navigation.MainRoute
 import com.ninezero.cream.ui.theme.CreamTheme
+import com.ninezero.cream.utils.NumUtils.formatPriceWithCommas
 import com.ninezero.cream.utils.spatialExpressiveSpring
 import com.ninezero.di.R
 import java.util.Locale
@@ -185,6 +186,51 @@ fun ProductBottomBar(
                             modifier = Modifier.weight(1f)
                         )
                     }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun CartBottomBar(
+    selectedCount: Int,
+    totalPrice: Int,
+    onOrderClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val sharedTransitionScope =
+        LocalSharedTransitionScope.current ?: throw IllegalStateException("No Shared scope")
+    val animatedVisibilityScope =
+        LocalNavAnimatedVisibilityScope.current ?: throw IllegalStateException("No Shared scope")
+
+    with(sharedTransitionScope) {
+        with(animatedVisibilityScope) {
+            CreamSurface(
+                modifier = modifier
+                    .renderInSharedTransitionScopeOverlay(zIndexInOverlay = 4f)
+                    .animateEnterExit(
+                        enter = slideInVertically(tween(300, delayMillis = 300)) { it } +
+                                fadeIn(tween(300, delayMillis = 300)),
+                        exit = slideOutVertically(tween(300, delayMillis = 300)) { it } +
+                                fadeOut(tween(50))
+                    ),
+                elevation = 8.dp
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(8.dp)
+                        .navigationBarsPadding(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    OrderButton(
+                        totalPrice = totalPrice,
+                        selectedCount = selectedCount,
+                        onClick = onOrderClick,
+                        enabled = selectedCount > 0
+                    )
                 }
             }
         }

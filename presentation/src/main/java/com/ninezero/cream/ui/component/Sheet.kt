@@ -115,6 +115,7 @@ fun SaveBottomSheet(
 @Composable
 fun DetailBottomSheet(
     showBottomSheet: MutableState<Boolean>,
+    onDismiss: () -> Unit,
     coroutineScope: CoroutineScope,
     productImageUrl: String,
     productName: String,
@@ -125,7 +126,10 @@ fun DetailBottomSheet(
     val sheetState = rememberModalBottomSheetState()
 
     ModalBottomSheet(
-        onDismissRequest = { showBottomSheet.value = false },
+        onDismissRequest = {
+            showBottomSheet.value = false
+            onDismiss()
+        },
         sheetState = sheetState,
         windowInsets = WindowInsets(0.dp),
         dragHandle = null,
@@ -214,7 +218,14 @@ fun DetailBottomSheet(
             ) {
                 OutlinedButton(
                     text = stringResource(id = R.string.bottom_sheet_add_to_cart),
-                    onClick = onAddToCart,
+                    onClick = {
+                        onAddToCart()
+                        coroutineScope.launch {
+                            sheetState.hide()
+                            showBottomSheet.value = false
+                            onDismiss()
+                        }
+                    },
                     modifier = Modifier
                         .height(48.dp)
                         .weight(1f)

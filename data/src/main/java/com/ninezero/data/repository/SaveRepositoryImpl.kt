@@ -17,7 +17,7 @@ class SaveRepositoryImpl @Inject constructor(
 
     override suspend fun saveProduct(product: Product) = saveDao.insert(product.toSavedProductEntity())
 
-    override suspend fun removeSavedProduct(productId: String) = saveDao.delete(productId)
+    override suspend fun removeFromSaved(productId: String) = saveDao.delete(productId)
 
     override suspend fun removeAll() = saveDao.deleteAll()
 

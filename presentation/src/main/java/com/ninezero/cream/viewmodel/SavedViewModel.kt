@@ -17,13 +17,11 @@ import com.ninezero.domain.usecase.SaveUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.FlowCollector
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -46,18 +44,16 @@ class SavedViewModel @Inject constructor(
         observeSavedProducts()
     }
 
-    override fun SavedAction.process(): Flow<SavedResult> = flow {
-        when (this@process) {
-            is SavedAction.Fetch -> fetchAll()
-            is SavedAction.Remove -> removeSavedProduct(product)
-            is SavedAction.RemoveAll -> removeAll()
-            is SavedAction.UpdateSortType -> updateSortType(newSortType)
-            is SavedAction.UpdateProducts -> updateProducts(products)
-            is SavedAction.Error -> emit(SavedResult.Error(message))
-        }
+    override fun SavedAction.process(): Flow<SavedResult> = when (this@process) {
+        is SavedAction.Fetch -> fetchAll()
+        is SavedAction.Remove -> removeSavedProduct(product)
+        is SavedAction.RemoveAll -> removeAll()
+        is SavedAction.UpdateSortType -> updateSortType(newSortType)
+        is SavedAction.UpdateProducts -> updateProducts(products)
+        is SavedAction.Error -> flow { emit(SavedResult.Error(message)) }
     }
 
-    private suspend fun FlowCollector<SavedResult>.fetchAll() {
+    private fun fetchAll(): Flow<SavedResult> = flow {
         emit(SavedResult.Fetching)
         try {
             handleNetworkCallback {
@@ -71,26 +67,26 @@ class SavedViewModel @Inject constructor(
         }
     }
 
-    private suspend fun FlowCollector<SavedResult>.removeSavedProduct(product: Product) {
+    private fun removeSavedProduct(product: Product): Flow<SavedResult> = flow {
         saveUseCase.toggleSave(product)
         val updatedProducts = _savedProducts.value.filter { it.productId != product.productId }
         _savedProducts.value = updatedProducts
         emit(SavedResult.Remove(product.productId))
     }
 
-    private suspend fun FlowCollector<SavedResult>.removeAll() {
+    private fun removeAll(): Flow<SavedResult> = flow {
         saveUseCase.removeAll()
         _savedProducts.value = emptyList()
         emit(SavedResult.RemoveAll)
     }
 
-    private suspend fun FlowCollector<SavedResult>.updateSortType(newSortType: Int) {
+    private fun updateSortType(newSortType: Int): Flow<SavedResult> = flow {
         _sortType.value = newSortType
         val sortedProducts = sortProducts(_savedProducts.value)
         emit(SavedResult.FetchSuccess(sortedProducts))
     }
 
-    private suspend fun FlowCollector<SavedResult>.updateProducts(products: List<Product>) {
+    private fun updateProducts(products: List<Product>): Flow<SavedResult> = flow {
         val sortedProducts = sortProducts(products)
         _savedProducts.value = sortedProducts
         emit(SavedResult.FetchSuccess(sortedProducts))
@@ -106,9 +102,10 @@ class SavedViewModel @Inject constructor(
 
     private fun observeSavedProducts() {
         viewModelScope.launch {
-            saveUseCase.fetchAll()
-                .map { products -> sortProducts(products) }
-                .collect { sortedProducts ->
+            saveUseCase.savedProductIds.collect { savedIds ->
+                try {
+                    val savedProducts = saveUseCase.fetchAll().first().filter { it.productId in savedIds }
+                    val sortedProducts = sortProducts(savedProducts)
                     _savedProducts.value = sortedProducts
                     if (networkState.value) {
                         action(SavedAction.UpdateProducts(sortedProducts))
@@ -116,7 +113,10 @@ class SavedViewModel @Inject constructor(
                         delay(NETWORK_DELAY)
                         action(SavedAction.Error(NO_INTERNET_CONNECTION))
                     }
+                } catch (e: Exception) {
+                    action(SavedAction.Error(ErrorHandler.getErrorMessage(e)))
                 }
+            }
         }
     }
 

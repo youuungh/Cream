@@ -1,4 +1,4 @@
-package com.ninezero.cream.ui.product
+package com.ninezero.cream.ui.product_detail
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.Box
@@ -12,6 +12,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -48,12 +49,14 @@ fun ProductDetailScreen(
     var appBarAlpha by remember { mutableFloatStateOf(0f) }
     var appBarHeight by remember { mutableStateOf(0.dp) }
     var tabVisible by remember { mutableStateOf(false) }
+    var showBottomSheet by remember { mutableStateOf(false) }
 
     val animState = rememberSlideInOutAnimState()
 
     viewModel.collectEvents {
         when (it) {
-            ProductDetailEvent.NavigateToSaved -> onNavigateToSaved()
+            is ProductDetailEvent.NavigateToSaved -> onNavigateToSaved()
+            is ProductDetailEvent.NavigateToCart -> onCartClick()
         }
     }
 
@@ -84,10 +87,16 @@ fun ProductDetailScreen(
                         viewModel.action(ProductDetailAction.ToggleSave(product))
                     },
                     onProductClick = onProductClick,
+                    onAddToCart = {
+                        viewModel.action(ProductDetailAction.AddToCart(state.product))
+                        showBottomSheet = false
+                    },
                     onBuyNow = { /* TODO */ },
                     updateAppBarAlpha = { appBarAlpha = it },
                     appBarHeight = appBarHeight,
-                    tabVisible = tabVisible
+                    tabVisible = tabVisible,
+                    showBottomSheet = showBottomSheet,
+                    onShowBottomSheetChange = { showBottomSheet = it }
                 )
 
                 is ProductDetailState.Error -> ErrorScreen(

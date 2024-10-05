@@ -1,4 +1,4 @@
-package com.ninezero.cream.ui.category
+package com.ninezero.cream.ui.category_detail
 
 import com.ninezero.cream.base.MviAction
 import com.ninezero.cream.base.MviEvent
@@ -15,7 +15,6 @@ sealed class CategoryDetailAction : MviAction {
     data class ToggleSave(val product: Product) : CategoryDetailAction()
     data class UpdateSavedIds(val savedIds: Set<String>) : CategoryDetailAction()
     object NavigateToSaved : CategoryDetailAction()
-    object ObserveSavedIds : CategoryDetailAction()
 }
 
 sealed class CategoryDetailResult : MviResult {
@@ -40,8 +39,15 @@ class CategoryDetailReducer @Inject constructor() : MviStateReducer<CategoryDeta
     override fun CategoryDetailState.reduce(result: CategoryDetailResult): CategoryDetailState {
         return when (result) {
             is CategoryDetailResult.Fetching -> CategoryDetailState.Fetching
-            is CategoryDetailResult.CategoryDetailContent -> CategoryDetailState.Content(result.categoryDetails, result.savedIds)
-            is CategoryDetailResult.Error -> CategoryDetailState.Error(result.message, result.categoryId, result.categoryName)
+            is CategoryDetailResult.CategoryDetailContent -> CategoryDetailState.Content(
+                result.categoryDetails,
+                result.savedIds
+            )
+            is CategoryDetailResult.Error -> CategoryDetailState.Error(
+                result.message,
+                result.categoryId,
+                result.categoryName
+            )
             is CategoryDetailResult.SaveToggled -> {
                 if (this is CategoryDetailState.Content) {
                     val updatedSavedIds = if (result.isSaved) {
@@ -52,7 +58,10 @@ class CategoryDetailReducer @Inject constructor() : MviStateReducer<CategoryDeta
                     val updatedProducts = categoryDetails.products.map {
                         if (it.productId == result.productId) it.copy(isSaved = result.isSaved) else it
                     }
-                    CategoryDetailState.Content(categoryDetails.copy(products = updatedProducts), updatedSavedIds)
+                    CategoryDetailState.Content(
+                        categoryDetails.copy(products = updatedProducts),
+                        updatedSavedIds
+                    )
                 } else this
             }
             is CategoryDetailEvent -> this

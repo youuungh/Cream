@@ -24,7 +24,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -46,10 +45,10 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.ninezero.cream.ui.LocalNavAnimatedVisibilityScope
@@ -57,13 +56,13 @@ import com.ninezero.cream.ui.LocalSharedTransitionScope
 import com.ninezero.cream.utils.CategorySharedElementKey
 import com.ninezero.cream.utils.CategorySharedElementType
 import com.ninezero.cream.utils.NumUtils
+import com.ninezero.cream.utils.NumUtils.formatPriceWithCommas
+import com.ninezero.cream.utils.NumUtils.formatPriceWithCommasDouble
 import com.ninezero.cream.utils.detailBoundsTransform
 import com.ninezero.cream.utils.getCategoryImageResource
 import com.ninezero.di.R
 import com.ninezero.domain.model.Brand
 import com.ninezero.domain.model.Category
-import com.ninezero.domain.model.Price
-import com.ninezero.domain.model.PriceStatus
 import com.ninezero.domain.model.Product
 import timber.log.Timber
 
@@ -215,10 +214,7 @@ fun SavedProductCard(
                         .clickable(
                             interactionSource = remember { MutableInteractionSource() },
                             indication = null,
-                            onClick = {
-                                onSaveToggle(product)
-                                println("Save toggle clicked for product: ${product.productId}")
-                            }
+                            onClick = { onSaveToggle(product) }
                         )
                 ) {
                     Icon(
@@ -393,6 +389,159 @@ fun BrandCard(
 }
 
 @Composable
+fun CartCard(
+    product: Product,
+    onProductClick: (String) -> Unit,
+    onRemoveProduct: (Product) -> Unit,
+    onUpdateSelection: (String, Boolean) -> Unit
+) {
+    CreamSurface(modifier = Modifier.fillMaxWidth()) {
+        Column(
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Column(
+                modifier = Modifier.padding(16.dp)
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    CustomCheckbox(
+                        checked = product.isSelected,
+                        onCheckedChange = { isChecked ->
+                            onUpdateSelection(product.productId, isChecked)
+                        }
+                    )
+                    Spacer(modifier = Modifier.weight(1f))
+                    DeleteButton(
+                        onClick = { onRemoveProduct(product) },
+                        text = stringResource(R.string.delete)
+                    )
+                }
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 8.dp)
+                        .clickable(
+                            onClick = { onProductClick(product.productId) },
+                            indication = null,
+                            interactionSource = remember { MutableInteractionSource() }
+                        ),
+                    contentAlignment = Alignment.TopStart
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        AsyncImage(
+                            model = product.imageUrl,
+                            contentDescription = null,
+                            modifier = Modifier
+                                .size(100.dp)
+                                .clip(RoundedCornerShape(16.dp)),
+                            contentScale = ContentScale.Crop
+                        )
+                        Column(
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text(
+                                text = product.productName,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                            Text(
+                                text = product.ko,
+                                style = MaterialTheme.typography.bodySmall.copy(
+                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                                    fontWeight = FontWeight.Normal
+                                )
+                            )
+                        }
+                        }
+                }
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 16.dp)
+                ) {
+                    Text(
+                        text = stringResource(R.string.product_price),
+                        modifier = Modifier.weight(1f)
+                    )
+                    Text(
+                        text = formatPriceWithCommas(product.price.instantBuyPrice),
+                        style = MaterialTheme.typography.bodyLarge.copy(
+                            fontWeight = FontWeight.Bold
+                        )
+                    )
+                }
+            }
+
+            ExpandingPaymentInfo(
+                estimatedPayment = formatPriceWithCommasDouble(product.price.instantBuyPrice * 1.05),
+                productPrice = formatPriceWithCommas(product.price.instantBuyPrice),
+                fee = formatPriceWithCommasDouble(product.price.instantBuyPrice * 0.05)
+            )
+        }
+    }
+}
+
+@Composable
+fun CartSummaryCard(
+    totalPrice: Int,
+    totalFee: Double
+) {
+    CreamSurface(modifier = Modifier.fillMaxWidth()) {
+        Column(
+            modifier = Modifier.padding(16.dp)
+        ) {
+            Text(
+                text = stringResource(R.string.order_summary),
+                style = MaterialTheme.typography.titleMedium.copy(
+                    fontWeight = FontWeight.Bold
+                )
+            )
+            Divider()
+            Row {
+                Text(
+                    text = stringResource(R.string.total_product_price),
+                    style = MaterialTheme.typography.bodyMedium.copy(
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.34f),
+                        fontWeight = FontWeight.Normal
+                    ),
+                    modifier = Modifier.weight(1f)
+                )
+                Text(text = formatPriceWithCommas(totalPrice))
+            }
+            Row {
+                Text(
+                    text = stringResource(R.string.total_fee),
+                    style = MaterialTheme.typography.bodyMedium.copy(
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.34f),
+                        fontWeight = FontWeight.Normal
+                    ),
+                    modifier = Modifier.weight(1f)
+                )
+                Text(text = formatPriceWithCommasDouble(totalFee))
+            }
+            Divider()
+            Row {
+                Text(
+                    text = stringResource(R.string.total_estimated_payment),
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.weight(1f)
+                )
+                Text(
+                    text = formatPriceWithCommasDouble(totalPrice + totalFee),
+                    style = MaterialTheme.typography.titleMedium,
+                )
+            }
+        }
+    }
+}
+
+@Composable
 fun SortOptionCard(
     text: String,
     selected: Boolean,
@@ -440,30 +589,6 @@ fun SortOptionCard(
                     )
                 }
             }
-        }
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun SortOptionCardPreview() {
-    MaterialTheme {
-        Column(
-            modifier = Modifier
-                .padding(16.dp)
-                .fillMaxWidth()
-        ) {
-            SortOptionCard(
-                text = "Text",
-                selected = true,
-                onClick = { },
-                modifier = Modifier.padding(bottom = 8.dp)
-            )
-            SortOptionCard(
-                text = "Text",
-                selected = false,
-                onClick = { }
-            )
         }
     }
 }

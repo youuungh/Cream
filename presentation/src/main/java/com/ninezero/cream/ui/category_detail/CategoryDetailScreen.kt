@@ -1,5 +1,5 @@
 @file:OptIn(ExperimentalMaterial3Api::class, ExperimentalSharedTransitionApi::class)
-package com.ninezero.cream.ui.category
+package com.ninezero.cream.ui.category_detail
 
 import androidx.compose.animation.EnterExitState
 import androidx.compose.animation.ExperimentalSharedTransitionApi
@@ -79,7 +79,7 @@ fun CategoryDetailScreen(
     viewModel.collectEvents {
         when (it) {
             is CategoryDetailEvent.NavigateToProductDetail -> onProductClick(it.productId)
-            CategoryDetailEvent.NavigateToSaved -> onNavigateToSaved()
+            is CategoryDetailEvent.NavigateToSaved -> onNavigateToSaved()
         }
     }
 

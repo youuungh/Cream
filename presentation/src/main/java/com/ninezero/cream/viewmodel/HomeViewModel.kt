@@ -7,7 +7,6 @@ import com.ninezero.cream.ui.home.HomeEvent
 import com.ninezero.cream.ui.home.HomeReducer
 import com.ninezero.cream.ui.home.HomeResult
 import com.ninezero.cream.ui.home.HomeState
-import com.ninezero.cream.ui.saved.SavedState
 import com.ninezero.cream.utils.ErrorHandler
 import com.ninezero.cream.utils.SnackbarUtils.showSnack
 import com.ninezero.di.R
@@ -18,9 +17,7 @@ import com.ninezero.domain.repository.NetworkRepository
 import com.ninezero.domain.usecase.HomeUseCase
 import com.ninezero.domain.usecase.SaveUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.FlowCollector
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -38,27 +35,24 @@ class HomeViewModel @Inject constructor(
 ) {
     init {
         action(HomeAction.Fetch)
-        action(HomeAction.ObserveSavedIds)
+        observeSavedIds()
     }
 
-    override fun HomeAction.process(): Flow<HomeResult> = flow {
-        when (this@process) {
-            is HomeAction.Fetch -> fetchHomeData()
-            is HomeAction.ProductClicked -> emit(HomeEvent.NavigateToProductDetail(productId))
-            is HomeAction.ToggleSave -> toggleSave(product)
-            is HomeAction.UpdateSavedIds -> updateSavedIds(savedIds)
-            is HomeAction.NavigateToSaved -> emit(HomeEvent.NavigateToSaved)
-            is HomeAction.ObserveSavedIds -> observeSavedIds()
-        }
+    override fun HomeAction.process(): Flow<HomeResult> = when (this@process) {
+        is HomeAction.Fetch -> fetchHomeData()
+        is HomeAction.ProductClicked -> flow { emit(HomeEvent.NavigateToProductDetail(productId)) }
+        is HomeAction.ToggleSave -> toggleSave(product)
+        is HomeAction.UpdateSavedIds -> updateSavedIds(savedIds)
+        is HomeAction.NavigateToSaved -> flow { emit(HomeEvent.NavigateToSaved) }
     }
 
-    private suspend fun FlowCollector<HomeResult>.fetchHomeData() {
+    private fun fetchHomeData(): Flow<HomeResult> = flow {
         emit(HomeResult.Fetching)
         try {
             handleNetworkCallback { homeUseCase() }.collect {
                 when (it) {
                     is EntityWrapper.Success -> {
-                        val savedIds = (state.value as? HomeState.Content)?.savedIds ?: emptySet()
+                        val savedIds = saveUseCase.savedProductIds.value
                         val updatedHomeData = it.entity.copy(
                             justDropped = it.entity.justDropped.updateSaveStatus(savedIds),
                             mostPopular = it.entity.mostPopular.updateSaveStatus(savedIds),
@@ -66,6 +60,7 @@ class HomeViewModel @Inject constructor(
                         )
                         emit(HomeResult.HomeContent(updatedHomeData, savedIds))
                     }
+
                     is EntityWrapper.Fail -> emit(HomeResult.Error(ErrorHandler.getErrorMessage(it.error)))
                 }
             }
@@ -74,7 +69,7 @@ class HomeViewModel @Inject constructor(
         }
     }
 
-    private suspend fun FlowCollector<HomeResult>.toggleSave(product: Product) {
+    private fun toggleSave(product: Product): Flow<HomeResult> = flow {
         saveUseCase.toggleSave(product)
         emit(HomeResult.SaveToggled(product.productId, !product.isSaved))
         if (!product.isSaved) {
@@ -86,7 +81,7 @@ class HomeViewModel @Inject constructor(
         }
     }
 
-    private suspend fun FlowCollector<HomeResult>.updateSavedIds(savedIds: Set<String>) {
+    private fun updateSavedIds(savedIds: Set<String>): Flow<HomeResult> = flow {
         val currentState = state.value
         if (currentState is HomeState.Content) {
             val updatedHomeData = currentState.homeData.copy(
@@ -100,9 +95,7 @@ class HomeViewModel @Inject constructor(
 
     private fun observeSavedIds() {
         viewModelScope.launch {
-            saveUseCase.fetchProductIds().collect { savedIds ->
-                action(HomeAction.UpdateSavedIds(savedIds))
-            }
+            saveUseCase.savedProductIds.collect { action(HomeAction.UpdateSavedIds(it)) }
         }
     }
 

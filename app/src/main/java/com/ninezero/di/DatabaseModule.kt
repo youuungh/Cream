@@ -3,6 +3,7 @@ package com.ninezero.di
 import android.content.Context
 import androidx.room.Room
 import com.ninezero.data.db.AppDatabase
+import com.ninezero.data.db.dao.CartDao
 import com.ninezero.data.db.dao.SaveDao
 import dagger.Module
 import dagger.Provides
@@ -28,5 +29,10 @@ object DatabaseModule {
     @Provides
     fun provideSaveDao(database: AppDatabase): SaveDao {
         return database.saveDao()
+    }
+
+    @Provides
+    fun provideCartDao(database: AppDatabase): CartDao {
+        return database.cartDao()
     }
 }

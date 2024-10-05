@@ -23,7 +23,7 @@ import com.ninezero.cream.ui.component.ShimmerBox
 import com.ninezero.cream.ui.theme.CreamTheme
 
 @Composable
-fun SavedScreenSkeleton(
+fun SavedSkeleton(
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -69,7 +69,6 @@ fun SavedProductCardSkeleton(
             .height(130.dp)
             .padding(vertical = 8.dp)
     ) {
-        // Product image skeleton
         ShimmerBox(
             modifier = Modifier
                 .size(130.dp)
@@ -117,6 +116,6 @@ fun SavedProductCardSkeleton(
 @Composable
 fun SavedScreenSkeletonPreview() {
     CreamTheme {
-        SavedScreenSkeleton()
+        SavedSkeleton()
     }
 }

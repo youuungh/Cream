@@ -3,13 +3,12 @@ package com.ninezero.cream.viewmodel
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
 import com.ninezero.cream.base.BaseStateViewModel
-import com.ninezero.cream.ui.product.ProductDetailAction
-import com.ninezero.cream.ui.product.ProductDetailEvent
-import com.ninezero.cream.ui.product.ProductDetailReducer
-import com.ninezero.cream.ui.product.ProductDetailResult
-import com.ninezero.cream.ui.product.ProductDetailState
+import com.ninezero.cream.ui.product_detail.ProductDetailAction
+import com.ninezero.cream.ui.product_detail.ProductDetailEvent
+import com.ninezero.cream.ui.product_detail.ProductDetailReducer
+import com.ninezero.cream.ui.product_detail.ProductDetailResult
+import com.ninezero.cream.ui.product_detail.ProductDetailState
 import com.ninezero.cream.ui.navigation.Routes
-import com.ninezero.cream.ui.saved.SavedState
 import com.ninezero.cream.utils.ErrorHandler
 import com.ninezero.cream.utils.SnackbarUtils.showSnack
 import com.ninezero.di.R
@@ -17,11 +16,11 @@ import com.ninezero.domain.model.EntityWrapper
 import com.ninezero.domain.model.Product
 import com.ninezero.domain.model.updateSaveStatus
 import com.ninezero.domain.repository.NetworkRepository
+import com.ninezero.domain.usecase.CartUseCase
 import com.ninezero.domain.usecase.ProductUseCase
 import com.ninezero.domain.usecase.SaveUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.FlowCollector
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.launch
@@ -31,6 +30,7 @@ import javax.inject.Inject
 class ProductDetailViewModel @Inject constructor(
     private val productUseCase: ProductUseCase,
     private val saveUseCase: SaveUseCase,
+    private val cartUseCase: CartUseCase,
     reducer: ProductDetailReducer,
     networkRepository: NetworkRepository,
     savedStateHandle: SavedStateHandle
@@ -43,31 +43,31 @@ class ProductDetailViewModel @Inject constructor(
 
     init {
         action(ProductDetailAction.Fetch)
-        action(ProductDetailAction.ObserveSavedIds)
+        observeSavedIds()
     }
 
-    override fun ProductDetailAction.process(): Flow<ProductDetailResult> = flow {
-        when (this@process) {
-            is ProductDetailAction.Fetch -> fetchProductDetails()
-            is ProductDetailAction.FetchRelatedProducts -> fetchRelatedProducts(brandId)
-            is ProductDetailAction.ToggleSave -> toggleSave(product)
-            is ProductDetailAction.UpdateSavedIds -> updateSavedIds(savedIds)
-            is ProductDetailAction.NavigateToSaved -> emit(ProductDetailEvent.NavigateToSaved)
-            is ProductDetailAction.ObserveSavedIds -> observeSavedIds()
-        }
+    override fun ProductDetailAction.process(): Flow<ProductDetailResult> = when (this@process) {
+        is ProductDetailAction.Fetch -> fetchProductDetails()
+        is ProductDetailAction.FetchRelatedProducts -> fetchRelatedProducts(brandId)
+        is ProductDetailAction.ToggleSave -> toggleSave(product)
+        is ProductDetailAction.UpdateSavedIds -> updateSavedIds(savedIds)
+        is ProductDetailAction.NavigateToSaved -> flow { emit(ProductDetailEvent.NavigateToSaved) }
+        is ProductDetailAction.AddToCart -> addToCart(product)
+        is ProductDetailAction.NavigateToCart -> flow { emit(ProductDetailEvent.NavigateToCart) }
     }
 
-    private suspend fun FlowCollector<ProductDetailResult>.fetchProductDetails() {
+    private fun fetchProductDetails(): Flow<ProductDetailResult> = flow {
         emit(ProductDetailResult.Fetching)
         try {
             handleNetworkCallback { productUseCase.getProductDetails(productId) }.collect {
                 when (it) {
                     is EntityWrapper.Success -> {
                         val product = it.entity
-                        val savedIds = saveUseCase.fetchProductIds().first()
+                        val savedIds = saveUseCase.savedProductIds.value
                         emit(ProductDetailResult.ProductContent(product.copy(isSaved = product.productId in savedIds), savedIds))
                         action(ProductDetailAction.FetchRelatedProducts(product.brand.brandId))
                     }
+
                     is EntityWrapper.Fail -> emit(
                         ProductDetailResult.Error(ErrorHandler.getErrorMessage(it.error))
                     )
@@ -78,15 +78,16 @@ class ProductDetailViewModel @Inject constructor(
         }
     }
 
-    private suspend fun FlowCollector<ProductDetailResult>.fetchRelatedProducts(brandId: String) {
+    private fun fetchRelatedProducts(brandId: String): Flow<ProductDetailResult> = flow {
         try {
             handleNetworkCallback { productUseCase.getProductsByBrand(brandId) }.collect {
                 when (it) {
                     is EntityWrapper.Success -> {
-                        val savedIds = saveUseCase.fetchProductIds().first()
+                        val savedIds = saveUseCase.savedProductIds.value
                         val updatedProducts = it.entity.updateSaveStatus(savedIds)
                         emit(ProductDetailResult.RelatedProducts(updatedProducts))
                     }
+
                     is EntityWrapper.Fail -> emit(
                         ProductDetailResult.Error(ErrorHandler.getErrorMessage(it.error))
                     )
@@ -97,7 +98,7 @@ class ProductDetailViewModel @Inject constructor(
         }
     }
 
-    private suspend fun FlowCollector<ProductDetailResult>.toggleSave(product: Product) {
+    private fun toggleSave(product: Product): Flow<ProductDetailResult> = flow {
         saveUseCase.toggleSave(product)
         emit(ProductDetailResult.SaveToggled(product.productId, !product.isSaved))
         if (!product.isSaved) {
@@ -109,7 +110,27 @@ class ProductDetailViewModel @Inject constructor(
         }
     }
 
-    private suspend fun FlowCollector<ProductDetailResult>.updateSavedIds(savedIds: Set<String>) {
+    private fun addToCart(product: Product): Flow<ProductDetailResult> = flow {
+        try {
+            val isAlreadyInCart = cartUseCase.isInCart(product.productId).first()
+            if (isAlreadyInCart) {
+                showSnack(messageTextId = R.string.already_in_cart)
+                emit(ProductDetailResult.AlreadyInCart)
+            } else {
+                cartUseCase.addToCart(product)
+                showSnack(
+                    messageTextId = R.string.added_to_cart,
+                    actionLabelId = R.string.view_cart,
+                    onAction = { action(ProductDetailAction.NavigateToCart) }
+                )
+                emit(ProductDetailResult.AddToCartSuccess)
+            }
+        } catch (e: Exception) {
+            emit(ProductDetailResult.Error(ErrorHandler.getErrorMessage(e)))
+        }
+    }
+
+    private fun updateSavedIds(savedIds: Set<String>): Flow<ProductDetailResult> = flow {
         val currentState = state.value
         if (currentState is ProductDetailState.Content) {
             val updatedProduct =
@@ -122,9 +143,7 @@ class ProductDetailViewModel @Inject constructor(
 
     private fun observeSavedIds() {
         viewModelScope.launch {
-            saveUseCase.fetchProductIds().collect { savedIds ->
-                action(ProductDetailAction.UpdateSavedIds(savedIds))
-            }
+            saveUseCase.savedProductIds.collect { action(ProductDetailAction.UpdateSavedIds(it)) }
         }
     }
 

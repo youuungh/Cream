@@ -27,8 +27,9 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.navArgument
-import com.ninezero.cream.ui.product.ProductDetailScreen
-import com.ninezero.cream.ui.category.CategoryDetailScreen
+import com.ninezero.cream.ui.cart.CartScreen
+import com.ninezero.cream.ui.product_detail.ProductDetailScreen
+import com.ninezero.cream.ui.category_detail.CategoryDetailScreen
 import com.ninezero.cream.ui.component.BottomBar
 import com.ninezero.cream.ui.component.CreamScaffold
 import com.ninezero.cream.ui.component.CustomSnackbar
@@ -67,6 +68,16 @@ fun MainScreen() {
                         onCategoryClick = navController::navigateToCategoryDetail,
                         navigateToSaved = navigateToSaved,
                         onNavigateToSavedConsumed = { navigateToSaved = false }
+                    )
+                }
+
+                composableWithCompositionLocal(route = Routes.CART) {
+                    CartScreen(
+                        onNavigateBack = navController::navigateBack,
+                        onProductClick = { productId ->
+                            navController.navigateToProductDetail(productId = productId, it)
+                        },
+                        onNavigateToHome = navController::navigateToMain
                     )
                 }
 

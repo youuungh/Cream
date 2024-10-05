@@ -40,8 +40,12 @@ class AppNavController(val navController: NavHostController) {
 
     fun navigateBack() = navController.navigateUp()
 
-    fun navigateToMain() = navController.navigate(Routes.MAIN) {
-        popUpTo(navController.graph.id) { inclusive = true }
+    fun navigateToMain() {
+        navController.navigate(Routes.MAIN) {
+            popUpTo(navController.graph.id) {
+                inclusive = true
+            }
+        }
     }
 
     fun navigateToBottomBarRoute(route: String) {
@@ -58,7 +62,6 @@ class AppNavController(val navController: NavHostController) {
 
     fun navigateToHome() = navigateToBottomBarRoute(Routes.MAIN_HOME)
     fun navigateToSaved() = navigateToBottomBarRoute(Routes.MAIN_SAVED)
-
     fun navigateToCart() = navController.navigate(Routes.CART)
     fun navigateToSearch() = navController.navigate(Routes.SEARCH)
 

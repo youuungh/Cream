@@ -44,13 +44,14 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.times
-import com.ninezero.cream.ui.product.ProductDetailState
+import com.ninezero.cream.ui.product_detail.ProductDetailState
 import com.ninezero.cream.utils.CONTENT_OVERLAP
 import com.ninezero.cream.utils.IMAGE_HEIGHT
 import com.ninezero.cream.utils.MAX_CORNER_RADIUS
 import com.ninezero.cream.utils.NumUtils.formatPriceWithCommas
 import com.ninezero.cream.utils.ProductDetailTab
 import com.ninezero.cream.utils.SCROLL_THRESHOLD_OFFSET
+import com.ninezero.cream.utils.TAB_OVERLAP
 import com.ninezero.domain.model.Product
 import kotlinx.coroutines.launch
 
@@ -59,10 +60,13 @@ fun ProductDetailContent(
     state: ProductDetailState.Content,
     onProductClick: (String) -> Unit,
     onSaveToggle: (Product) -> Unit,
+    onAddToCart: () -> Unit,
     onBuyNow: () -> Unit,
     updateAppBarAlpha: (Float) -> Unit,
     appBarHeight: Dp,
     tabVisible: Boolean,
+    showBottomSheet: Boolean,
+    onShowBottomSheetChange: (Boolean) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val lazyListState = rememberLazyListState()
@@ -75,7 +79,6 @@ fun ProductDetailContent(
     var selectedTabIndex by remember { mutableIntStateOf(0) }
 
     val scope = rememberCoroutineScope()
-    val showBottomSheet = remember { mutableStateOf(false) }
 
     val tabVisibility by remember {
         derivedStateOf {
@@ -87,7 +90,7 @@ fun ProductDetailContent(
             when {
                 tabItem == null && lazyListState.firstVisibleItemIndex >= tabIndex -> 1f
                 tabItem == null -> 0f
-                tabItem.offset + tabItem.size <= with(density) { (appBarHeight + CONTENT_OVERLAP.dp + tabHeight).toPx() } -> 1f
+                tabItem.offset + tabItem.size <= with(density) { (appBarHeight + tabHeight + TAB_OVERLAP.dp).toPx() } -> 1f
                 else -> 0f
             }
         }
@@ -96,7 +99,7 @@ fun ProductDetailContent(
     val scrollBasedTabIndex by remember {
         derivedStateOf {
             val adjustmentPx =
-                with(density) { (appBarHeight + tabHeight + CONTENT_OVERLAP.dp).toPx() }
+                with(density) { (appBarHeight + tabHeight + TAB_OVERLAP.dp).toPx() }
             val layoutInfo = lazyListState.layoutInfo
             val visibleItemsInfo = layoutInfo.visibleItemsInfo
 
@@ -197,19 +200,20 @@ fun ProductDetailContent(
             price = formatPriceWithCommas(state.product.price.instantBuyPrice),
             isSaved = state.product.isSaved,
             onSaveToggle = { onSaveToggle(state.product) },
-            onBuyClick = { showBottomSheet.value = true },
+            onBuyClick = { onShowBottomSheetChange(true) },
             modifier = Modifier.align(Alignment.BottomCenter)
         )
 
-        if (showBottomSheet.value) {
+        if (showBottomSheet) {
             DetailBottomSheet(
-                showBottomSheet = showBottomSheet,
+                showBottomSheet = remember { mutableStateOf(showBottomSheet) },
+                onDismiss = { onShowBottomSheetChange(false) },
                 coroutineScope = scope,
                 productImageUrl = state.product.imageUrl,
                 productName = state.product.productName,
                 productKo = state.product.ko,
-                onAddToCart = { /*todo*/ },
-                onBuyNow = { /*todo*/ }
+                onAddToCart = onAddToCart,
+                onBuyNow = onBuyNow
             )
         }
     }
