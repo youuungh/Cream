@@ -68,6 +68,7 @@ fun HomeScreen(
             ) { innerPadding ->
                 when (val state = uiState) {
                     is HomeState.Fetching -> HomeSkeleton(modifier = Modifier.padding(innerPadding))
+
                     is HomeState.Content -> HomeContent(
                         data = state.homeData,
                         onProductClick = { productId -> viewModel.action(HomeAction.ProductClicked(productId)) },
@@ -75,6 +76,7 @@ fun HomeScreen(
                         onBrandClick = { /*TODO*/ },
                         modifier = Modifier.padding(innerPadding)
                     )
+
                     is HomeState.Error -> ErrorScreen(
                         onRetry = { viewModel.action(HomeAction.Fetch) },
                         modifier = Modifier.padding(innerPadding)
