@@ -12,7 +12,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -42,7 +41,6 @@ fun ProductDetailScreen(
     viewModel: ProductDetailViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.state.collectAsState()
-    val networkState by viewModel.networkState.collectAsState()
     val creamScaffoldState = rememberCreamScaffoldState()
 
     var visible by remember { mutableStateOf(false) }
@@ -57,6 +55,7 @@ fun ProductDetailScreen(
         when (it) {
             is ProductDetailEvent.NavigateToSaved -> onNavigateToSaved()
             is ProductDetailEvent.NavigateToCart -> onCartClick()
+            is ProductDetailEvent.ShowSnackbar -> creamScaffoldState.showSnackbar(it.message)
         }
     }
 
@@ -66,10 +65,6 @@ fun ProductDetailScreen(
         if (uiState is ProductDetailState.Content) {
             tabVisible = true
         }
-    }
-
-    LaunchedEffect(networkState) {
-        Timber.d("networkState: $networkState")
     }
 
     AnimatedVisibility(

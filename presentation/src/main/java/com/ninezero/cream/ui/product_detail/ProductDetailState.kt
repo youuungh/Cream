@@ -5,32 +5,34 @@ import com.ninezero.cream.base.MviEvent
 import com.ninezero.cream.base.MviResult
 import com.ninezero.cream.base.MviStateReducer
 import com.ninezero.cream.base.MviViewState
+import com.ninezero.cream.model.Message
 import com.ninezero.domain.model.Product
 import javax.inject.Inject
 
 sealed class ProductDetailAction : MviAction {
     object Fetch : ProductDetailAction()
+    object NavigateToSaved : ProductDetailAction()
+    object NavigateToCart : ProductDetailAction()
     data class ToggleSave(val product: Product) : ProductDetailAction()
+    data class AddToCart(val product: Product) : ProductDetailAction()
     data class FetchRelatedProducts(val brandId: String) : ProductDetailAction()
     data class UpdateSavedIds(val savedIds: Set<String>) : ProductDetailAction()
-    object NavigateToSaved : ProductDetailAction()
-    data class AddToCart(val product: Product) : ProductDetailAction()
-    object NavigateToCart : ProductDetailAction()
 }
 
 sealed class ProductDetailResult : MviResult {
     object Fetching : ProductDetailResult()
+    object AddToCartSuccess : ProductDetailResult()
+    object AlreadyInCart : ProductDetailResult()
     data class ProductContent(val product: Product, val savedIds: Set<String>) : ProductDetailResult()
     data class RelatedProducts(val relatedProducts: List<Product>) : ProductDetailResult()
     data class Error(val message: String) : ProductDetailResult()
     data class SaveToggled(val productId: String, val isSaved: Boolean) : ProductDetailResult()
-    object AddToCartSuccess : ProductDetailResult()
-    object AlreadyInCart : ProductDetailResult()
 }
 
 sealed class ProductDetailEvent : MviEvent, ProductDetailResult() {
     object NavigateToSaved : ProductDetailEvent()
     object NavigateToCart : ProductDetailEvent()
+    data class ShowSnackbar(val message: Message) : ProductDetailEvent()
 }
 
 sealed class ProductDetailState : MviViewState {

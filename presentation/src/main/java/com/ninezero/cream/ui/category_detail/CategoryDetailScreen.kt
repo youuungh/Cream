@@ -22,7 +22,6 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.ui.Modifier
@@ -40,6 +39,7 @@ import com.ninezero.cream.ui.LocalSharedTransitionScope
 import com.ninezero.cream.ui.component.CreamScaffold
 import com.ninezero.cream.ui.component.CustomSnackbar
 import com.ninezero.cream.ui.component.rememberCreamScaffoldState
+import com.ninezero.cream.ui.product_detail.ProductDetailEvent
 import com.ninezero.cream.utils.CategorySharedElementKey
 import com.ninezero.cream.utils.CategorySharedElementType
 import com.ninezero.cream.utils.detailBoundsTransform
@@ -57,7 +57,6 @@ fun CategoryDetailScreen(
     viewModel: CategoryDetailViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.state.collectAsState()
-    val networkState by viewModel.networkState.collectAsState()
     val creamScaffoldState = rememberCreamScaffoldState()
 
     val sharedTransitionScope = LocalSharedTransitionScope.current
@@ -80,11 +79,8 @@ fun CategoryDetailScreen(
         when (it) {
             is CategoryDetailEvent.NavigateToProductDetail -> onProductClick(it.productId)
             is CategoryDetailEvent.NavigateToSaved -> onNavigateToSaved()
+            is CategoryDetailEvent.ShowSnackbar -> creamScaffoldState.showSnackbar(it.message)
         }
-    }
-
-    LaunchedEffect(networkState) {
-        Timber.d("networkState: $networkState")
     }
 
     with(sharedTransitionScope) {

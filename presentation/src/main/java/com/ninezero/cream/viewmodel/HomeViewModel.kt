@@ -2,13 +2,13 @@ package com.ninezero.cream.viewmodel
 
 import androidx.lifecycle.viewModelScope
 import com.ninezero.cream.base.BaseStateViewModel
+import com.ninezero.cream.model.Message
 import com.ninezero.cream.ui.home.HomeAction
 import com.ninezero.cream.ui.home.HomeEvent
 import com.ninezero.cream.ui.home.HomeReducer
 import com.ninezero.cream.ui.home.HomeResult
 import com.ninezero.cream.ui.home.HomeState
 import com.ninezero.cream.utils.ErrorHandler
-import com.ninezero.cream.utils.SnackbarUtils.showSnack
 import com.ninezero.di.R
 import com.ninezero.domain.model.EntityWrapper
 import com.ninezero.domain.model.Product
@@ -40,10 +40,10 @@ class HomeViewModel @Inject constructor(
 
     override fun HomeAction.process(): Flow<HomeResult> = when (this@process) {
         is HomeAction.Fetch -> fetchHomeData()
-        is HomeAction.ProductClicked -> flow { emit(HomeEvent.NavigateToProductDetail(productId)) }
         is HomeAction.ToggleSave -> toggleSave(product)
         is HomeAction.UpdateSavedIds -> updateSavedIds(savedIds)
         is HomeAction.NavigateToSaved -> flow { emit(HomeEvent.NavigateToSaved) }
+        is HomeAction.ProductClicked -> flow { emit(HomeEvent.NavigateToProductDetail(productId)) }
     }
 
     private fun fetchHomeData(): Flow<HomeResult> = flow {
@@ -73,10 +73,14 @@ class HomeViewModel @Inject constructor(
         saveUseCase.toggleSave(product)
         emit(HomeResult.SaveToggled(product.productId, !product.isSaved))
         if (!product.isSaved) {
-            showSnack(
-                messageTextId = R.string.saved_item_added,
-                actionLabelId = R.string.view_saved,
-                onAction = { action(HomeAction.NavigateToSaved) }
+            emit(
+                HomeEvent.ShowSnackbar(
+                    Message(
+                        messageId = R.string.saved_item_added,
+                        actionLabelId = R.string.view_saved,
+                        onAction = { action(HomeAction.NavigateToSaved) }
+                    )
+                )
             )
         }
     }

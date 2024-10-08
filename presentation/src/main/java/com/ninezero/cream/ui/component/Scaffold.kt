@@ -16,7 +16,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import com.ninezero.cream.utils.SnackbarUtils
+import com.ninezero.cream.model.Message
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
@@ -42,37 +42,30 @@ fun CreamScaffold(
 @Composable
 fun rememberCreamScaffoldState(
     snackBarHostState: SnackbarHostState = remember { SnackbarHostState() },
-    snackbarUtils: SnackbarUtils = SnackbarUtils,
     resources: Resources = resources(),
     coroutineScope: CoroutineScope = rememberCoroutineScope()
-) : CreamScaffoldState  = remember(snackBarHostState, snackbarUtils, resources, coroutineScope) {
-    CreamScaffoldState(snackBarHostState, snackbarUtils, resources, coroutineScope)
+) : CreamScaffoldState  = remember(snackBarHostState, resources, coroutineScope) {
+    CreamScaffoldState(snackBarHostState, resources, coroutineScope)
 }
 
 @Stable
 class CreamScaffoldState(
     val snackBarHostState: SnackbarHostState,
-    private val snackbarUtils: SnackbarUtils,
     private val resources: Resources,
-    coroutineScope: CoroutineScope
+    private val coroutineScope: CoroutineScope
 ) {
-    init {
+    fun showSnackbar(message: Message) {
         coroutineScope.launch {
-            snackbarUtils.messages.collect { messages ->
-                messages.firstOrNull()?.let { message ->
-                    val text = resources.getText(message.messageId)
-                    val actionLabel = message.actionLabelId?.let { resources.getText(it) }
+            val text = resources.getText(message.messageId)
+            val actionLabel = message.actionLabelId?.let { resources.getText(it) }
 
-                    val result = snackBarHostState.showSnackbar(
-                        message = text.toString(),
-                        actionLabel = actionLabel?.toString(),
-                        duration = message.duration
-                    )
-                    snackbarUtils.setSnackShown(message.id)
-                    if (result == SnackbarResult.ActionPerformed)
-                        message.onAction?.invoke()
-                }
-            }
+            val result = snackBarHostState.showSnackbar(
+                message = text.toString(),
+                actionLabel = actionLabel?.toString(),
+                duration = message.duration
+            )
+            if (result == SnackbarResult.ActionPerformed)
+                message.onAction?.invoke()
         }
     }
 }

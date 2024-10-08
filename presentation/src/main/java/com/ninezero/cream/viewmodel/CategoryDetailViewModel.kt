@@ -3,6 +3,7 @@ package com.ninezero.cream.viewmodel
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
 import com.ninezero.cream.base.BaseStateViewModel
+import com.ninezero.cream.model.Message
 import com.ninezero.cream.ui.category_detail.CategoryDetailAction
 import com.ninezero.cream.ui.category_detail.CategoryDetailEvent
 import com.ninezero.cream.ui.category_detail.CategoryDetailReducer
@@ -10,7 +11,6 @@ import com.ninezero.cream.ui.category_detail.CategoryDetailResult
 import com.ninezero.cream.ui.category_detail.CategoryDetailState
 import com.ninezero.cream.ui.navigation.Routes
 import com.ninezero.cream.utils.ErrorHandler
-import com.ninezero.cream.utils.SnackbarUtils.showSnack
 import com.ninezero.di.R
 import com.ninezero.domain.model.EntityWrapper
 import com.ninezero.domain.model.Product
@@ -46,10 +46,10 @@ class CategoryDetailViewModel @Inject constructor(
 
     override fun CategoryDetailAction.process(): Flow<CategoryDetailResult> = when (this@process) {
         is CategoryDetailAction.Fetch -> fetchCategoryDetails()
-        is CategoryDetailAction.ProductClicked -> flow { emit(CategoryDetailEvent.NavigateToProductDetail(productId)) }
         is CategoryDetailAction.ToggleSave -> toggleSave(product)
         is CategoryDetailAction.UpdateSavedIds -> updateSavedIds(savedIds)
         is CategoryDetailAction.NavigateToSaved -> flow { emit(CategoryDetailEvent.NavigateToSaved) }
+        is CategoryDetailAction.ProductClicked -> flow { emit(CategoryDetailEvent.NavigateToProductDetail(productId)) }
     }
 
     private fun fetchCategoryDetails(): Flow<CategoryDetailResult> = flow {
@@ -75,10 +75,14 @@ class CategoryDetailViewModel @Inject constructor(
         saveUseCase.toggleSave(product)
         emit(CategoryDetailResult.SaveToggled(product.productId, !product.isSaved))
         if (!product.isSaved) {
-            showSnack(
-                messageTextId = R.string.saved_item_added,
-                actionLabelId = R.string.view_saved,
-                onAction = { action(CategoryDetailAction.NavigateToSaved) }
+            emit(
+                CategoryDetailEvent.ShowSnackbar(
+                    Message(
+                        messageId = R.string.saved_item_added,
+                        actionLabelId = R.string.view_saved,
+                        onAction = { action(CategoryDetailAction.NavigateToSaved) }
+                    )
+                )
             )
         }
     }

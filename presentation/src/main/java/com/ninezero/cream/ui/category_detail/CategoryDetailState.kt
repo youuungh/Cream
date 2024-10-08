@@ -5,16 +5,18 @@ import com.ninezero.cream.base.MviEvent
 import com.ninezero.cream.base.MviResult
 import com.ninezero.cream.base.MviStateReducer
 import com.ninezero.cream.base.MviViewState
+import com.ninezero.cream.model.Message
+import com.ninezero.cream.ui.product_detail.ProductDetailEvent
 import com.ninezero.domain.model.CategoryDetails
 import com.ninezero.domain.model.Product
 import javax.inject.Inject
 
 sealed class CategoryDetailAction : MviAction {
     object Fetch : CategoryDetailAction()
-    data class ProductClicked(val productId: String) : CategoryDetailAction()
-    data class ToggleSave(val product: Product) : CategoryDetailAction()
-    data class UpdateSavedIds(val savedIds: Set<String>) : CategoryDetailAction()
     object NavigateToSaved : CategoryDetailAction()
+    data class ToggleSave(val product: Product) : CategoryDetailAction()
+    data class ProductClicked(val productId: String) : CategoryDetailAction()
+    data class UpdateSavedIds(val savedIds: Set<String>) : CategoryDetailAction()
 }
 
 sealed class CategoryDetailResult : MviResult {
@@ -25,8 +27,9 @@ sealed class CategoryDetailResult : MviResult {
 }
 
 sealed class CategoryDetailEvent : MviEvent, CategoryDetailResult() {
-    data class NavigateToProductDetail(val productId: String) : CategoryDetailEvent()
     object NavigateToSaved : CategoryDetailEvent()
+    data class NavigateToProductDetail(val productId: String) : CategoryDetailEvent()
+    data class ShowSnackbar(val message: Message) : CategoryDetailEvent()
 }
 
 sealed class CategoryDetailState : MviViewState {

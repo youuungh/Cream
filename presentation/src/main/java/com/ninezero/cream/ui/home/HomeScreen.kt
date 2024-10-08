@@ -8,9 +8,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.ui.Modifier
@@ -25,10 +24,13 @@ import com.ninezero.cream.ui.component.ProductCard
 import com.ninezero.cream.ui.component.RowSection
 import com.ninezero.cream.base.collectAsState
 import com.ninezero.cream.base.collectEvents
+import com.ninezero.cream.ui.component.CreamScaffold
 import com.ninezero.cream.ui.component.CreamSurface
+import com.ninezero.cream.ui.component.CustomSnackbar
 import com.ninezero.cream.ui.component.ErrorScreen
 import com.ninezero.cream.ui.component.SearchTopAppBar
 import com.ninezero.cream.ui.component.TopBanner
+import com.ninezero.cream.ui.component.rememberCreamScaffoldState
 import com.ninezero.cream.ui.component.skeleton.HomeSkeleton
 import com.ninezero.cream.viewmodel.HomeViewModel
 import com.ninezero.di.R
@@ -46,25 +48,29 @@ fun HomeScreen(
     viewModel: HomeViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.state.collectAsState()
-    val networkState by viewModel.networkState.collectAsState()
+    val creamScaffoldState = rememberCreamScaffoldState()
 
     viewModel.collectEvents {
         when (it) {
             is HomeEvent.NavigateToProductDetail -> onProductClick(it.productId)
             is HomeEvent.NavigateToSaved -> onNavigateToSaved()
+            is HomeEvent.ShowSnackbar -> creamScaffoldState.showSnackbar(it.message)
         }
-    }
-
-    LaunchedEffect(networkState) {
-        Timber.d("networkState: $networkState")
     }
 
     CreamSurface(modifier = modifier.fillMaxSize()) {
         SharedTransitionLayout {
-            Scaffold(
+            CreamScaffold(
                 topBar = {
                     SearchTopAppBar(onCartClick = onCartClick, onSearchClick = onSearchClick)
-                }
+                },
+                snackbarHost = {
+                    SnackbarHost(
+                        hostState = it,
+                        snackbar = { snackbarData -> CustomSnackbar(snackbarData) }
+                    )
+                },
+                snackbarHostState = creamScaffoldState.snackBarHostState
             ) { innerPadding ->
                 when (val state = uiState) {
                     is HomeState.Fetching -> HomeSkeleton(modifier = Modifier.padding(innerPadding))

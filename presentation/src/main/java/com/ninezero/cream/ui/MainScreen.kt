@@ -71,7 +71,11 @@ fun MainScreen() {
                     )
                 }
 
-                composableWithCompositionLocal(route = Routes.CART) {
+                composableWithCompositionLocal(
+                    route = Routes.CART,
+                    enterTransition = animState.first,
+                    exitTransition = animState.second
+                ) {
                     CartScreen(
                         onNavigateBack = navController::navigateBack,
                         onProductClick = { productId ->
@@ -142,7 +146,6 @@ fun MainContent(
     navigateToSaved: Boolean,
     onNavigateToSavedConsumed: () -> Unit
 ) {
-    val creamScaffoldState = rememberCreamScaffoldState()
     val nestedNavController = rememberAppNavController()
     val navBackStackEntry by nestedNavController.navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
@@ -178,14 +181,7 @@ fun MainContent(
                 }
             }
         },
-        modifier = modifier,
-        snackbarHost = {
-            SnackbarHost(
-                hostState = it,
-                snackbar = { snackbarData -> CustomSnackbar(snackbarData) }
-            )
-        },
-        snackbarHostState = creamScaffoldState.snackBarHostState
+        modifier = modifier
     ) { innerPadding ->
         NavHost(
             navController = nestedNavController.navController,

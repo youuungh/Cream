@@ -1,7 +1,10 @@
 package com.ninezero.cream.base
 
+import androidx.annotation.StringRes
+import androidx.compose.material3.SnackbarDuration
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.ninezero.cream.model.Message
 import com.ninezero.cream.utils.NETWORK_DELAY
 import com.ninezero.cream.utils.NO_INTERNET_CONNECTION
 import com.ninezero.domain.repository.NetworkRepository
@@ -91,6 +94,21 @@ abstract class BaseStateViewModel<Action : MviAction, Result : MviResult, Event 
             kotlinx.coroutines.delay(NETWORK_DELAY)
             throw Exception(NO_INTERNET_CONNECTION)
         } else emitAll(call())
+    }
+
+    protected fun showSnackbar(
+        @StringRes messageId: Int,
+        duration: SnackbarDuration = SnackbarDuration.Short,
+        @StringRes actionLabelId: Int? = null,
+        onAction: (() -> Unit)? = null
+    ) {
+        val message = Message(
+            messageId = messageId,
+            duration = duration,
+            actionLabelId = actionLabelId,
+            onAction = onAction
+        )
+        _event.tryEmit(message.messageId as Event)
     }
 
     abstract fun refreshData()

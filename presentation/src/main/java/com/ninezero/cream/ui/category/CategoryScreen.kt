@@ -7,7 +7,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.ui.Modifier
@@ -33,16 +32,11 @@ fun CategoryScreen(
     viewModel: CategoryViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.state.collectAsState()
-    val networkState by viewModel.networkState.collectAsState()
 
     viewModel.collectEvents {
         when (it) {
             is CategoryEvent.NavigateToCategoryDetail -> onCategoryClick(it.categoryId, it.categoryName)
         }
-    }
-
-    LaunchedEffect(networkState) {
-        Timber.d("networkState: $networkState")
     }
 
     CreamSurface(modifier = modifier.fillMaxSize()) {

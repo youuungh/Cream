@@ -3,6 +3,7 @@ package com.ninezero.cream.viewmodel
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
 import com.ninezero.cream.base.BaseStateViewModel
+import com.ninezero.cream.model.Message
 import com.ninezero.cream.ui.product_detail.ProductDetailAction
 import com.ninezero.cream.ui.product_detail.ProductDetailEvent
 import com.ninezero.cream.ui.product_detail.ProductDetailReducer
@@ -10,7 +11,6 @@ import com.ninezero.cream.ui.product_detail.ProductDetailResult
 import com.ninezero.cream.ui.product_detail.ProductDetailState
 import com.ninezero.cream.ui.navigation.Routes
 import com.ninezero.cream.utils.ErrorHandler
-import com.ninezero.cream.utils.SnackbarUtils.showSnack
 import com.ninezero.di.R
 import com.ninezero.domain.model.EntityWrapper
 import com.ninezero.domain.model.Product
@@ -48,11 +48,11 @@ class ProductDetailViewModel @Inject constructor(
 
     override fun ProductDetailAction.process(): Flow<ProductDetailResult> = when (this@process) {
         is ProductDetailAction.Fetch -> fetchProductDetails()
-        is ProductDetailAction.FetchRelatedProducts -> fetchRelatedProducts(brandId)
         is ProductDetailAction.ToggleSave -> toggleSave(product)
+        is ProductDetailAction.AddToCart -> addToCart(product)
+        is ProductDetailAction.FetchRelatedProducts -> fetchRelatedProducts(brandId)
         is ProductDetailAction.UpdateSavedIds -> updateSavedIds(savedIds)
         is ProductDetailAction.NavigateToSaved -> flow { emit(ProductDetailEvent.NavigateToSaved) }
-        is ProductDetailAction.AddToCart -> addToCart(product)
         is ProductDetailAction.NavigateToCart -> flow { emit(ProductDetailEvent.NavigateToCart) }
     }
 
@@ -102,10 +102,14 @@ class ProductDetailViewModel @Inject constructor(
         saveUseCase.toggleSave(product)
         emit(ProductDetailResult.SaveToggled(product.productId, !product.isSaved))
         if (!product.isSaved) {
-            showSnack(
-                messageTextId = R.string.saved_item_added,
-                actionLabelId = R.string.view_saved,
-                onAction = { action(ProductDetailAction.NavigateToSaved) }
+            emit(
+                ProductDetailEvent.ShowSnackbar(
+                    Message(
+                        messageId = R.string.saved_item_added,
+                        actionLabelId = R.string.view_saved,
+                        onAction = { action(ProductDetailAction.NavigateToSaved) }
+                    )
+                )
             )
         }
     }
@@ -114,14 +118,18 @@ class ProductDetailViewModel @Inject constructor(
         try {
             val isAlreadyInCart = cartUseCase.isInCart(product.productId).first()
             if (isAlreadyInCart) {
-                showSnack(messageTextId = R.string.already_in_cart)
+                emit(ProductDetailEvent.ShowSnackbar(Message(messageId = R.string.already_in_cart)))
                 emit(ProductDetailResult.AlreadyInCart)
             } else {
                 cartUseCase.addToCart(product)
-                showSnack(
-                    messageTextId = R.string.added_to_cart,
-                    actionLabelId = R.string.view_cart,
-                    onAction = { action(ProductDetailAction.NavigateToCart) }
+                emit(
+                    ProductDetailEvent.ShowSnackbar(
+                        Message(
+                            messageId = R.string.added_to_cart,
+                            actionLabelId = R.string.view_cart,
+                            onAction = { action(ProductDetailAction.NavigateToCart) }
+                        )
+                    )
                 )
                 emit(ProductDetailResult.AddToCartSuccess)
             }

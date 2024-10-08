@@ -5,16 +5,17 @@ import com.ninezero.cream.base.MviEvent
 import com.ninezero.cream.base.MviResult
 import com.ninezero.cream.base.MviStateReducer
 import com.ninezero.cream.base.MviViewState
+import com.ninezero.cream.model.Message
 import com.ninezero.domain.model.HomeData
 import com.ninezero.domain.model.Product
 import javax.inject.Inject
 
 sealed class HomeAction : MviAction {
     object Fetch : HomeAction()
-    data class ProductClicked(val productId: String) : HomeAction()
+    object NavigateToSaved : HomeAction()
     data class ToggleSave(val product: Product) : HomeAction()
     data class UpdateSavedIds(val savedIds: Set<String>) : HomeAction()
-    object NavigateToSaved : HomeAction()
+    data class ProductClicked(val productId: String) : HomeAction()
 }
 
 sealed class HomeResult : MviResult {
@@ -25,8 +26,9 @@ sealed class HomeResult : MviResult {
 }
 
 sealed class HomeEvent : MviEvent, HomeResult() {
-    data class NavigateToProductDetail(val productId: String) : HomeEvent()
     object NavigateToSaved : HomeEvent()
+    data class ShowSnackbar(val message: Message) : HomeEvent()
+    data class NavigateToProductDetail(val productId: String) : HomeEvent()
 }
 
 sealed class HomeState : MviViewState {
