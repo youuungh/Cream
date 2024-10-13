@@ -43,11 +43,7 @@ class CategoryViewModel @Inject constructor(
                 emit(
                     when (it) {
                         is EntityWrapper.Success -> CategoryResult.CategoryContent(it.entity)
-                        is EntityWrapper.Fail -> CategoryResult.Error(
-                            ErrorHandler.getErrorMessage(
-                                it.error
-                            )
-                        )
+                        is EntityWrapper.Fail -> CategoryResult.Error(ErrorHandler.getErrorMessage(it.error))
                     }
                 )
             }

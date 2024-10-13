@@ -63,7 +63,6 @@ class AppNavController(val navController: NavHostController) {
     fun navigateToHome() = navigateToBottomBarRoute(Routes.MAIN_HOME)
     fun navigateToSaved() = navigateToBottomBarRoute(Routes.MAIN_SAVED)
     fun navigateToCart() = navController.navigate(Routes.CART)
-    fun navigateToSearch() = navController.navigate(Routes.SEARCH)
 
     fun navigateToCategoryDetail(categoryId: String, categoryName: String, from: NavBackStackEntry) {
         if (from.lifecycleIsResumed()) {
@@ -115,7 +114,6 @@ fun NavGraphBuilder.composableWithCompositionLocal(
 
 fun NavGraphBuilder.addMainGraph(
     onCartClick: () -> Unit,
-    onSearchClick: () -> Unit,
     onProductClick: (String) -> Unit,
     onCategoryClick: (String, String, NavBackStackEntry) -> Unit,
     onNavigateToHome: () -> Unit,
@@ -130,7 +128,6 @@ fun NavGraphBuilder.addMainGraph(
     ) {
         HomeScreen(
             onCartClick = onCartClick,
-            onSearchClick = onSearchClick,
             onProductClick = onProductClick,
             onNavigateToSaved = onNavigateToSaved,
             modifier = modifier

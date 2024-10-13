@@ -13,4 +13,6 @@ interface RemoteDataSource {
     fun getProductsByBrand(brandId: String): Flow<ApiResult<List<ProductResponse>>>
     fun getCategories(): Flow<ApiResult<List<CategoryResponse>>>
     fun getCategoryDetails(categoryId: String): Flow<ApiResult<CategoryDetailsResponse>>
+    fun searchProducts(query: String): Flow<ApiResult<List<ProductResponse>>>
+    fun getAllProducts(): Flow<ApiResult<List<ProductResponse>>>
 }

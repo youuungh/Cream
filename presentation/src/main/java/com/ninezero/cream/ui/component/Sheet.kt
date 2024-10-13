@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -37,16 +36,18 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil.compose.rememberAsyncImagePainter
+import com.ninezero.cream.utils.SavedSortOption
+import com.ninezero.cream.utils.SearchSortOption
 import com.ninezero.di.R
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
 @Composable
-fun SaveBottomSheet(
+fun SavedBottomSheet(
     showBottomSheet: MutableState<Boolean>,
     coroutineScope: CoroutineScope,
-    selectedOption: MutableState<Int>,
-    onOptionSelected: (Int) -> Unit
+    selectedOption: SavedSortOption,
+    onOptionSelected: (SavedSortOption) -> Unit
 ) {
     val sheetState = rememberModalBottomSheetState()
 
@@ -87,28 +88,33 @@ fun SaveBottomSheet(
         Spacer(modifier = Modifier.height(16.dp))
         SortOptionCard(
             text = stringResource(id = R.string.sort_by_saved_date),
-            selected = selectedOption.value == R.string.sort_by_saved_date,
+            selected = selectedOption == SavedSortOption.SAVED_DATE,
             onClick = {
-                selectedOption.value = R.string.sort_by_saved_date
-                onOptionSelected(R.string.sort_by_saved_date)
+                onOptionSelected(SavedSortOption.SAVED_DATE)
+                coroutineScope.launch { sheetState.hide() }
+                    .invokeOnCompletion {
+                        if (!sheetState.isVisible) showBottomSheet.value = false
+                    }
             },
             modifier = Modifier.padding(horizontal = 16.dp)
         )
         Spacer(modifier = Modifier.height(8.dp))
         SortOptionCard(
             text = stringResource(id = R.string.sort_by_price),
-            selected = selectedOption.value == R.string.sort_by_price,
+            selected = selectedOption == SavedSortOption.PRICE,
             onClick = {
-                selectedOption.value = R.string.sort_by_price
-                onOptionSelected(R.string.sort_by_price)
+                onOptionSelected(SavedSortOption.PRICE)
+                coroutineScope.launch { sheetState.hide() }
+                    .invokeOnCompletion {
+                        if (!sheetState.isVisible) showBottomSheet.value = false
+                    }
             },
             modifier = Modifier.padding(
                 start = 16.dp,
                 end = 16.dp,
-                bottom = BottomSheetDefaults.windowInsets.asPaddingValues().calculateBottomPadding()
+                bottom = 16.dp + BottomSheetDefaults.windowInsets.asPaddingValues().calculateBottomPadding()
             )
         )
-        Spacer(modifier = Modifier.height(16.dp))
     }
 }
 
@@ -239,6 +245,39 @@ fun DetailBottomSheet(
                 )
             }
             Spacer(modifier = Modifier.height(16.dp))
+        }
+    }
+}
+
+@Composable
+fun SortBottomSheet(
+    selectedOption: SearchSortOption,
+    onOptionSelected: (SearchSortOption) -> Unit,
+    onDismiss: () -> Unit
+) {
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = rememberModalBottomSheetState(),
+        windowInsets = WindowInsets(0.dp),
+        dragHandle = null,
+        shape = RoundedCornerShape(topStart = 8.dp, topEnd = 8.dp)
+    ) {
+        Column(
+            modifier = Modifier.padding(
+                top = 16.dp,
+                start = 16.dp,
+                end = 16.dp,
+                bottom = 16.dp + BottomSheetDefaults.windowInsets.asPaddingValues().calculateBottomPadding()
+            )
+        ) {
+            SearchSortOption.entries.forEach { option ->
+                SortOptionItem(
+                    option = option,
+                    isSelected = option == selectedOption,
+                    onSelect = { onOptionSelected(option) }
+                )
+                if (option != SearchSortOption.entries.last()) { Divider() }
+            }
         }
     }
 }

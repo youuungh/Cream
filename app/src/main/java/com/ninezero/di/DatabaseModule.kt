@@ -5,6 +5,7 @@ import androidx.room.Room
 import com.ninezero.data.db.AppDatabase
 import com.ninezero.data.db.dao.CartDao
 import com.ninezero.data.db.dao.SaveDao
+import com.ninezero.data.db.dao.SearchDao
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -34,5 +35,10 @@ object DatabaseModule {
     @Provides
     fun provideCartDao(database: AppDatabase): CartDao {
         return database.cartDao()
+    }
+
+    @Provides
+    fun provideSearchDao(database: AppDatabase): SearchDao {
+        return database.searchDao()
     }
 }

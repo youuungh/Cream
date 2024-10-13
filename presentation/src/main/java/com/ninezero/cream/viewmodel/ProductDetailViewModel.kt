@@ -52,8 +52,8 @@ class ProductDetailViewModel @Inject constructor(
         is ProductDetailAction.AddToCart -> addToCart(product)
         is ProductDetailAction.FetchRelatedProducts -> fetchRelatedProducts(brandId)
         is ProductDetailAction.UpdateSavedIds -> updateSavedIds(savedIds)
-        is ProductDetailAction.NavigateToSaved -> flow { emit(ProductDetailEvent.NavigateToSaved) }
-        is ProductDetailAction.NavigateToCart -> flow { emit(ProductDetailEvent.NavigateToCart) }
+        is ProductDetailAction.NavigateToSaved -> emitEvent(ProductDetailEvent.NavigateToSaved)
+        is ProductDetailAction.NavigateToCart -> emitEvent(ProductDetailEvent.NavigateToCart)
     }
 
     private fun fetchProductDetails(): Flow<ProductDetailResult> = flow {

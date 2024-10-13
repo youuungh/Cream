@@ -56,6 +56,10 @@ class CreamScaffoldState(
 ) {
     fun showSnackbar(message: Message) {
         coroutineScope.launch {
+            snackBarHostState.currentSnackbarData?.let {
+                snackBarHostState.currentSnackbarData!!.dismiss()
+            }
+
             val text = resources.getText(message.messageId)
             val actionLabel = message.actionLabelId?.let { resources.getText(it) }
 

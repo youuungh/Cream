@@ -12,7 +12,6 @@ import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.SnackbarHost
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
@@ -32,8 +31,6 @@ import com.ninezero.cream.ui.product_detail.ProductDetailScreen
 import com.ninezero.cream.ui.category_detail.CategoryDetailScreen
 import com.ninezero.cream.ui.component.BottomBar
 import com.ninezero.cream.ui.component.CreamScaffold
-import com.ninezero.cream.ui.component.CustomSnackbar
-import com.ninezero.cream.ui.component.rememberCreamScaffoldState
 import com.ninezero.cream.ui.navigation.Routes
 import com.ninezero.cream.ui.navigation.addMainGraph
 import com.ninezero.cream.ui.navigation.composableWithCompositionLocal
@@ -61,7 +58,6 @@ fun MainScreen() {
                 composableWithCompositionLocal(route = Routes.MAIN) {
                     MainContent(
                         onCartClick = navController::navigateToCart,
-                        onSearchClick = navController::navigateToSearch,
                         onProductClick = { productId ->
                             navController.navigateToProductDetail(productId = productId, it)
                         },
@@ -140,7 +136,6 @@ fun MainScreen() {
 fun MainContent(
     modifier: Modifier = Modifier,
     onCartClick: () -> Unit,
-    onSearchClick: () -> Unit,
     onProductClick: (String) -> Unit,
     onCategoryClick: (String, String, NavBackStackEntry) -> Unit,
     navigateToSaved: Boolean,
@@ -192,7 +187,6 @@ fun MainContent(
         ) {
             addMainGraph(
                 onCartClick = onCartClick,
-                onSearchClick = onSearchClick,
                 onProductClick = onProductClick,
                 onCategoryClick = onCategoryClick,
                 onNavigateToHome = nestedNavController::navigateToHome,

@@ -64,7 +64,6 @@ import com.ninezero.di.R
 import com.ninezero.domain.model.Brand
 import com.ninezero.domain.model.Category
 import com.ninezero.domain.model.Product
-import timber.log.Timber
 
 @Composable
 fun ProductCard(
@@ -110,7 +109,7 @@ fun ProductCard(
             ) {
                 Icon(
                     painter = painterResource(
-                        id = if (product.isSaved) R.drawable.ic_save_fill_opsz48 else R.drawable.ic_save_opsz48
+                        id = if (product.isSaved) R.drawable.ic_save_fill_48 else R.drawable.ic_save_48
                     ),
                     contentDescription = null,
                     modifier = Modifier.size(30.dp)
@@ -133,7 +132,7 @@ fun ProductCard(
             )
             Spacer(modifier = Modifier.height(8.dp))
             Text(
-                text = NumUtils.formatPriceWithCommas(product.price.instantBuyPrice),
+                text = formatPriceWithCommas(product.price.instantBuyPrice),
                 style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold)
             )
             Text(
@@ -218,7 +217,7 @@ fun SavedProductCard(
                         )
                 ) {
                     Icon(
-                        painter = painterResource(id = R.drawable.ic_save_fill_opsz48),
+                        painter = painterResource(id = R.drawable.ic_save_fill_48),
                         contentDescription = null,
                         modifier = Modifier.size(40.dp)
                     )
@@ -240,7 +239,7 @@ fun SavedProductCard(
                     textAlign = TextAlign.End
                 )
                 Text(
-                    text = NumUtils.formatPriceWithCommas(product.price.instantBuyPrice),
+                    text = formatPriceWithCommas(product.price.instantBuyPrice),
                     style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
                     textAlign = TextAlign.End
                 )
@@ -589,6 +588,96 @@ fun SortOptionCard(
                     )
                 }
             }
+        }
+    }
+}
+
+@Composable
+fun SearchProductCard(
+    product: Product,
+    onClick: () -> Unit,
+    onSaveToggle: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier
+            .clip(RoundedCornerShape(8.dp))
+            .background(Color.Transparent)
+            .clickable(onClick = onClick)
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .aspectRatio(1f)
+                .clip(RoundedCornerShape(8.dp))
+        ) {
+            AsyncImage(
+                model = product.imageUrl,
+                contentDescription = null,
+                modifier = Modifier.fillMaxSize(),
+                contentScale = ContentScale.Crop,
+                placeholder = painterResource(id = R.drawable.ic_placeholder)
+            )
+            Box(
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(8.dp)
+            ) {
+                Text(
+                    text = "거래 ${NumUtils.formatTradingVolume(product.tradingVolume)}",
+                    style = MaterialTheme.typography.bodySmall.copy(
+                        color = MaterialTheme.colorScheme.outline
+                    )
+                )
+            }
+            IconButton(
+                onClick = onSaveToggle,
+                modifier = Modifier.align(Alignment.BottomEnd)
+            ) {
+                Icon(
+                    painter = painterResource(
+                        id = if (product.isSaved) R.drawable.ic_save_fill_48 else R.drawable.ic_save_48
+                    ),
+                    contentDescription = null,
+                    modifier = Modifier.size(30.dp)
+                )
+            }
+        }
+        Column(modifier = Modifier.padding(8.dp)) {
+            Text(
+                text = product.brand.brandName,
+                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = product.productName,
+                style = MaterialTheme.typography.bodySmall,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis
+            )
+            Text(
+                text = product.ko,
+                style = MaterialTheme.typography.labelSmall.copy(
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                    fontWeight = FontWeight.Normal
+                ),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = formatPriceWithCommas(product.price.instantBuyPrice),
+                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold)
+            )
+            Text(
+                text = "즉시구매가",
+                style = MaterialTheme.typography.labelSmall.copy(
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                    fontWeight = FontWeight.Normal
+                )
+            )
         }
     }
 }

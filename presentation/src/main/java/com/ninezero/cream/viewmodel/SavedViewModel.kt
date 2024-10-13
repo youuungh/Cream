@@ -10,7 +10,7 @@ import com.ninezero.cream.ui.saved.SavedState
 import com.ninezero.cream.utils.ErrorHandler
 import com.ninezero.cream.utils.NETWORK_DELAY
 import com.ninezero.cream.utils.NO_INTERNET_CONNECTION
-import com.ninezero.di.R
+import com.ninezero.cream.utils.SavedSortOption
 import com.ninezero.domain.model.Product
 import com.ninezero.domain.repository.NetworkRepository
 import com.ninezero.domain.usecase.SaveUseCase
@@ -35,8 +35,8 @@ class SavedViewModel @Inject constructor(
     reducer = reducer,
     networkRepository = networkRepository
 ) {
-    private val _sortType = MutableStateFlow(R.string.sort_by_saved_date)
-    val sortType: StateFlow<Int> = _sortType.asStateFlow()
+    private val _sortType = MutableStateFlow(SavedSortOption.SAVED_DATE)
+    val sortType: StateFlow<SavedSortOption> = _sortType.asStateFlow()
 
     private val _savedProducts = MutableStateFlow<List<Product>>(emptyList())
 
@@ -48,9 +48,9 @@ class SavedViewModel @Inject constructor(
         is SavedAction.Fetch -> fetchAll()
         is SavedAction.Remove -> removeSavedProduct(product)
         is SavedAction.RemoveAll -> removeAll()
-        is SavedAction.UpdateSortType -> updateSortType(newSortType)
+        is SavedAction.UpdateSortType -> updateSortType(sortOption)
         is SavedAction.UpdateProducts -> updateProducts(products)
-        is SavedAction.Error -> flow { emit(SavedResult.Error(message)) }
+        is SavedAction.Error -> emitResult(SavedResult.Error(message))
     }
 
     private fun fetchAll(): Flow<SavedResult> = flow {
@@ -80,8 +80,8 @@ class SavedViewModel @Inject constructor(
         emit(SavedResult.RemoveAll)
     }
 
-    private fun updateSortType(newSortType: Int): Flow<SavedResult> = flow {
-        _sortType.value = newSortType
+    private fun updateSortType(sortOption: SavedSortOption): Flow<SavedResult> = flow {
+        _sortType.value = sortOption
         val sortedProducts = sortProducts(_savedProducts.value)
         emit(SavedResult.FetchSuccess(sortedProducts))
     }
@@ -94,9 +94,8 @@ class SavedViewModel @Inject constructor(
 
     private fun sortProducts(products: List<Product>): List<Product> {
         return when (_sortType.value) {
-            R.string.sort_by_saved_date -> products.sortedByDescending { it.savedAt }
-            R.string.sort_by_price -> products.sortedByDescending { it.price.instantBuyPrice }
-            else -> products
+            SavedSortOption.SAVED_DATE -> products.sortedByDescending { it.savedAt }
+            SavedSortOption.PRICE -> products.sortedByDescending { it.price.instantBuyPrice }
         }
     }
 

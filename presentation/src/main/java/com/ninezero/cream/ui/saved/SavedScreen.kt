@@ -1,6 +1,5 @@
 package com.ninezero.cream.ui.saved
 
-import androidx.annotation.StringRes
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.clickable
@@ -22,7 +21,6 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -42,9 +40,10 @@ import com.ninezero.cream.ui.component.CreamTopAppBar
 import com.ninezero.cream.ui.component.Divider
 import com.ninezero.cream.ui.component.EmptyScreen
 import com.ninezero.cream.ui.component.ErrorScreen
-import com.ninezero.cream.ui.component.SaveBottomSheet
+import com.ninezero.cream.ui.component.SavedBottomSheet
 import com.ninezero.cream.ui.component.SavedProductCard
 import com.ninezero.cream.ui.component.skeleton.SavedSkeleton
+import com.ninezero.cream.utils.SavedSortOption
 import com.ninezero.cream.viewmodel.SavedViewModel
 import com.ninezero.di.R
 import com.ninezero.domain.model.Product
@@ -81,7 +80,7 @@ fun SavedScreen(
                 is SavedState.Fetching -> SavedSkeleton(modifier = Modifier.padding(innerPadding))
 
                 is SavedState.Content -> {
-                    if (state.savedProducts.isEmpty()) {
+                    if (state.products.isEmpty()) {
                         EmptyScreen(
                             onNavigateToHome = onNavigateToHome,
                             title = stringResource(id = R.string.no_saved_items),
@@ -90,7 +89,7 @@ fun SavedScreen(
                         )
                     } else {
                         SavedContent(
-                            savedProducts = state.savedProducts,
+                            savedProducts = state.products,
                             sortType = sortType,
                             onProductClick = onProductClick,
                             onRemoveClick = { product -> viewModel.action(SavedAction.Remove(product)) },
@@ -108,10 +107,10 @@ fun SavedScreen(
         }
 
         if (showBottomSheet.value) {
-            SaveBottomSheet(
+            SavedBottomSheet(
                 showBottomSheet = showBottomSheet,
                 coroutineScope = scope,
-                selectedOption = remember { mutableIntStateOf(sortType) },
+                selectedOption = sortType,
                 onOptionSelected = { viewModel.action(SavedAction.UpdateSortType(it)) }
             )
         }
@@ -121,7 +120,7 @@ fun SavedScreen(
 @Composable
 fun SavedContent(
     savedProducts: List<Product>,
-    @StringRes sortType: Int,
+    sortType: SavedSortOption,
     onProductClick: (String) -> Unit,
     onRemoveClick: (Product) -> Unit,
     onSortClick: () -> Unit,
@@ -156,7 +155,7 @@ fun SavedContent(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        stringResource(sortType),
+                        stringResource(sortType.stringResId),
                         textAlign = TextAlign.Center,
                         style = MaterialTheme.typography.labelLarge.copy(
                             color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),

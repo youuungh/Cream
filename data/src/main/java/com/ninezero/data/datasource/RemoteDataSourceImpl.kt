@@ -89,4 +89,29 @@ class RemoteDataSourceImpl @Inject constructor(
             }
         }
     }
+
+    override fun searchProducts(query: String): Flow<ApiResult<List<ProductResponse>>> = flow {
+        fetchData().collect { result ->
+            when (val response = result.response) {
+                is ApiResponse.Success -> {
+                    val filteredProducts = response.data.products.filter { product ->
+                        product.productName.contains(query, ignoreCase = true) ||
+                                product.brand.brandName.contains(query, ignoreCase = true) ||
+                                product.ko.contains(query, ignoreCase = true)
+                    }
+                    emit(ApiResult(ApiResponse.Success(filteredProducts)))
+                }
+                is ApiResponse.Fail -> emit(ApiResult(response))
+            }
+        }
+    }
+
+    override fun getAllProducts(): Flow<ApiResult<List<ProductResponse>>> = flow {
+        fetchData().collect { result ->
+            when (val response = result.response) {
+                is ApiResponse.Success -> emit(ApiResult(ApiResponse.Success(response.data.products)))
+                is ApiResponse.Fail -> emit(ApiResult(response))
+            }
+        }
+    }
 }

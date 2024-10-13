@@ -1,18 +1,39 @@
 @file:OptIn(ExperimentalSharedTransitionApi::class)
 package com.ninezero.cream.ui.home
 
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionLayout
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.platform.SoftwareKeyboardController
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -26,31 +47,48 @@ import com.ninezero.cream.base.collectAsState
 import com.ninezero.cream.base.collectEvents
 import com.ninezero.cream.ui.component.CreamScaffold
 import com.ninezero.cream.ui.component.CreamSurface
+import com.ninezero.cream.ui.component.CustomDialog
 import com.ninezero.cream.ui.component.CustomSnackbar
 import com.ninezero.cream.ui.component.ErrorScreen
+import com.ninezero.cream.ui.component.SearchHistorySection
+import com.ninezero.cream.ui.component.SearchResultsSection
 import com.ninezero.cream.ui.component.SearchTopAppBar
+import com.ninezero.cream.ui.component.SortBottomSheet
+import com.ninezero.cream.ui.component.SuggestionsSection
 import com.ninezero.cream.ui.component.TopBanner
 import com.ninezero.cream.ui.component.rememberCreamScaffoldState
 import com.ninezero.cream.ui.component.skeleton.HomeSkeleton
+import com.ninezero.cream.ui.home.search.SearchAction
+import com.ninezero.cream.ui.home.search.SearchEvent
+import com.ninezero.cream.ui.home.search.SearchState
+import com.ninezero.cream.utils.SearchSortOption
 import com.ninezero.cream.viewmodel.HomeViewModel
+import com.ninezero.cream.viewmodel.SearchViewModel
 import com.ninezero.di.R
 import com.ninezero.domain.model.HomeData
 import com.ninezero.domain.model.Product
-import timber.log.Timber
 
 @Composable
 fun HomeScreen(
     modifier: Modifier = Modifier,
     onCartClick: () -> Unit,
-    onSearchClick: () -> Unit,
     onProductClick: (String) -> Unit,
     onNavigateToSaved: () -> Unit,
-    viewModel: HomeViewModel = hiltViewModel(),
+    homeViewModel: HomeViewModel = hiltViewModel(),
+    searchViewModel: SearchViewModel = hiltViewModel()
 ) {
-    val uiState by viewModel.state.collectAsState()
+    val homeUiState by homeViewModel.state.collectAsState()
+    val searchUiState by searchViewModel.state.collectAsState()
+    val searchQuery by searchViewModel.query.collectAsState()
+    val isSearchMode by searchViewModel.isSearchMode.collectAsState()
     val creamScaffoldState = rememberCreamScaffoldState()
+    var showBottomSheet by remember { mutableStateOf(false) }
+    var showClearHistoryDialog by remember { mutableStateOf(false) }
+    val keyboardController = LocalSoftwareKeyboardController.current
+    val focusManager = LocalFocusManager.current
+    val focusRequester = remember { FocusRequester() }
 
-    viewModel.collectEvents {
+    homeViewModel.collectEvents {
         when (it) {
             is HomeEvent.NavigateToProductDetail -> onProductClick(it.productId)
             is HomeEvent.NavigateToSaved -> onNavigateToSaved()
@@ -58,11 +96,42 @@ fun HomeScreen(
         }
     }
 
+    searchViewModel.collectEvents {
+        when (it) {
+            is SearchEvent.NavigateToSaved -> onNavigateToSaved()
+            is SearchEvent.ShowSnackbar -> creamScaffoldState.showSnackbar(it.message)
+        }
+    }
+
     CreamSurface(modifier = modifier.fillMaxSize()) {
         SharedTransitionLayout {
             CreamScaffold(
                 topBar = {
-                    SearchTopAppBar(onCartClick = onCartClick, onSearchClick = onSearchClick)
+                    SearchTopAppBar(
+                        isSearchMode = isSearchMode,
+                        isSearchResultMode = isSearchMode && searchUiState is SearchState.Results,
+                        searchQuery = searchQuery,
+                        onSearchQueryChange = { searchViewModel.updateQuery(it) },
+                        onSearch = {
+                            searchViewModel.search(it)
+                            searchViewModel.setSearchMode(true)
+                            keyboardController?.hide()
+                            focusManager.clearFocus()
+                        },
+                        onBackClick = {
+                            focusManager.clearFocus()
+                            keyboardController?.hide()
+                            searchViewModel.clearSearch()
+                            searchViewModel.setSearchMode(false)
+                        },
+                        onClearClick = {
+                            searchViewModel.clearSearch()
+                            searchViewModel.setSearchMode(true)
+                        },
+                        onCartClick = onCartClick,
+                        onSearchClick = { searchViewModel.setSearchMode(true) },
+                        focusRequester = focusRequester
+                    )
                 },
                 snackbarHost = {
                     SnackbarHost(
@@ -72,24 +141,95 @@ fun HomeScreen(
                 },
                 snackbarHostState = creamScaffoldState.snackBarHostState
             ) { innerPadding ->
-                when (val state = uiState) {
-                    is HomeState.Fetching -> HomeSkeleton(modifier = Modifier.padding(innerPadding))
+                AnimatedContent(
+                    targetState = isSearchMode,
+                    transitionSpec = {
+                        if (targetState) {
+                            slideInVertically { height -> -height } + fadeIn() togetherWith
+                                    slideOutVertically { height -> height } + fadeOut()
+                        } else {
+                            slideInVertically { height -> height } + fadeIn() togetherWith
+                                    slideOutVertically { height -> -height } + fadeOut()
+                        }
+                    },
+                    label = "search_content"
+                ) { searchMode ->
+                    if (searchMode) {
+                        SearchContent(
+                            state = searchUiState,
+                            onProductClick = onProductClick,
+                            searchViewModel = searchViewModel,
+                            onClearAndHideHistory = { showClearHistoryDialog = true },
+                            onSuggestionClick = {
+                                keyboardController?.hide()
+                                focusManager.clearFocus()
+                                searchViewModel.search(it)
+                                searchViewModel.setSearchMode(true)
+                            },
+                            onSortClick = { showBottomSheet = true },
+                            focusRequester = focusRequester,
+                            keyboardController = keyboardController,
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(innerPadding)
+                                .pointerInput(Unit) {
+                                    detectTapGestures(onTap = {
+                                        focusManager.clearFocus()
+                                        keyboardController?.hide()
+                                    })
+                                }
+                        )
+                    } else {
+                        when (val state = homeUiState) {
+                            is HomeState.Fetching -> HomeSkeleton(modifier = Modifier.padding(innerPadding))
 
-                    is HomeState.Content -> HomeContent(
-                        data = state.homeData,
-                        onProductClick = { productId -> viewModel.action(HomeAction.ProductClicked(productId)) },
-                        onSaveClick = { product -> viewModel.action(HomeAction.ToggleSave(product)) },
-                        onBrandClick = { /*TODO*/ },
-                        modifier = Modifier.padding(innerPadding)
-                    )
+                            is HomeState.Content -> HomeContent(
+                                data = state.homeData,
+                                onProductClick = { productId -> homeViewModel.action(HomeAction.ProductClicked(productId)) },
+                                onSaveClick = { product -> homeViewModel.action(HomeAction.ToggleSave(product)) },
+                                onBrandClick = { /*TODO*/ },
+                                modifier = Modifier.padding(innerPadding)
+                            )
 
-                    is HomeState.Error -> ErrorScreen(
-                        onRetry = { viewModel.action(HomeAction.Fetch) },
-                        modifier = Modifier.padding(innerPadding)
-                    )
+                            is HomeState.Error -> ErrorScreen(
+                                onRetry = { homeViewModel.action(HomeAction.Fetch) },
+                                modifier = Modifier.padding(innerPadding)
+                            )
+                        }
+                    }
                 }
             }
         }
+    }
+
+    if (showBottomSheet) {
+        SortBottomSheet(
+            selectedOption = (searchUiState as? SearchState.Results)?.sortOption ?: SearchSortOption.RECOMMENDED,
+            onOptionSelected = { option ->
+                searchViewModel.action(SearchAction.ChangeSort(option))
+                showBottomSheet = false
+            },
+            onDismiss = { showBottomSheet = false }
+        )
+    }
+
+    if (showClearHistoryDialog) {
+        CustomDialog(
+            onDismissRequest = {
+                showClearHistoryDialog = false
+                if (isSearchMode) {
+                    focusRequester.requestFocus()
+                    keyboardController?.show()
+                }
+            },
+            title = stringResource(R.string.dialog_clear_search_history),
+            content = stringResource(R.string.dialog_clear_search_history_confirm),
+            confirmButtonText = stringResource(R.string.delete),
+            onConfirmClick = {
+                searchViewModel.action(SearchAction.ClearHistory)
+                showClearHistoryDialog = false
+            }
+        )
     }
 }
 
@@ -165,5 +305,73 @@ private fun HomeContent(
                 }
             }
         }
+    }
+}
+
+@Composable
+fun SearchContent(
+    state: SearchState,
+    onProductClick: (String) -> Unit,
+    searchViewModel: SearchViewModel,
+    onClearAndHideHistory: () -> Unit,
+    onSuggestionClick: (String) -> Unit,
+    onSortClick: () -> Unit,
+    focusRequester: FocusRequester,
+    keyboardController: SoftwareKeyboardController?,
+    modifier: Modifier = Modifier
+) {
+    Box(modifier = modifier) {
+        when (state) {
+            is SearchState.Init -> {
+                if (!state.isHistoryHidden) {
+                    SearchHistorySection(
+                        searchHistory = state.history,
+                        onHistoryItemClick = onSuggestionClick,
+                        onClearAndHideHistory = {
+                            keyboardController?.hide()
+                            onClearAndHideHistory()
+                        },
+                        onRemoveHistoryItem = { searchViewModel.action(SearchAction.RemoveHistory(it)) }
+                    )
+                }
+            }
+            is SearchState.Suggesting -> {
+                SuggestionsSection(
+                    suggestions = state.suggestions,
+                    searchQuery = state.query,
+                    onSuggestionClick = onSuggestionClick
+                )
+            }
+            is SearchState.Searching -> {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator()
+                }
+            }
+            is SearchState.Results -> {
+                AnimatedVisibility(
+                    visible = true,
+                    enter = slideInVertically() + fadeIn(),
+                    exit = slideOutVertically() + fadeOut()
+                ) {
+                    SearchResultsSection(
+                        products = state.products,
+                        sortOption = state.sortOption,
+                        onSortClick = onSortClick,
+                        onProductClick = onProductClick,
+                        onSaveToggle = { searchViewModel.action(SearchAction.ToggleSave(it)) }
+                    )
+                }
+            }
+            is SearchState.Error -> {
+                Text(text = state.message, modifier = Modifier.padding(16.dp))
+            }
+        }
+    }
+
+    LaunchedEffect(state) {
+        if (state is SearchState.Init || state is SearchState.Suggesting) { focusRequester.requestFocus() }
     }
 }

@@ -25,6 +25,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material3.HorizontalDivider
@@ -52,6 +53,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.ninezero.cream.utils.SearchSortOption
 import com.ninezero.di.R
 
 @Composable
@@ -176,30 +178,30 @@ fun ExpandingText(description: String) {
 }
 
 @Composable
-fun SearchBar(
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier
+fun SortOptionItem(
+    option: SearchSortOption,
+    isSelected: Boolean,
+    onSelect: () -> Unit
 ) {
-    val interactionSource = remember { MutableInteractionSource() }
-
-    Box(
-        modifier = modifier
+    Row(
+        modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(12.dp))
-            .background(MaterialTheme.colorScheme.surfaceVariant)
             .clickable(
-                interactionSource = interactionSource,
+                onClick = onSelect,
                 indication = null,
-                onClick = onClick
+                interactionSource = remember { MutableInteractionSource() }
             ),
-        contentAlignment = Alignment.CenterStart
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        Text(
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
-            text = "브랜드, 상품 등",
-            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
-            style = MaterialTheme.typography.bodyMedium
-        )
+        Text(text = stringResource(option.stringResId))
+        if (isSelected) {
+            Icon(
+                imageVector = Icons.Default.CheckCircle,
+                contentDescription = "Selected",
+                tint = MaterialTheme.colorScheme.primary
+            )
+        }
     }
 }
 
@@ -267,10 +269,10 @@ fun ErrorScreen(
 @Composable
 fun EmptyScreen(
     modifier: Modifier = Modifier,
-    onNavigateToHome: () -> Unit,
+    onNavigateToHome: (() -> Unit)? = null,
     title: String,
     subtitle: String? = null,
-    label: String
+    label: String? = null
 ) {
     Column(
         modifier = modifier.fillMaxSize(),
@@ -293,10 +295,12 @@ fun EmptyScreen(
                 )
             )
         }
-        Spacer(modifier = Modifier.height(16.dp))
-        RetryButton(
-            onClick = onNavigateToHome,
-            text = label
-        )
+        if (onNavigateToHome != null && label != null) {
+            Spacer(modifier = Modifier.height(16.dp))
+            RetryButton(
+                onClick = onNavigateToHome,
+                text = label
+            )
+        }
     }
 }

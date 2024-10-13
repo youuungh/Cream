@@ -9,21 +9,12 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Tab
-import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -32,11 +23,9 @@ import com.ninezero.cream.utils.NumUtils.calculatePriceDiff
 import com.ninezero.cream.utils.NumUtils.formatPriceWithCommas
 import com.ninezero.cream.utils.NumUtils.formatWithCommas
 import com.ninezero.cream.utils.NumUtils.getShippingDate
-import com.ninezero.cream.utils.ProductDetailTab
 import com.ninezero.di.R
 import com.ninezero.domain.model.Brand
 import com.ninezero.domain.model.Product
-import kotlinx.coroutines.launch
 
 @Composable
 fun ProductInfoHeader(product: Product) {

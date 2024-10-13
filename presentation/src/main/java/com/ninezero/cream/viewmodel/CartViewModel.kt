@@ -49,7 +49,7 @@ class CartViewModel @Inject constructor(
         is CartAction.UpdateSelection -> updateSelection(productId, isSelected)
         is CartAction.UpdateAllSelection -> updateAllSelection(isSelected)
         is CartAction.UpdateProducts -> updateProducts(products)
-        is CartAction.Error -> flow { emit(CartResult.Error(message)) }
+        is CartAction.Error -> emitResult(CartResult.Error(message))
     }
 
     private fun fetchAll(): Flow<CartResult> = flow {

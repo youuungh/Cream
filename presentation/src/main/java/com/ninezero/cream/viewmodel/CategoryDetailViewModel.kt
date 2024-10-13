@@ -48,8 +48,8 @@ class CategoryDetailViewModel @Inject constructor(
         is CategoryDetailAction.Fetch -> fetchCategoryDetails()
         is CategoryDetailAction.ToggleSave -> toggleSave(product)
         is CategoryDetailAction.UpdateSavedIds -> updateSavedIds(savedIds)
-        is CategoryDetailAction.NavigateToSaved -> flow { emit(CategoryDetailEvent.NavigateToSaved) }
-        is CategoryDetailAction.ProductClicked -> flow { emit(CategoryDetailEvent.NavigateToProductDetail(productId)) }
+        is CategoryDetailAction.NavigateToSaved -> emitEvent(CategoryDetailEvent.NavigateToSaved)
+        is CategoryDetailAction.ProductClicked -> emitEvent(CategoryDetailEvent.NavigateToProductDetail(productId))
     }
 
     private fun fetchCategoryDetails(): Flow<CategoryDetailResult> = flow {

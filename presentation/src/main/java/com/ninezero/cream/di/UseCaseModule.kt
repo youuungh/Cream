@@ -1,9 +1,12 @@
 package com.ninezero.cream.di
 
 import com.ninezero.domain.repository.CartRepository
+import com.ninezero.domain.repository.ProductRepository
 import com.ninezero.domain.repository.SaveRepository
+import com.ninezero.domain.repository.SearchRepository
 import com.ninezero.domain.usecase.CartUseCase
 import com.ninezero.domain.usecase.SaveUseCase
+import com.ninezero.domain.usecase.SearchUseCase
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -30,5 +33,14 @@ object UseCaseModule {
         cartRepository: CartRepository
     ): CartUseCase {
         return CartUseCase(cartRepository)
+    }
+
+    @Provides
+    @Singleton
+    fun provideSearchUseCase(
+        productRepository: ProductRepository,
+        searchRepository: SearchRepository
+    ): SearchUseCase {
+        return SearchUseCase(productRepository, searchRepository)
     }
 }

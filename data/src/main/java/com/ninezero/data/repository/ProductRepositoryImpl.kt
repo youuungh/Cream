@@ -22,4 +22,17 @@ class ProductRepositoryImpl @Inject constructor(
         remoteDataSource.getProductsByBrand(brandId).map { apiResult ->
             productMapper.mapProductsByBrand(apiResult)
         }
+
+    override fun searchProducts(query: String): Flow<EntityWrapper<List<Product>>> =
+        remoteDataSource.searchProducts(query).map { apiResult ->
+            productMapper.mapProductsByBrand(apiResult)
+        }
+
+    override fun getAllProducts(): Flow<List<Product>> =
+        remoteDataSource.getAllProducts().map { apiResult ->
+            when (val result = productMapper.mapProductsByBrand(apiResult)) {
+                is EntityWrapper.Success -> result.entity
+                is EntityWrapper.Fail -> emptyList()
+            }
+        }
 }

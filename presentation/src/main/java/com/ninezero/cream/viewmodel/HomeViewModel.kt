@@ -42,8 +42,8 @@ class HomeViewModel @Inject constructor(
         is HomeAction.Fetch -> fetchHomeData()
         is HomeAction.ToggleSave -> toggleSave(product)
         is HomeAction.UpdateSavedIds -> updateSavedIds(savedIds)
-        is HomeAction.NavigateToSaved -> flow { emit(HomeEvent.NavigateToSaved) }
-        is HomeAction.ProductClicked -> flow { emit(HomeEvent.NavigateToProductDetail(productId)) }
+        is HomeAction.NavigateToSaved -> emitEvent(HomeEvent.NavigateToSaved)
+        is HomeAction.ProductClicked -> emitEvent(HomeEvent.NavigateToProductDetail(productId))
     }
 
     private fun fetchHomeData(): Flow<HomeResult> = flow {

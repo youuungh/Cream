@@ -10,14 +10,12 @@ import com.ninezero.di.R
 
 object Routes {
     const val MAIN = "main"
+    const val CART = "cart"
 
     const val MAIN_HOME = "main_home"
     const val MAIN_CATEGORY = "main_category"
     const val MAIN_SAVED = "main_saved"
     const val MAIN_MY_PAGE = "main_my_page"
-
-    const val CART = "cart"
-    const val SEARCH = "search"
 
     const val PRODUCT_DETAIL = "product_detail"
     const val CATEGORY_DETAIL = "category_detail"

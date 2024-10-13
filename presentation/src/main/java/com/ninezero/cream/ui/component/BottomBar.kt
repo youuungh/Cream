@@ -58,7 +58,6 @@ import com.ninezero.cream.ui.LocalNavAnimatedVisibilityScope
 import com.ninezero.cream.ui.LocalSharedTransitionScope
 import com.ninezero.cream.ui.navigation.MainRoute
 import com.ninezero.cream.ui.theme.CreamTheme
-import com.ninezero.cream.utils.NumUtils.formatPriceWithCommas
 import com.ninezero.cream.utils.spatialExpressiveSpring
 import com.ninezero.di.R
 import java.util.Locale
@@ -176,7 +175,7 @@ fun ProductBottomBar(
                     ) {
                         IconTonalButton(
                             onClick = onSaveToggle,
-                            iconResId = if (isSaved) R.drawable.ic_save_fill_opsz48 else R.drawable.ic_save_opsz48,
+                            iconResId = if (isSaved) R.drawable.ic_save_fill_48 else R.drawable.ic_save_48,
                             contentDescription = null
                         )
                         Spacer(modifier = Modifier.width(16.dp))
