@@ -1,6 +1,9 @@
 <resources>
     <string name="app_name">Cream</string>
 
+    <string name="logo_title">CREAM</string>
+    <string name="logo_subtitle">CLOTHES RULE EVERYTHING AROUND ME</string>
+
     <string name="sort">정렬</string>
     <string name="try_again">재시도</string>
     <string name="cart">장바구니</string>
@@ -68,9 +71,14 @@
     <string name="no_cart_items_subtitle">원하는 상품을 장바구니에 담아보세요</string>
     <string name="no_search_results">검색 결과가 없습니다</string>
 
+    <string name="login_with_google">구글로 로그인</string>
+    <string name="login_with_kakao">카카오로 로그인</string>
+    <string name="login_with_naver">네이버로 로그인</string>
+
     <string name="already_in_cart">장바구니에 이미 담긴 상품입니다</string>"
     <string name="added_to_cart">장바구니에 담겼습니다"</string>
 
+    <string name="network_error">네트워크가 원활하지 않습니다</string>
     <string name="error_title">접속이 원활하지 않습니다</string>
     <string name="error_subtitle">네트워크 연결상태를 확인하거나\n잠시 후 다시 시도해주세요</string>
 

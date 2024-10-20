@@ -11,6 +11,7 @@ import com.ninezero.di.R
 object Routes {
     const val MAIN = "main"
     const val CART = "cart"
+    const val LOGIN = "login"
 
     const val MAIN_HOME = "main_home"
     const val MAIN_CATEGORY = "main_category"
@@ -48,7 +49,7 @@ sealed class MainRoute(
     @Composable
     fun icon() = painterResource(id = iconResId)
 
-    object Home : MainRoute(R.string.main_home, R.drawable.ic_store, Routes.MAIN_HOME,)
+    object Home : MainRoute(R.string.main_home, R.drawable.ic_store, Routes.MAIN_HOME)
     object Category : MainRoute(R.string.main_category, R.drawable.ic_category, Routes.MAIN_CATEGORY)
     object Saved : MainRoute(R.string.main_saved, R.drawable.ic_save, Routes.MAIN_SAVED)
     object MyPage : MainRoute(R.string.main_my_page, R.drawable.ic_my_page, Routes.MAIN_MY_PAGE)

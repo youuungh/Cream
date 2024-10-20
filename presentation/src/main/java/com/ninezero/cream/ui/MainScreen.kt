@@ -15,17 +15,21 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.navArgument
+import com.ninezero.cream.ui.auth.AuthState
+import com.ninezero.cream.ui.auth.LoginScreen
 import com.ninezero.cream.ui.cart.CartScreen
 import com.ninezero.cream.ui.product_detail.ProductDetailScreen
 import com.ninezero.cream.ui.category_detail.CategoryDetailScreen
@@ -38,16 +42,18 @@ import com.ninezero.cream.ui.navigation.rememberAppNavController
 import com.ninezero.cream.utils.nonSpatialExpressiveSpring
 import com.ninezero.cream.utils.rememberProductDetailAnimState
 import com.ninezero.cream.utils.spatialExpressiveSpring
+import com.ninezero.cream.viewmodel.MainViewModel
 
 val LocalNavAnimatedVisibilityScope = compositionLocalOf<AnimatedVisibilityScope?> { null }
 val LocalSharedTransitionScope = compositionLocalOf<SharedTransitionScope?> { null }
 
 @Composable
 fun MainScreen() {
-    //val viewModel = hiltViewModel<MainViewModel>()
+    val viewModel = hiltViewModel<MainViewModel>()
     val navController = rememberAppNavController()
     var navigateToSaved by remember { mutableStateOf(false) }
     val animState = rememberProductDetailAnimState()
+    val authState by viewModel.authState.collectAsState()
 
     SharedTransitionLayout {
         CompositionLocalProvider(LocalSharedTransitionScope provides this) {
@@ -57,13 +63,22 @@ fun MainScreen() {
             ) {
                 composableWithCompositionLocal(route = Routes.MAIN) {
                     MainContent(
-                        onCartClick = navController::navigateToCart,
-                        onProductClick = { productId ->
-                            navController.navigateToProductDetail(productId = productId, it)
+                        onCartClick = {
+                            when (authState) {
+                                AuthState.AUTHENTICATED -> navController.navigateToCart()
+                                AuthState.UNAUTHENTICATED -> navController.navigateToLogin()
+                            }
                         },
+                        onProductClick = { productId -> navController.navigateToProductDetail(productId = productId, it) },
                         onCategoryClick = navController::navigateToCategoryDetail,
+                        onNavigateToLogin = navController::navigateToLogin,
                         navigateToSaved = navigateToSaved,
-                        onNavigateToSavedConsumed = { navigateToSaved = false }
+                        onNavigateToSavedConsumed = { navigateToSaved = false },
+                        authState = authState,
+                        onSignOut = {
+                            viewModel.setAuthState(AuthState.UNAUTHENTICATED)
+                            navController.navigateToMain()
+                        }
                     )
                 }
 
@@ -73,28 +88,42 @@ fun MainScreen() {
                     exitTransition = animState.second
                 ) {
                     CartScreen(
+                        onProductClick = { productId -> navController.navigateToProductDetail(productId = productId, it) },
                         onNavigateBack = navController::navigateBack,
-                        onProductClick = { productId ->
-                            navController.navigateToProductDetail(productId = productId, it)
-                        },
                         onNavigateToHome = navController::navigateToMain
                     )
                 }
 
                 composableWithCompositionLocal(
+                    route = Routes.LOGIN,
+                    enterTransition = animState.first,
+                    exitTransition = animState.second
+                ) {
+                    LoginScreen(
+                        onNavigateBack = navController::navigateBack,
+                        onLoginSuccess = {
+                            viewModel.setAuthState(AuthState.AUTHENTICATED)
+                            navController.navigateBack()
+                        }
+                    )
+                }
+
+                composableWithCompositionLocal(
                     route = Routes.productDetailRoute("{${Routes.PRODUCT_ID_KEY}}"),
-                    arguments = listOf(
-                        navArgument(Routes.PRODUCT_ID_KEY) { type = NavType.StringType }
-                    ),
+                    arguments = listOf(navArgument(Routes.PRODUCT_ID_KEY) { type = NavType.StringType }),
                     enterTransition = animState.first,
                     exitTransition = animState.second
                 ) {
                     ProductDetailScreen(
-                        onNavigateBack = navController::navigateBack,
-                        onCartClick = navController::navigateToCart,
-                        onProductClick = { productId ->
-                            navController.navigateToProductDetail(productId = productId, it)
+                        onCartClick = {
+                            when (authState) {
+                                AuthState.AUTHENTICATED -> navController.navigateToCart()
+                                AuthState.UNAUTHENTICATED -> navController.navigateToLogin()
+                            }
                         },
+                        onProductClick = { productId -> navController.navigateToProductDetail(productId = productId, it) },
+                        onNavigateBack = navController::navigateBack,
+                        onNavigateToLogin = navController::navigateToLogin,
                         onNavigateToSaved = {
                             navigateToSaved = true
                             navController.navigateToMain()
@@ -117,10 +146,9 @@ fun MainScreen() {
                     CategoryDetailScreen(
                         categoryId = arguments.getString(Routes.CATEGORY_ID_KEY).orEmpty(),
                         categoryName = arguments.getString(Routes.CATEGORY_NAME_KEY).orEmpty(),
-                        onProductClick = { productId ->
-                            navController.navigateToProductDetail(productId = productId, it)
-                        },
+                        onProductClick = { productId -> navController.navigateToProductDetail(productId = productId, it) },
                         onNavigateBack = navController::navigateBack,
+                        onNavigateToLogin = navController::navigateToLogin,
                         onNavigateToSaved = {
                             navigateToSaved = true
                             navController.navigateBack()
@@ -138,8 +166,11 @@ fun MainContent(
     onCartClick: () -> Unit,
     onProductClick: (String) -> Unit,
     onCategoryClick: (String, String, NavBackStackEntry) -> Unit,
+    onNavigateToLogin: () -> Unit,
     navigateToSaved: Boolean,
-    onNavigateToSavedConsumed: () -> Unit
+    onNavigateToSavedConsumed: () -> Unit,
+    authState: AuthState,
+    onSignOut: () -> Unit
 ) {
     val nestedNavController = rememberAppNavController()
     val navBackStackEntry by nestedNavController.navController.currentBackStackEntryAsState()
@@ -163,7 +194,17 @@ fun MainContent(
                 with(sharedTransitionScope) {
                     BottomBar(
                         currentRoute = currentRoute ?: Routes.MAIN_HOME,
-                        navigateToRoute = nestedNavController::navigateToBottomBarRoute,
+                        navigateToRoute = { route ->
+                            when (route) {
+                                Routes.MAIN_SAVED, Routes.MAIN_MY_PAGE -> {
+                                    when (authState) {
+                                        AuthState.AUTHENTICATED -> nestedNavController.navigateToBottomBarRoute(route)
+                                        AuthState.UNAUTHENTICATED -> onNavigateToLogin()
+                                    }
+                                }
+                                else -> nestedNavController.navigateToBottomBarRoute(route)
+                            }
+                        },
                         modifier = Modifier
                             .renderInSharedTransitionScopeOverlay(zIndexInOverlay = 1f)
                             .animateEnterExit(
@@ -190,7 +231,9 @@ fun MainContent(
                 onProductClick = onProductClick,
                 onCategoryClick = onCategoryClick,
                 onNavigateToHome = nestedNavController::navigateToHome,
-                onNavigateToSaved = nestedNavController::navigateToSaved
+                onNavigateToLogin = onNavigateToLogin,
+                onNavigateToSaved = nestedNavController::navigateToSaved,
+                onSignOut = onSignOut
             )
         }
     }

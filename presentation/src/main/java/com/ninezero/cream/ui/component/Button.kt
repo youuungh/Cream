@@ -30,12 +30,16 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.ninezero.cream.ui.theme.CreamTheme
+import com.ninezero.cream.ui.theme.creamKakao
+import com.ninezero.cream.ui.theme.creamNaver
 import com.ninezero.cream.utils.NumUtils.formatPriceWithCommas
 import com.ninezero.di.R
 
@@ -305,6 +309,107 @@ fun DeleteButton(
     }
 }
 
+@Composable
+fun SocialButton(
+    onClick: () -> Unit,
+    text: String,
+    iconResId: Int,
+    backgroundColor: Color,
+    contentColor: Color,
+    modifier: Modifier = Modifier,
+    borderColor: Color? = null
+) {
+    Button(
+        onClick = onClick,
+        modifier = modifier
+            .fillMaxWidth()
+            .height(48.dp)
+            .then(
+                if (borderColor != null)
+                    Modifier.border(1.dp, borderColor, MaterialTheme.shapes.small)
+                else
+                    Modifier
+            ),
+        shape = MaterialTheme.shapes.small,
+        colors = ButtonDefaults.buttonColors(
+            containerColor = backgroundColor,
+            contentColor = contentColor
+        ),
+        contentPadding = PaddingValues(horizontal = 16.dp)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.Start,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                painter = painterResource(id = iconResId),
+                contentDescription = null,
+                modifier = Modifier.size(20.dp),
+                tint = Color.Unspecified
+            )
+            Spacer(modifier = Modifier.width(16.dp))
+            Text(
+                text = text,
+                style = MaterialTheme.typography.labelLarge,
+                modifier = Modifier.weight(1f),
+                textAlign = TextAlign.Center
+            )
+            Spacer(modifier = Modifier.width(24.dp))
+        }
+    }
+}
+
+@Composable
+fun GoogleLoginButton(onClick: () -> Unit) {
+    SocialButton(
+        onClick = onClick,
+        text = stringResource(id = R.string.login_with_google),
+        iconResId = R.drawable.ic_google,
+        backgroundColor = Color.White,
+        contentColor = Color.Black,
+        borderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.34f)
+    )
+}
+
+@Composable
+fun KakaoLoginButton(onClick: () -> Unit) {
+    SocialButton(
+        onClick = onClick,
+        text = stringResource(id = R.string.login_with_kakao),
+        iconResId = R.drawable.ic_kakao,
+        backgroundColor = creamKakao,
+        contentColor = Color.Black
+    )
+}
+
+@Composable
+fun NaverLoginButton(onClick: () -> Unit) {
+    SocialButton(
+        onClick = onClick,
+        text = stringResource(id = R.string.login_with_naver),
+        iconResId = R.drawable.ic_naver,
+        backgroundColor = creamNaver,
+        contentColor = Color.White
+    )
+}
+
+@Composable
+fun SocialLoginButtons(
+    onGoogleLogin: () -> Unit,
+    onNaverLogin: () -> Unit,
+    onKakaoLogin: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier,
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        GoogleLoginButton(onClick = onGoogleLogin)
+        KakaoLoginButton(onClick = onKakaoLogin)
+        NaverLoginButton(onClick = onNaverLogin)
+    }
+}
 
 @Preview(showBackground = true)
 @Composable
@@ -341,6 +446,11 @@ private fun PreviewButtons() {
             DeleteButton(
                 onClick = {},
                 text = "선택 삭제"
+            )
+            SocialLoginButtons(
+                onGoogleLogin = {},
+                onNaverLogin = {},
+                onKakaoLogin = {}
             )
         }
     }

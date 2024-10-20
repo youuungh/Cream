@@ -45,6 +45,7 @@ sealed class SearchResult : MviResult {
 }
 
 sealed class SearchEvent : MviEvent, SearchResult() {
+    object NavigateToLogin : SearchEvent()
     object NavigateToSaved : SearchEvent()
     data class ShowSnackbar(val message: Message) : SearchEvent()
 }

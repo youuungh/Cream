@@ -3,7 +3,6 @@ package com.ninezero.cream.viewmodel
 import androidx.lifecycle.viewModelScope
 import com.ninezero.cream.base.BaseStateViewModel
 import com.ninezero.cream.model.Message
-import com.ninezero.cream.ui.category_detail.CategoryDetailAction
 import com.ninezero.cream.ui.home.search.SearchAction
 import com.ninezero.cream.ui.home.search.SearchEvent
 import com.ninezero.cream.ui.home.search.SearchReducer
@@ -16,6 +15,7 @@ import com.ninezero.domain.model.EntityWrapper
 import com.ninezero.domain.model.Product
 import com.ninezero.domain.model.updateSaveStatus
 import com.ninezero.domain.repository.NetworkRepository
+import com.ninezero.domain.usecase.AuthUseCase
 import com.ninezero.domain.usecase.SaveUseCase
 import com.ninezero.domain.usecase.SearchUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -33,6 +33,7 @@ import javax.inject.Inject
 @HiltViewModel
 class SearchViewModel @Inject constructor(
     private val searchUseCase: SearchUseCase,
+    private val authUseCase: AuthUseCase,
     private val saveUseCase: SaveUseCase,
     reducer: SearchReducer,
     networkRepository: NetworkRepository
@@ -144,19 +145,21 @@ class SearchViewModel @Inject constructor(
     }
 
     private fun toggleSave(product: Product): Flow<SearchResult> = flow {
-        saveUseCase.toggleSave(product)
-        emit(SearchResult.SaveToggled(product.productId, !product.isSaved))
-        if (!product.isSaved) {
-            emit(
-                SearchEvent.ShowSnackbar(
-                    Message(
-                        messageId = R.string.saved_item_added,
-                        actionLabelId = R.string.view_saved,
-                        onAction = { action(SearchAction.NavigateToSaved) }
+        if (authUseCase.getCurrentUser() != null) {
+            saveUseCase.toggleSave(product)
+            emit(SearchResult.SaveToggled(product.productId, !product.isSaved))
+            if (!product.isSaved) {
+                emit(
+                    SearchEvent.ShowSnackbar(
+                        Message(
+                            messageId = R.string.saved_item_added,
+                            actionLabelId = R.string.view_saved,
+                            onAction = { action(SearchAction.NavigateToSaved) }
+                        )
                     )
                 )
-            )
-        }
+            }
+        } else emit(SearchEvent.NavigateToLogin)
     }
 
     private fun updateSavedIds(savedIds: Set<String>): Flow<SearchResult> = flow {

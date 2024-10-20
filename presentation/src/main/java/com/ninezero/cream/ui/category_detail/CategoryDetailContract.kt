@@ -6,7 +6,6 @@ import com.ninezero.cream.base.MviResult
 import com.ninezero.cream.base.MviStateReducer
 import com.ninezero.cream.base.MviViewState
 import com.ninezero.cream.model.Message
-import com.ninezero.cream.ui.product_detail.ProductDetailEvent
 import com.ninezero.domain.model.CategoryDetails
 import com.ninezero.domain.model.Product
 import javax.inject.Inject
@@ -27,6 +26,7 @@ sealed class CategoryDetailResult : MviResult {
 }
 
 sealed class CategoryDetailEvent : MviEvent, CategoryDetailResult() {
+    object NavigateToLogin : CategoryDetailEvent()
     object NavigateToSaved : CategoryDetailEvent()
     data class NavigateToProductDetail(val productId: String) : CategoryDetailEvent()
     data class ShowSnackbar(val message: Message) : CategoryDetailEvent()

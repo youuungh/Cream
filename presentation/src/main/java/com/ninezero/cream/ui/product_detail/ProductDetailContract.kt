@@ -30,6 +30,7 @@ sealed class ProductDetailResult : MviResult {
 }
 
 sealed class ProductDetailEvent : MviEvent, ProductDetailResult() {
+    object NavigateToLogin : ProductDetailEvent()
     object NavigateToSaved : ProductDetailEvent()
     object NavigateToCart : ProductDetailEvent()
     data class ShowSnackbar(val message: Message) : ProductDetailEvent()

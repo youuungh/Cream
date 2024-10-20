@@ -16,6 +16,7 @@ import com.ninezero.domain.model.EntityWrapper
 import com.ninezero.domain.model.Product
 import com.ninezero.domain.model.updateSaveStatus
 import com.ninezero.domain.repository.NetworkRepository
+import com.ninezero.domain.usecase.AuthUseCase
 import com.ninezero.domain.usecase.CategoryUseCase
 import com.ninezero.domain.usecase.SaveUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -27,6 +28,7 @@ import javax.inject.Inject
 @HiltViewModel
 class CategoryDetailViewModel @Inject constructor(
     private val categoryUseCase: CategoryUseCase,
+    private val authUseCase: AuthUseCase,
     private val saveUseCase: SaveUseCase,
     reducer: CategoryDetailReducer,
     networkRepository: NetworkRepository,
@@ -72,19 +74,21 @@ class CategoryDetailViewModel @Inject constructor(
     }
 
     private fun toggleSave(product: Product): Flow<CategoryDetailResult> = flow {
-        saveUseCase.toggleSave(product)
-        emit(CategoryDetailResult.SaveToggled(product.productId, !product.isSaved))
-        if (!product.isSaved) {
-            emit(
-                CategoryDetailEvent.ShowSnackbar(
-                    Message(
-                        messageId = R.string.saved_item_added,
-                        actionLabelId = R.string.view_saved,
-                        onAction = { action(CategoryDetailAction.NavigateToSaved) }
+        if (authUseCase.getCurrentUser() != null) {
+            saveUseCase.toggleSave(product)
+            emit(CategoryDetailResult.SaveToggled(product.productId, !product.isSaved))
+            if (!product.isSaved) {
+                emit(
+                    CategoryDetailEvent.ShowSnackbar(
+                        Message(
+                            messageId = R.string.saved_item_added,
+                            actionLabelId = R.string.view_saved,
+                            onAction = { action(CategoryDetailAction.NavigateToSaved) }
+                        )
                     )
                 )
-            )
-        }
+            }
+        } else emit(CategoryDetailEvent.NavigateToLogin)
     }
 
     private fun updateSavedIds(savedIds: Set<String>): Flow<CategoryDetailResult> = flow {

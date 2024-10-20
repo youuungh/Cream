@@ -14,6 +14,7 @@ import com.ninezero.domain.model.EntityWrapper
 import com.ninezero.domain.model.Product
 import com.ninezero.domain.model.updateSaveStatus
 import com.ninezero.domain.repository.NetworkRepository
+import com.ninezero.domain.usecase.AuthUseCase
 import com.ninezero.domain.usecase.HomeUseCase
 import com.ninezero.domain.usecase.SaveUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -25,6 +26,7 @@ import javax.inject.Inject
 @HiltViewModel
 class HomeViewModel @Inject constructor(
     private val homeUseCase: HomeUseCase,
+    private val authUseCase: AuthUseCase,
     private val saveUseCase: SaveUseCase,
     reducer: HomeReducer,
     networkRepository: NetworkRepository,
@@ -70,19 +72,21 @@ class HomeViewModel @Inject constructor(
     }
 
     private fun toggleSave(product: Product): Flow<HomeResult> = flow {
-        saveUseCase.toggleSave(product)
-        emit(HomeResult.SaveToggled(product.productId, !product.isSaved))
-        if (!product.isSaved) {
-            emit(
-                HomeEvent.ShowSnackbar(
-                    Message(
-                        messageId = R.string.saved_item_added,
-                        actionLabelId = R.string.view_saved,
-                        onAction = { action(HomeAction.NavigateToSaved) }
+        if (authUseCase.getCurrentUser() != null) {
+            saveUseCase.toggleSave(product)
+            emit(HomeResult.SaveToggled(product.productId, !product.isSaved))
+            if (!product.isSaved) {
+                emit(
+                    HomeEvent.ShowSnackbar(
+                        Message(
+                            messageId = R.string.saved_item_added,
+                            actionLabelId = R.string.view_saved,
+                            onAction = { action(HomeAction.NavigateToSaved) }
+                        )
                     )
                 )
-            )
-        }
+            }
+        } else emit(HomeEvent.NavigateToLogin)
     }
 
     private fun updateSavedIds(savedIds: Set<String>): Flow<HomeResult> = flow {

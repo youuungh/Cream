@@ -14,6 +14,10 @@ private val googleSansFamily = FontFamily(
     Font(R.font.google_sans_bold, FontWeight.Bold),
 )
 
+private val arciformFamily = FontFamily(
+    Font(R.font.arciform, FontWeight.Normal)
+)
+
 // Set of Material typography styles to start with
 private val baseTextStyle = TextStyle(
     fontFamily = googleSansFamily
@@ -112,4 +116,17 @@ val Typography = Typography(
         lineHeight = 16.sp,
         letterSpacing = 0.5.sp
     )
+)
+
+val logoTitle = TextStyle(
+    fontFamily = arciformFamily,
+    fontWeight = FontWeight.Normal,
+    fontSize = 48.sp,
+    letterSpacing = 0.sp
+)
+
+val logoSubtitle = TextStyle(
+    fontFamily = arciformFamily,
+    fontWeight = FontWeight.Normal,
+    fontSize = 14.sp,
 )

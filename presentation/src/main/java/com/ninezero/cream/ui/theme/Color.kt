@@ -12,3 +12,5 @@ val Pink40 = Color(0xFF7D5260)
 
 val creamRed = Color(0xffef6253)
 val creamGreen = Color(0xff41b979)
+val creamKakao = Color(0xFFFEE500)
+val creamNaver = Color(0xFF03C75A)

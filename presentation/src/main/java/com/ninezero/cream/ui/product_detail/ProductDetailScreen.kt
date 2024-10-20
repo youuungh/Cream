@@ -34,9 +34,10 @@ import timber.log.Timber
 
 @Composable
 fun ProductDetailScreen(
-    onNavigateBack: () -> Unit,
     onCartClick: () -> Unit,
     onProductClick: (String) -> Unit,
+    onNavigateBack: () -> Unit,
+    onNavigateToLogin: () -> Unit,
     onNavigateToSaved: () -> Unit,
     viewModel: ProductDetailViewModel = hiltViewModel()
 ) {
@@ -53,6 +54,7 @@ fun ProductDetailScreen(
 
     viewModel.collectEvents {
         when (it) {
+            is ProductDetailEvent.NavigateToLogin -> onNavigateToLogin()
             is ProductDetailEvent.NavigateToSaved -> onNavigateToSaved()
             is ProductDetailEvent.NavigateToCart -> onCartClick()
             is ProductDetailEvent.ShowSnackbar -> creamScaffoldState.showSnackbar(it.message)
@@ -78,10 +80,10 @@ fun ProductDetailScreen(
 
                 is ProductDetailState.Content -> ProductDetailContent(
                     state = state,
+                    onProductClick = onProductClick,
                     onSaveToggle = { product ->
                         viewModel.action(ProductDetailAction.ToggleSave(product))
                     },
-                    onProductClick = onProductClick,
                     onAddToCart = {
                         viewModel.action(ProductDetailAction.AddToCart(state.product))
                         showBottomSheet = false
@@ -91,7 +93,7 @@ fun ProductDetailScreen(
                     appBarHeight = appBarHeight,
                     tabVisible = tabVisible,
                     showBottomSheet = showBottomSheet,
-                    onShowBottomSheetChange = { showBottomSheet = it }
+                    onShowBottomSheetChange = { showBottomSheet = it },
                 )
 
                 is ProductDetailState.Error -> ErrorScreen(

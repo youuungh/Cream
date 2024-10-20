@@ -53,6 +53,7 @@ fun CategoryDetailScreen(
     categoryName: String,
     onProductClick: (String) -> Unit,
     onNavigateBack: () -> Unit,
+    onNavigateToLogin: () -> Unit,
     onNavigateToSaved: () -> Unit,
     viewModel: CategoryDetailViewModel = hiltViewModel()
 ) {
@@ -78,6 +79,7 @@ fun CategoryDetailScreen(
     viewModel.collectEvents {
         when (it) {
             is CategoryDetailEvent.NavigateToProductDetail -> onProductClick(it.productId)
+            is CategoryDetailEvent.NavigateToLogin -> onNavigateToLogin()
             is CategoryDetailEvent.NavigateToSaved -> onNavigateToSaved()
             is CategoryDetailEvent.ShowSnackbar -> creamScaffoldState.showSnackbar(it.message)
         }

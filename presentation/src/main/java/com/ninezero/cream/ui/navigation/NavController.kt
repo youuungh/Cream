@@ -25,6 +25,7 @@ import androidx.navigation.navDeepLink
 import com.ninezero.cream.ui.LocalNavAnimatedVisibilityScope
 import com.ninezero.cream.ui.category.CategoryScreen
 import com.ninezero.cream.ui.home.HomeScreen
+import com.ninezero.cream.ui.mypage.MyPageScreen
 import com.ninezero.cream.ui.saved.SavedScreen
 import com.ninezero.cream.utils.nonSpatialExpressiveSpring
 
@@ -61,10 +62,20 @@ class AppNavController(val navController: NavHostController) {
     }
 
     fun navigateToHome() = navigateToBottomBarRoute(Routes.MAIN_HOME)
+
     fun navigateToSaved() = navigateToBottomBarRoute(Routes.MAIN_SAVED)
+
+    fun navigateToMyPage() = navigateToBottomBarRoute(Routes.MAIN_MY_PAGE)
+
     fun navigateToCart() = navController.navigate(Routes.CART)
 
-    fun navigateToCategoryDetail(categoryId: String, categoryName: String, from: NavBackStackEntry) {
+    fun navigateToLogin() = navController.navigate(Routes.LOGIN)
+
+    fun navigateToCategoryDetail(
+        categoryId: String,
+        categoryName: String,
+        from: NavBackStackEntry
+    ) {
         if (from.lifecycleIsResumed()) {
             navController.navigate(Routes.categoryDetailRoute(categoryId, categoryName))
         }
@@ -117,7 +128,9 @@ fun NavGraphBuilder.addMainGraph(
     onProductClick: (String) -> Unit,
     onCategoryClick: (String, String, NavBackStackEntry) -> Unit,
     onNavigateToHome: () -> Unit,
+    onNavigateToLogin: () -> Unit,
     onNavigateToSaved: () -> Unit,
+    onSignOut: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     composable(
@@ -129,6 +142,7 @@ fun NavGraphBuilder.addMainGraph(
         HomeScreen(
             onCartClick = onCartClick,
             onProductClick = onProductClick,
+            onNavigateToLogin = onNavigateToLogin,
             onNavigateToSaved = onNavigateToSaved,
             modifier = modifier
         )
@@ -163,6 +177,19 @@ fun NavGraphBuilder.addMainGraph(
             onCartClick = onCartClick,
             onProductClick = onProductClick,
             onNavigateToHome = onNavigateToHome,
+            modifier = modifier
+        )
+    }
+
+    composable(
+        route = Routes.MAIN_MY_PAGE,
+        deepLinks = listOf(navDeepLink {
+            uriPattern = "${Routes.DEEP_LINK_SCHEME}${Routes.MAIN_MY_PAGE}"
+        })
+    ) {
+        MyPageScreen(
+            onCartClick = onCartClick,
+            onSignOut = onSignOut,
             modifier = modifier
         )
     }

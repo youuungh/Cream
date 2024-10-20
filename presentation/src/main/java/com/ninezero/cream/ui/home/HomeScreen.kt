@@ -1,6 +1,7 @@
 @file:OptIn(ExperimentalSharedTransitionApi::class)
 package com.ninezero.cream.ui.home
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ExperimentalSharedTransitionApi
@@ -22,6 +23,7 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
@@ -49,6 +51,7 @@ import com.ninezero.cream.ui.component.CreamScaffold
 import com.ninezero.cream.ui.component.CreamSurface
 import com.ninezero.cream.ui.component.CustomDialog
 import com.ninezero.cream.ui.component.CustomSnackbar
+import com.ninezero.cream.ui.component.EmptyScreen
 import com.ninezero.cream.ui.component.ErrorScreen
 import com.ninezero.cream.ui.component.SearchHistorySection
 import com.ninezero.cream.ui.component.SearchResultsSection
@@ -67,12 +70,14 @@ import com.ninezero.cream.viewmodel.SearchViewModel
 import com.ninezero.di.R
 import com.ninezero.domain.model.HomeData
 import com.ninezero.domain.model.Product
+import timber.log.Timber
 
 @Composable
 fun HomeScreen(
     modifier: Modifier = Modifier,
     onCartClick: () -> Unit,
     onProductClick: (String) -> Unit,
+    onNavigateToLogin: () -> Unit,
     onNavigateToSaved: () -> Unit,
     homeViewModel: HomeViewModel = hiltViewModel(),
     searchViewModel: SearchViewModel = hiltViewModel()
@@ -88,9 +93,19 @@ fun HomeScreen(
     val focusManager = LocalFocusManager.current
     val focusRequester = remember { FocusRequester() }
 
+    val backHandlingEnabled by remember { derivedStateOf { isSearchMode } }
+
+    BackHandler(backHandlingEnabled) {
+        keyboardController?.hide()
+        focusManager.clearFocus()
+        searchViewModel.clearSearch()
+        searchViewModel.setSearchMode(false)
+    }
+
     homeViewModel.collectEvents {
         when (it) {
             is HomeEvent.NavigateToProductDetail -> onProductClick(it.productId)
+            is HomeEvent.NavigateToLogin -> onNavigateToLogin()
             is HomeEvent.NavigateToSaved -> onNavigateToSaved()
             is HomeEvent.ShowSnackbar -> creamScaffoldState.showSnackbar(it.message)
         }
@@ -98,6 +113,7 @@ fun HomeScreen(
 
     searchViewModel.collectEvents {
         when (it) {
+            is SearchEvent.NavigateToLogin -> onNavigateToLogin()
             is SearchEvent.NavigateToSaved -> onNavigateToSaved()
             is SearchEvent.ShowSnackbar -> creamScaffoldState.showSnackbar(it.message)
         }
@@ -356,6 +372,9 @@ fun SearchContent(
                     enter = slideInVertically() + fadeIn(),
                     exit = slideOutVertically() + fadeOut()
                 ) {
+                    if (state.products.isEmpty()) {
+                        EmptyScreen(title = stringResource(R.string.no_search_results))
+                    }
                     SearchResultsSection(
                         products = state.products,
                         sortOption = state.sortOption,

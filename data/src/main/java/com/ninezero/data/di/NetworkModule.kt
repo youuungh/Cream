@@ -5,10 +5,13 @@ import com.google.gson.Gson
 import com.ninezero.data.BuildConfig
 import com.ninezero.data.datasource.NetworkStatus
 import com.ninezero.data.remote.api.ApiService
+import com.ninezero.data.remote.api.CustomTokenApiService
 import com.ninezero.data.remote.retrofit.NetworkRequestFactory
 import com.ninezero.data.remote.retrofit.NetworkRequestFactoryImpl
 import com.ninezero.data.remote.retrofit.StringConverterFactory
 import com.ninezero.data.repository.NetworkRepositoryImpl
+import com.ninezero.data.utils.KAKAO_FUNCTIONS_URL
+import com.ninezero.data.utils.NAVER_FUNCTIONS_URL
 import com.ninezero.domain.repository.NetworkRepository
 import dagger.Module
 import dagger.Provides
@@ -18,7 +21,9 @@ import dagger.hilt.components.SingletonComponent
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
+import retrofit2.converter.gson.GsonConverterFactory
 import timber.log.Timber
+import javax.inject.Named
 import javax.inject.Singleton
 
 @Module
@@ -61,6 +66,38 @@ class NetworkModule {
     @Provides
     @Singleton
     fun provideApiService(retrofit: Retrofit): ApiService = retrofit.create(ApiService::class.java)
+
+    @Provides
+    @Singleton
+    @Named("NaverRetrofit")
+    fun provideNaverRetrofit(okHttpClient: OkHttpClient): Retrofit =
+        Retrofit.Builder()
+            .baseUrl(NAVER_FUNCTIONS_URL)
+            .client(okHttpClient)
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+
+    @Provides
+    @Singleton
+    @Named("KakaoRetrofit")
+    fun provideKakaoRetrofit(okHttpClient: OkHttpClient): Retrofit =
+        Retrofit.Builder()
+            .baseUrl(KAKAO_FUNCTIONS_URL)
+            .client(okHttpClient)
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+
+    @Provides
+    @Singleton
+    @Named("NaverCustomTokenApiService")
+    fun provideNaverCustomTokenApiService(@Named("NaverRetrofit") retrofit: Retrofit): CustomTokenApiService =
+        retrofit.create(CustomTokenApiService::class.java)
+
+    @Provides
+    @Singleton
+    @Named("KakaoCustomTokenApiService")
+    fun provideKakaoCustomTokenApiService(@Named("KakaoRetrofit") retrofit: Retrofit): CustomTokenApiService =
+        retrofit.create(CustomTokenApiService::class.java)
 
     @Provides
     @Singleton

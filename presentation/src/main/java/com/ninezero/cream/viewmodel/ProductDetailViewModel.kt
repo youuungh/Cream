@@ -16,6 +16,7 @@ import com.ninezero.domain.model.EntityWrapper
 import com.ninezero.domain.model.Product
 import com.ninezero.domain.model.updateSaveStatus
 import com.ninezero.domain.repository.NetworkRepository
+import com.ninezero.domain.usecase.AuthUseCase
 import com.ninezero.domain.usecase.CartUseCase
 import com.ninezero.domain.usecase.ProductUseCase
 import com.ninezero.domain.usecase.SaveUseCase
@@ -29,6 +30,7 @@ import javax.inject.Inject
 @HiltViewModel
 class ProductDetailViewModel @Inject constructor(
     private val productUseCase: ProductUseCase,
+    private val authUseCase: AuthUseCase,
     private val saveUseCase: SaveUseCase,
     private val cartUseCase: CartUseCase,
     reducer: ProductDetailReducer,
@@ -99,43 +101,47 @@ class ProductDetailViewModel @Inject constructor(
     }
 
     private fun toggleSave(product: Product): Flow<ProductDetailResult> = flow {
-        saveUseCase.toggleSave(product)
-        emit(ProductDetailResult.SaveToggled(product.productId, !product.isSaved))
-        if (!product.isSaved) {
-            emit(
-                ProductDetailEvent.ShowSnackbar(
-                    Message(
-                        messageId = R.string.saved_item_added,
-                        actionLabelId = R.string.view_saved,
-                        onAction = { action(ProductDetailAction.NavigateToSaved) }
-                    )
-                )
-            )
-        }
-    }
-
-    private fun addToCart(product: Product): Flow<ProductDetailResult> = flow {
-        try {
-            val isAlreadyInCart = cartUseCase.isInCart(product.productId).first()
-            if (isAlreadyInCart) {
-                emit(ProductDetailEvent.ShowSnackbar(Message(messageId = R.string.already_in_cart)))
-                emit(ProductDetailResult.AlreadyInCart)
-            } else {
-                cartUseCase.addToCart(product)
+        if (authUseCase.getCurrentUser() != null) {
+            saveUseCase.toggleSave(product)
+            emit(ProductDetailResult.SaveToggled(product.productId, !product.isSaved))
+            if (!product.isSaved) {
                 emit(
                     ProductDetailEvent.ShowSnackbar(
                         Message(
-                            messageId = R.string.added_to_cart,
-                            actionLabelId = R.string.view_cart,
-                            onAction = { action(ProductDetailAction.NavigateToCart) }
+                            messageId = R.string.saved_item_added,
+                            actionLabelId = R.string.view_saved,
+                            onAction = { action(ProductDetailAction.NavigateToSaved) }
                         )
                     )
                 )
-                emit(ProductDetailResult.AddToCartSuccess)
             }
-        } catch (e: Exception) {
-            emit(ProductDetailResult.Error(ErrorHandler.getErrorMessage(e)))
-        }
+        } else emit(ProductDetailEvent.NavigateToLogin)
+    }
+
+    private fun addToCart(product: Product): Flow<ProductDetailResult> = flow {
+        if (authUseCase.getCurrentUser() != null) {
+            try {
+                val isAlreadyInCart = cartUseCase.isInCart(product.productId).first()
+                if (isAlreadyInCart) {
+                    emit(ProductDetailEvent.ShowSnackbar(Message(messageId = R.string.already_in_cart)))
+                    emit(ProductDetailResult.AlreadyInCart)
+                } else {
+                    cartUseCase.addToCart(product)
+                    emit(
+                        ProductDetailEvent.ShowSnackbar(
+                            Message(
+                                messageId = R.string.added_to_cart,
+                                actionLabelId = R.string.view_cart,
+                                onAction = { action(ProductDetailAction.NavigateToCart) }
+                            )
+                        )
+                    )
+                    emit(ProductDetailResult.AddToCartSuccess)
+                }
+            } catch (e: Exception) {
+                emit(ProductDetailResult.Error(ErrorHandler.getErrorMessage(e)))
+            }
+        } else emit(ProductDetailEvent.NavigateToLogin)
     }
 
     private fun updateSavedIds(savedIds: Set<String>): Flow<ProductDetailResult> = flow {

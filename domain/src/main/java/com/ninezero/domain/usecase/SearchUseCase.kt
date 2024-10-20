@@ -15,8 +15,20 @@ class SearchUseCase @Inject constructor(
     private val productRepository: ProductRepository,
     private val searchRepository: SearchRepository
 ) {
-    fun searchProducts(keyword: String): Flow<EntityWrapper<List<Product>>> =
-        productRepository.searchProducts(keyword)
+    fun searchProducts(keyword: String): Flow<EntityWrapper<List<Product>>> = flow {
+        if (keyword.isBlank()) {
+            emit(EntityWrapper.Success(emptyList()))
+            return@flow
+        }
+
+        val allProducts = productRepository.getAllProducts().first()
+        val matchingProducts = allProducts.filter { product ->
+            product.brand.brandName.contains(keyword, ignoreCase = true) ||
+            product.productName.contains(keyword, ignoreCase = true) ||
+            product.ko.contains(keyword, ignoreCase = true)
+        }
+        emit(EntityWrapper.Success(matchingProducts))
+    }
 
     fun getSearchHistory(): Flow<List<SearchHistory>> = searchRepository.getSearchHistory()
 
@@ -35,11 +47,7 @@ class SearchUseCase @Inject constructor(
         val history = searchRepository.getSearchHistory().first()
 
         val suggestions = (products.flatMap {
-            listOf(
-                it.brand.brandName,
-                it.productName,
-                it.ko
-            )
+            listOf(it.brand.brandName, it.productName, it.ko)
         } + history.map { it.keyword })
             .distinct()
             .filter { it.contains(keyword, ignoreCase = true) }

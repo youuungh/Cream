@@ -26,6 +26,7 @@ sealed class HomeResult : MviResult {
 }
 
 sealed class HomeEvent : MviEvent, HomeResult() {
+    object NavigateToLogin : HomeEvent()
     object NavigateToSaved : HomeEvent()
     data class ShowSnackbar(val message: Message) : HomeEvent()
     data class NavigateToProductDetail(val productId: String) : HomeEvent()
