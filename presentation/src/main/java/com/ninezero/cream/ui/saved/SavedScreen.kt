@@ -40,8 +40,9 @@ import com.ninezero.cream.ui.component.CreamTopAppBar
 import com.ninezero.cream.ui.component.Divider
 import com.ninezero.cream.ui.component.EmptyScreen
 import com.ninezero.cream.ui.component.ErrorScreen
-import com.ninezero.cream.ui.component.SavedBottomSheet
 import com.ninezero.cream.ui.component.SavedProductCard
+import com.ninezero.cream.ui.component.bottomsheet.BottomSheetState
+import com.ninezero.cream.ui.component.bottomsheet.CreamBottomSheet
 import com.ninezero.cream.ui.component.skeleton.SavedSkeleton
 import com.ninezero.cream.utils.SavedSortOption
 import com.ninezero.cream.viewmodel.SavedViewModel
@@ -107,11 +108,14 @@ fun SavedScreen(
         }
 
         if (showBottomSheet.value) {
-            SavedBottomSheet(
+            CreamBottomSheet(
                 showBottomSheet = showBottomSheet,
-                coroutineScope = scope,
-                selectedOption = sortType,
-                onOptionSelected = { viewModel.action(SavedAction.UpdateSortType(it)) }
+                state = BottomSheetState.SavedSort(
+                    selectedOption = sortType,
+                    onOptionSelected = { option -> viewModel.action(SavedAction.UpdateSortType(option)) }
+                ),
+                onDismiss = { showBottomSheet.value = false },
+                coroutineScope = scope
             )
         }
     }

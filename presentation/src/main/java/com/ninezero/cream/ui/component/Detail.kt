@@ -44,6 +44,10 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.times
+import com.ninezero.cream.ui.component.bottomsheet.AnimatedCreamBottomSheet
+import com.ninezero.cream.ui.component.bottomsheet.BottomSheetState
+import com.ninezero.cream.ui.component.bottomsheet.BottomSheetType
+import com.ninezero.cream.ui.component.bottomsheet.DetailBottomSheetState
 import com.ninezero.cream.ui.product_detail.ProductDetailState
 import com.ninezero.cream.utils.CONTENT_OVERLAP
 import com.ninezero.cream.utils.IMAGE_HEIGHT
@@ -65,8 +69,8 @@ fun ProductDetailContent(
     updateAppBarAlpha: (Float) -> Unit,
     appBarHeight: Dp,
     tabVisible: Boolean,
-    showBottomSheet: Boolean,
-    onShowBottomSheetChange: (Boolean) -> Unit,
+    bottomSheetState: DetailBottomSheetState,
+    onBottomSheetStateChange: (DetailBottomSheetState) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val lazyListState = rememberLazyListState()
@@ -200,20 +204,40 @@ fun ProductDetailContent(
             price = formatPriceWithCommas(state.product.price.instantBuyPrice),
             isSaved = state.product.isSaved,
             onSaveToggle = { onSaveToggle(state.product) },
-            onBuyClick = { onShowBottomSheetChange(true) },
+            onBuyClick = {
+                onBottomSheetStateChange(
+                    DetailBottomSheetState(
+                        isVisible = true,
+                        type = BottomSheetType.Detail
+                    )
+                )
+            },
             modifier = Modifier.align(Alignment.BottomCenter)
         )
 
-        if (showBottomSheet) {
-            DetailBottomSheet(
-                showBottomSheet = remember { mutableStateOf(showBottomSheet) },
-                onDismiss = { onShowBottomSheetChange(false) },
-                coroutineScope = scope,
-                productImageUrl = state.product.imageUrl,
-                productName = state.product.productName,
-                productKo = state.product.ko,
-                onAddToCart = onAddToCart,
-                onBuyNow = onBuyNow
+        if (bottomSheetState.isVisible) {
+            AnimatedCreamBottomSheet(
+                showBottomSheet = remember { mutableStateOf(bottomSheetState.isVisible) },
+                state = when (bottomSheetState.type) {
+                    BottomSheetType.Detail -> BottomSheetState.Detail(
+                        productImageUrl = state.product.imageUrl,
+                        productName = state.product.productName,
+                        productKo = state.product.ko,
+                        onAddToCart = onAddToCart,
+                        onBuyNow = onBuyNow
+                    )
+
+                    BottomSheetType.Payment -> BottomSheetState.Payment(
+                        products = listOf(state.product),
+                        onPaymentClick = { /* todo */ }
+                    )
+
+                    BottomSheetType.None -> BottomSheetState.None
+                },
+                onDismiss = {
+                    onBottomSheetStateChange(DetailBottomSheetState())
+                },
+                coroutineScope = scope
             )
         }
     }

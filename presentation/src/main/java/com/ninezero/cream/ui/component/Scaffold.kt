@@ -60,12 +60,12 @@ class CreamScaffoldState(
                 snackBarHostState.currentSnackbarData!!.dismiss()
             }
 
-            val text = resources.getText(message.messageId)
-            val actionLabel = message.actionLabelId?.let { resources.getText(it) }
+            val text = message.message ?: resources.getString(message.messageId)
+            val actionLabel = message.actionLabelId?.let { resources.getString(it) }
 
             val result = snackBarHostState.showSnackbar(
-                message = text.toString(),
-                actionLabel = actionLabel?.toString(),
+                message = text,
+                actionLabel = actionLabel,
                 duration = message.duration
             )
             if (result == SnackbarResult.ActionPerformed)

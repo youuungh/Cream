@@ -25,6 +25,8 @@ import com.ninezero.cream.ui.component.CustomSnackbar
 import com.ninezero.cream.ui.component.DetailsAppBar
 import com.ninezero.cream.ui.component.ErrorScreen
 import com.ninezero.cream.ui.component.ProductDetailContent
+import com.ninezero.cream.ui.component.bottomsheet.BottomSheetType
+import com.ninezero.cream.ui.component.bottomsheet.DetailBottomSheetState
 import com.ninezero.cream.ui.component.rememberCreamScaffoldState
 import com.ninezero.cream.ui.component.skeleton.ProductDetailSkeleton
 import com.ninezero.cream.utils.BOTTOM_BAR_HEIGHT
@@ -48,7 +50,7 @@ fun ProductDetailScreen(
     var appBarAlpha by remember { mutableFloatStateOf(0f) }
     var appBarHeight by remember { mutableStateOf(0.dp) }
     var tabVisible by remember { mutableStateOf(false) }
-    var showBottomSheet by remember { mutableStateOf(false) }
+    var bottomSheetState by remember { mutableStateOf(DetailBottomSheetState()) }
 
     val animState = rememberSlideInOutAnimState()
 
@@ -86,14 +88,14 @@ fun ProductDetailScreen(
                     },
                     onAddToCart = {
                         viewModel.action(ProductDetailAction.AddToCart(state.product))
-                        showBottomSheet = false
+                        bottomSheetState = DetailBottomSheetState()
                     },
-                    onBuyNow = { /* TODO */ },
+                    onBuyNow = { bottomSheetState = bottomSheetState.copy(type = BottomSheetType.Payment) },
                     updateAppBarAlpha = { appBarAlpha = it },
                     appBarHeight = appBarHeight,
                     tabVisible = tabVisible,
-                    showBottomSheet = showBottomSheet,
-                    onShowBottomSheetChange = { showBottomSheet = it },
+                    bottomSheetState = bottomSheetState,
+                    onBottomSheetStateChange = { newState -> bottomSheetState = newState }
                 )
 
                 is ProductDetailState.Error -> ErrorScreen(

@@ -28,6 +28,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -202,6 +203,54 @@ fun SortOptionItem(
                 tint = MaterialTheme.colorScheme.primary
             )
         }
+    }
+}
+
+@Composable
+fun BottomSheetLayout(
+    title: String? = null,
+    subtitle: String? = null,
+    showCloseButton: Boolean = true,
+    onDismiss: () -> Unit,
+    content: @Composable () -> Unit
+) {
+    Column(modifier = Modifier.padding(top = 8.dp)) {
+        title?.let {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(start = 16.dp, end = 8.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column {
+                    Text(
+                        text = title,
+                        style = MaterialTheme.typography.titleLarge.copy(
+                            fontWeight = FontWeight.Normal
+                        )
+                    )
+                    subtitle?.let {
+                        Text(
+                            text = subtitle,
+                            style = MaterialTheme.typography.labelSmall.copy(
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
+                                fontWeight = FontWeight.Normal
+                            )
+                        )
+                    }
+                }
+                if (showCloseButton) {
+                    IconButton(onClick = onDismiss) {
+                        Icon(
+                            imageVector = Icons.Rounded.Close,
+                            contentDescription = "Close"
+                        )
+                    }
+                }
+            }
+        }
+        content()
     }
 }
 

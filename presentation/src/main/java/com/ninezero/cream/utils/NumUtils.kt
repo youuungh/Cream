@@ -2,6 +2,7 @@ package com.ninezero.cream.utils
 
 import android.annotation.SuppressLint
 import com.ninezero.domain.model.Price
+import com.ninezero.domain.model.Product
 import java.text.NumberFormat
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -15,17 +16,14 @@ data class PriceDiffInfo(
 )
 
 object NumUtils {
-    fun formatPriceWithCommas(number: Int?): String {
-        return number?.let { NumberFormat.getNumberInstance(Locale.getDefault()).format(number) + "원" } ?: "-"
-    }
+    fun formatPriceWithCommas(number: Int?): String =
+        number?.let { NumberFormat.getNumberInstance(Locale.getDefault()).format(number) + "원" } ?: "-"
 
-    fun formatPriceWithCommasDouble(number: Double?): String {
-        return number?.let { NumberFormat.getNumberInstance(Locale.getDefault()).format(number.toInt()) + "원" } ?: "-"
-    }
+    fun formatPriceWithCommasDouble(number: Double?): String =
+        number?.let { NumberFormat.getNumberInstance(Locale.getDefault()).format(number.toInt()) + "원" } ?: "-"
 
-    fun formatWithCommas(number: Int?): String {
-        return number?.let { NumberFormat.getNumberInstance(Locale.getDefault()).format(number) } ?: "-"
-    }
+    fun formatWithCommas(number: Int?): String =
+        number?.let { NumberFormat.getNumberInstance(Locale.getDefault()).format(number) } ?: "-"
 
     @SuppressLint("DefaultLocale")
     fun formatTradingVolume(volume: Int): String {
@@ -34,6 +32,12 @@ object NumUtils {
             else -> formatWithCommas(volume)
         }
     }
+
+    fun calculateTotalPrice(products: List<Product>): Int = products.sumOf { it.price.instantBuyPrice }
+
+    fun calculateTotalFee(totalPrice: Int): Double = totalPrice * 0.05
+
+    fun calculateTotalPayment(totalPrice: Int, totalFee: Double): Int = totalPrice + totalFee.toInt()
 
     fun calculatePriceDiff(price: Price): PriceDiffInfo? {
         val release = price.releasePrice ?: return null

@@ -51,6 +51,7 @@ import com.ninezero.cream.ui.theme.creamGreen
 import com.ninezero.cream.ui.theme.creamRed
 import com.ninezero.cream.utils.DETAIL_BOTTOM_BAR_HEIGHT
 import com.ninezero.cream.utils.IMAGE_HEIGHT
+import com.ninezero.cream.utils.NumUtils.formatPriceWithCommas
 import com.ninezero.cream.utils.PriceDiffInfo
 import com.ninezero.di.R
 import com.ninezero.domain.model.Brand
@@ -373,6 +374,67 @@ fun ExpandingPaymentInfo(
                     Text(text = fee)
                 }
             }
+        }
+    }
+}
+
+@Composable
+fun PaymentInfo(
+    totalPrice: Int,
+    totalFee: Double,
+    totalPayment: Int,
+    modifier: Modifier = Modifier
+) {
+    Column(modifier = modifier.fillMaxWidth()) {
+        Text(
+            text = stringResource(R.string.final_order_info),
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Text(
+                text = stringResource(R.string.purchase_price),
+                style = MaterialTheme.typography.bodyMedium.copy(
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.34f),
+                    fontWeight = FontWeight.Normal
+                ),
+                modifier = Modifier.weight(1f)
+            )
+            Text(formatPriceWithCommas(totalPrice))
+        }
+        Spacer(modifier = Modifier.height(4.dp))
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Text(
+                text = stringResource(R.string.fee),
+                style = MaterialTheme.typography.bodyMedium.copy(
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.34f),
+                    fontWeight = FontWeight.Normal
+                ),
+                modifier = Modifier.weight(1f)
+            )
+            Text(formatPriceWithCommas(totalFee.toInt()))
+        }
+        Spacer(modifier = Modifier.height(16.dp))
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Text(
+                text = stringResource(R.string.total_payment),
+                style = MaterialTheme.typography.titleMedium,
+                modifier = Modifier.weight(1f)
+            )
+            Text(
+                text = formatPriceWithCommas(totalPayment),
+                style = MaterialTheme.typography.titleMedium
+            )
         }
     }
 }

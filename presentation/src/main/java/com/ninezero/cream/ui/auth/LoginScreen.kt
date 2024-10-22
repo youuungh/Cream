@@ -7,6 +7,7 @@ import android.content.Context
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -16,6 +17,7 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -43,6 +45,7 @@ import com.kakao.sdk.user.UserApiClient
 import com.navercorp.nid.NaverIdLoginSDK
 import com.navercorp.nid.oauth.OAuthLoginCallback
 import com.ninezero.cream.base.collectEvents
+import com.ninezero.cream.model.Message
 import com.ninezero.cream.ui.component.CreamScaffold
 import com.ninezero.cream.ui.component.CustomSnackbar
 import com.ninezero.cream.ui.component.SocialLoginButtons
@@ -65,12 +68,13 @@ fun LoginScreen(
     val scope = rememberCoroutineScope()
     val creamScaffoldState = rememberCreamScaffoldState()
 
-    val googleSignInLauncher = rememberLauncherForActivityResult(contract = ActivityResultContracts.StartActivityForResult()) { result ->
-        if (result.resultCode == Activity.RESULT_OK) {
-            val task = GoogleSignIn.getSignedInAccountFromIntent(result.data)
-            viewModel.handleGoogleSignInResult(task)
+    val googleSignInLauncher =
+        rememberLauncherForActivityResult(contract = ActivityResultContracts.StartActivityForResult()) { result ->
+            if (result.resultCode == Activity.RESULT_OK) {
+                val task = GoogleSignIn.getSignedInAccountFromIntent(result.data)
+                viewModel.handleGoogleSignInResult(task)
+            }
         }
-    }
 
     val naverLoginCallback = remember {
         object : OAuthLoginCallback {
@@ -88,7 +92,9 @@ fun LoginScreen(
                 viewModel.action(LoginAction.LoginError("Naver login failed: $errorCode, $errorDescription"))
             }
 
-            override fun onError(errorCode: Int, message: String) { onFailure(errorCode, message) }
+            override fun onError(errorCode: Int, message: String) {
+                onFailure(errorCode, message)
+            }
         }
     }
 
@@ -99,8 +105,19 @@ fun LoginScreen(
     }
 
     LaunchedEffect(state) {
-        if (state is LoginState.LoggedIn) {
-            onLoginSuccess()
+        when (state) {
+            is LoginState.LoggedIn -> onLoginSuccess()
+            is LoginState.Error -> {
+                val errorMessage =
+                    context.getString(R.string.login_error, (state as LoginState.Error).message)
+                creamScaffoldState.showSnackbar(
+                    Message(
+                        messageId = R.string.login_error,
+                        message = errorMessage
+                    )
+                )
+            }
+            else -> {}
         }
     }
 
@@ -124,51 +141,65 @@ fun LoginScreen(
         },
         snackbarHostState = creamScaffoldState.snackBarHostState
     ) { innerPadding ->
-        Column(
+        Box(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
-                .padding(horizontal = 24.dp),
-            verticalArrangement = Arrangement.SpaceBetween,
-            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Spacer(modifier = Modifier.weight(1f))
-
             Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(bottom = 16.dp)
+                    .padding(horizontal = 24.dp),
+                verticalArrangement = Arrangement.SpaceBetween,
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Text(
-                    text = stringResource(R.string.logo_title),
-                    style = logoTitle,
-                    modifier = Modifier.padding(bottom = 4.dp)
+                Spacer(modifier = Modifier.weight(1f))
+
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        text = stringResource(R.string.logo_title),
+                        style = logoTitle,
+                        modifier = Modifier.padding(bottom = 4.dp)
+                    )
+                    Text(
+                        text = stringResource(R.string.logo_subtitle),
+                        style = logoSubtitle,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                    )
+                }
+                Spacer(modifier = Modifier.weight(1f))
+
+                SocialLoginButtons(
+                    onGoogleLogin = { googleSignInLauncher.launch(viewModel.getGoogleSignInIntent()) },
+                    onNaverLogin = { NaverIdLoginSDK.authenticate(context, naverLoginCallback) },
+                    onKakaoLogin = {
+                        scope.launch {
+                            handleKakaoLogin(
+                                context,
+                                onSuccess = { token ->
+                                    viewModel.action(
+                                        LoginAction.SignInWithKakao(
+                                            token.accessToken
+                                        )
+                                    )
+                                },
+                                onError = { error -> viewModel.action(LoginAction.LoginError("Kakao login failed: ${error.message}")) },
+                                onCancel = { viewModel.action(LoginAction.LoginError("Kakao login cancelled")) }
+                            )
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth()
                 )
-                Text(
-                    text = stringResource(R.string.logo_subtitle),
-                    style = logoSubtitle,
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                )
+                Spacer(modifier = Modifier.height(48.dp))
             }
-            Spacer(modifier = Modifier.weight(1f))
 
-            SocialLoginButtons(
-                onGoogleLogin = { googleSignInLauncher.launch(viewModel.getGoogleSignInIntent()) },
-                onNaverLogin = { NaverIdLoginSDK.authenticate(context, naverLoginCallback) },
-                onKakaoLogin = {
-                    scope.launch {
-                        handleKakaoLogin(
-                            context,
-                            onSuccess = { token -> viewModel.action(LoginAction.SignInWithKakao(token.accessToken)) },
-                            onError = { error -> viewModel.action(LoginAction.LoginError("Kakao login failed: ${error.message}")) },
-                            onCancel = { viewModel.action(LoginAction.LoginError("Kakao login cancelled")) }
-                        )
-                    }
-                },
-                modifier = Modifier.fillMaxWidth()
-            )
-            Spacer(modifier = Modifier.height(48.dp))
-
-            if (state is LoginState.Error) {
-                LaunchedEffect(state) { Timber.e("Login error: ${(state as LoginState.Error).message}") }
+            if (state is LoginState.Loading) {
+                CircularProgressIndicator(
+                    modifier = Modifier.align(Alignment.Center)
+                )
             }
         }
     }
@@ -186,6 +217,7 @@ private fun handleKakaoLogin(
                 Timber.tag("KakaoLogin").e(error, "카카오계정으로 로그인 실패")
                 onError(error)
             }
+
             token != null -> {
                 Timber.tag("KakaoLogin").i("카카오계정으로 로그인 성공 %s", token.accessToken)
                 onSuccess(token)
@@ -204,6 +236,7 @@ private fun handleKakaoLogin(
                         onCancel()
                     }
                 }
+
                 token != null -> {
                     Timber.tag("KakaoLogin").i("카카오톡으로 로그인 성공 %s", token.accessToken)
                     onSuccess(token)

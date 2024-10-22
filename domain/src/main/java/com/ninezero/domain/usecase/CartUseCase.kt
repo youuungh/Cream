@@ -43,9 +43,7 @@ class CartUseCase @Inject constructor(
 
     fun isInCart(productId: String): Flow<Boolean> = cartRepository.isInCart(productId)
 
-    fun calculateTotalPrice(products: List<Product>): Int =
-        products.sumOf { it.price.instantBuyPrice }
+    fun calculateTotalPrice(products: List<Product>): Int = products.sumOf { it.price.instantBuyPrice }
 
-    fun calculateTotalFee(products: List<Product>): Double =
-        calculateTotalPrice(products) * 0.05
+    fun calculateTotalFee(products: List<Product>): Double = calculateTotalPrice(products) * 0.05
 }

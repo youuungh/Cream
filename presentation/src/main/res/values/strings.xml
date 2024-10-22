@@ -15,18 +15,20 @@
     <string name="cancel">취소</string>
     <string name="clear">지우기</string>
     <string name="search_history">최근 검색어</string>
-
     <string name="search_bar_placeholder">브랜드, 상품 등</string>
     <string name="delete_selected">선택 삭제</string>
     <string name="product_price">상품금액</string>
     <string name="estimated_payment">예상 결제금액</string>
     <string name="fee">수수료</string>
     <string name="order_summary">선택 주문정보</string>
+    <string name="final_order_info">최종 주문정보</string>
     <string name="total_product_price">총 상품금액</string>
     <string name="total_fee">총 수수료</string>
     <string name="total_estimated_payment">총 예상 결제금액</string>
+    <string name="total_payment">총 결제금액</string>
     <string name="total_items">전체 %d</string>
-    
+    <string name="purchase_price">구매가</string>
+
     <string name="view_home">SHOP 바로가기</string>
     <string name="view_saved">보러가기</string>
     <string name="view_cart">보러가기</string>
@@ -36,6 +38,8 @@
     <string name="bottom_sheet_add_to_cart">장바구니 담기</string>
     <string name="bottom_sheet_buy_now">즉시 구매하기</string>
     <string name="bottom_sheet_order">총 %1$d건 주문하기</string>
+    <string name="bottom_sheet_payment">결제</string>
+    <string name="bottom_sheet_proceed_to_payment">결제하기</string>
 
     <string name="dialog_delete_selected_items">선택 상품 삭제</string>
     <string name="dialog_delete_selected_items_confirm">선택하신 %1$d개 상품을 삭제하시겠습니까?</string>
@@ -79,6 +83,7 @@
     <string name="added_to_cart">장바구니에 담겼습니다"</string>
 
     <string name="network_error">네트워크가 원활하지 않습니다</string>
+    <string name="login_error">로그인 실패: %s</string>
     <string name="error_title">접속이 원활하지 않습니다</string>
     <string name="error_subtitle">네트워크 연결상태를 확인하거나\n잠시 후 다시 시도해주세요</string>
 

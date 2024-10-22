@@ -28,6 +28,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -56,9 +57,10 @@ import com.ninezero.cream.ui.component.ErrorScreen
 import com.ninezero.cream.ui.component.SearchHistorySection
 import com.ninezero.cream.ui.component.SearchResultsSection
 import com.ninezero.cream.ui.component.SearchTopAppBar
-import com.ninezero.cream.ui.component.SortBottomSheet
 import com.ninezero.cream.ui.component.SuggestionsSection
 import com.ninezero.cream.ui.component.TopBanner
+import com.ninezero.cream.ui.component.bottomsheet.BottomSheetState
+import com.ninezero.cream.ui.component.bottomsheet.CreamBottomSheet
 import com.ninezero.cream.ui.component.rememberCreamScaffoldState
 import com.ninezero.cream.ui.component.skeleton.HomeSkeleton
 import com.ninezero.cream.ui.home.search.SearchAction
@@ -70,7 +72,6 @@ import com.ninezero.cream.viewmodel.SearchViewModel
 import com.ninezero.di.R
 import com.ninezero.domain.model.HomeData
 import com.ninezero.domain.model.Product
-import timber.log.Timber
 
 @Composable
 fun HomeScreen(
@@ -219,13 +220,18 @@ fun HomeScreen(
     }
 
     if (showBottomSheet) {
-        SortBottomSheet(
-            selectedOption = (searchUiState as? SearchState.Results)?.sortOption ?: SearchSortOption.RECOMMENDED,
-            onOptionSelected = { option ->
-                searchViewModel.action(SearchAction.ChangeSort(option))
-                showBottomSheet = false
-            },
-            onDismiss = { showBottomSheet = false }
+        CreamBottomSheet(
+            showBottomSheet = remember { mutableStateOf(showBottomSheet) },
+            state = BottomSheetState.SearchSort(
+                selectedOption = (searchUiState as? SearchState.Results)?.sortOption
+                    ?: SearchSortOption.RECOMMENDED,
+                onOptionSelected = { option ->
+                    searchViewModel.action(SearchAction.ChangeSort(option))
+                    showBottomSheet = false
+                }
+            ),
+            onDismiss = { showBottomSheet = false },
+            coroutineScope = rememberCoroutineScope()
         )
     }
 

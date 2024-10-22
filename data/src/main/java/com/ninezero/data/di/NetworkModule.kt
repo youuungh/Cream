@@ -10,6 +10,7 @@ import com.ninezero.data.remote.retrofit.NetworkRequestFactory
 import com.ninezero.data.remote.retrofit.NetworkRequestFactoryImpl
 import com.ninezero.data.remote.retrofit.StringConverterFactory
 import com.ninezero.data.repository.NetworkRepositoryImpl
+import com.ninezero.data.utils.CREAM_API
 import com.ninezero.data.utils.KAKAO_FUNCTIONS_URL
 import com.ninezero.data.utils.NAVER_FUNCTIONS_URL
 import com.ninezero.domain.repository.NetworkRepository
@@ -54,7 +55,7 @@ class NetworkModule {
     fun provideRetrofit(okHttpClient: OkHttpClient, gson: Gson): Retrofit =
         Retrofit.Builder()
             .client(okHttpClient)
-            .baseUrl(logBaseUrl("https://gist.githubusercontent.com/youuungh/12862d93521f807a474b75f9a1341c13/raw/59d26f39cf5ab47d381f05efaddfcf909bd5f09b/"))
+            .baseUrl(logBaseUrl(CREAM_API))
             .addConverterFactory(StringConverterFactory(gson))
             .build()
 

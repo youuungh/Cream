@@ -24,6 +24,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -42,6 +43,8 @@ import com.ninezero.cream.ui.component.CustomDialog
 import com.ninezero.cream.ui.component.DeleteButton
 import com.ninezero.cream.ui.component.EmptyScreen
 import com.ninezero.cream.ui.component.ErrorScreen
+import com.ninezero.cream.ui.component.bottomsheet.BottomSheetState
+import com.ninezero.cream.ui.component.bottomsheet.CreamBottomSheet
 import com.ninezero.cream.ui.component.skeleton.CartSkeleton
 import com.ninezero.cream.viewmodel.CartViewModel
 import com.ninezero.di.R
@@ -60,6 +63,7 @@ fun CartScreen(
     var showDeleteSingleItemDialog by remember { mutableStateOf(false) }
     var selectedCount by remember { mutableIntStateOf(0) }
     var productToDelete by remember { mutableStateOf<Product?>(null) }
+    var showPaymentBottomSheet by remember { mutableStateOf(false) }
 
     viewModel.collectEvents {
         when (it) {
@@ -115,6 +119,7 @@ fun CartScreen(
                         },
                         calculateTotalPrice = viewModel::calculateTotalPrice,
                         calculateTotalFee = viewModel::calculateTotalFee,
+                        onOrderClick = { showPaymentBottomSheet = true },
                         modifier = Modifier.padding(innerPadding)
                     )
                 }
@@ -169,6 +174,19 @@ fun CartScreen(
             )
         }
     }
+
+    if (showPaymentBottomSheet && uiState is CartState.Content) {
+        val selectedProducts = (uiState as CartState.Content).products.filter { it.isSelected }
+        CreamBottomSheet(
+            showBottomSheet = remember { mutableStateOf(showPaymentBottomSheet) },
+            state = BottomSheetState.Payment(
+                products = selectedProducts,
+                onPaymentClick = { showPaymentBottomSheet = false }
+            ),
+            onDismiss = { showPaymentBottomSheet = false },
+            coroutineScope = rememberCoroutineScope()
+        )
+    }
 }
 
 @Composable
@@ -182,6 +200,7 @@ fun CartContent(
     onDeleteSelected: () -> Unit,
     calculateTotalPrice: () -> Int,
     calculateTotalFee: () -> Double,
+    onOrderClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Column(modifier = modifier.fillMaxSize()) {
@@ -241,7 +260,7 @@ fun CartContent(
         CartBottomBar(
             selectedCount = products.count { it.isSelected },
             totalPrice = totalAmount,
-            onOrderClick = { /*todo*/ }
+            onOrderClick = onOrderClick
         )
     }
 }
