@@ -25,7 +25,7 @@ fun CreamBottomSheet(
                 productName = state.productName,
                 productKo = state.productKo,
                 onAddToCart = state.onAddToCart,
-                onBuyNow = state.onBuyNow
+                onBuyClick = state.onBuyClick
             )
             is BottomSheetState.Payment -> PaymentBottomSheetContent(
                 onDismiss = onDismiss,
@@ -42,7 +42,7 @@ fun CreamBottomSheet(
                 onOptionSelected = state.onOptionSelected,
                 onDismiss = onDismiss
             )
-            BottomSheetState.None -> {}
+            else -> {}
         }
     }
 }

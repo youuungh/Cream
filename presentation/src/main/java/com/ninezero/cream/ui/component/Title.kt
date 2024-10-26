@@ -18,9 +18,10 @@ import com.ninezero.cream.ui.theme.CreamTheme
 
 @Composable
 fun SectionTitle(
+    modifier: Modifier = Modifier,
     title: String,
     subtitle: String?,
-    modifier: Modifier = Modifier
+    onMoreClick: (() -> Unit)? = null
 ) {
     Row(
         modifier = modifier
@@ -46,6 +47,19 @@ fun SectionTitle(
                 )
             }
         }
+        onMoreClick?.let {
+            TextButton(
+                onClick = it
+            ) {
+                Text(
+                    text = "더보기",
+                    style = MaterialTheme.typography.titleSmall.copy(
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
+                        fontWeight = FontWeight.Normal
+                    )
+                )
+            }
+        }
     }
 }
 
@@ -53,7 +67,7 @@ fun SectionTitle(
 fun ContainerTitle(
     modifier: Modifier = Modifier,
     title: String,
-    onMoreClick: (() -> Unit)? = null,
+    onMoreClick: (() -> Unit)? = null
 ) {
     Row(
         modifier = modifier.fillMaxWidth(),
@@ -87,7 +101,8 @@ fun SectionTitlePreview() {
         Column {
             SectionTitle(
                 title = "Title",
-                subtitle = "subtitle"
+                subtitle = "subtitle",
+                onMoreClick = {}
             )
             ContainerTitle(
                 title = "Title",

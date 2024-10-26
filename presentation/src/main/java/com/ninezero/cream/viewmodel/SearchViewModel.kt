@@ -64,7 +64,7 @@ class SearchViewModel @Inject constructor(
         observeSavedIds()
     }
 
-    override fun SearchAction.process(): Flow<SearchResult> = when(this@process) {
+    override fun SearchAction.process(): Flow<SearchResult> = when (this@process) {
         is SearchAction.UpdateQuery -> processQuery(query)
         is SearchAction.Search -> performSearch(query)
         is SearchAction.RemoveHistory -> removeHistoryItem(keyword)
@@ -83,8 +83,13 @@ class SearchViewModel @Inject constructor(
         emit(SearchResult.Init(query = query))
         if (query.isNotBlank()) {
             emit(SearchResult.Suggesting(query))
-            searchUseCase.getSuggestedKeywords(query).collect { suggestions ->
-                emit(SearchResult.SuggestionsReady(suggestions, query))
+            try {
+                handleNetworkCallback { searchUseCase.getSuggestedKeywords(query) }
+                    .collect { suggestions ->
+                        emit(SearchResult.SuggestionsReady(suggestions, query))
+                    }
+            } catch (e: Exception) {
+                emit(SearchResult.Error(ErrorHandler.getErrorMessage(e)))
             }
         } else {
             fetchHistory()
@@ -95,16 +100,22 @@ class SearchViewModel @Inject constructor(
         _query.value = query
         emit(SearchResult.Searching(query))
         searchUseCase.addSearchHistory(query)
-        searchUseCase.searchProducts(query).collect {
-            when (it) {
-                is EntityWrapper.Success -> {
-                    val savedIds = saveUseCase.savedProductIds.value
-                    val updatedProducts = it.entity.updateSaveStatus(savedIds)
-                    val sortedProducts = updatedProducts.sortedByDescending { product -> product.tradingVolume }
-                    emit(SearchResult.SearchComplete(sortedProducts, query, SearchSortOption.RECOMMENDED, savedIds))
+
+        try {
+            handleNetworkCallback { searchUseCase.searchProducts(query) }
+                .collect {
+                    when (it) {
+                        is EntityWrapper.Success -> {
+                            val savedIds = saveUseCase.savedProductIds.value
+                            val updatedProducts = it.entity.updateSaveStatus(savedIds)
+                            val sortedProducts = updatedProducts.sortedByDescending { product -> product.tradingVolume }
+                            emit(SearchResult.SearchComplete(sortedProducts, query, SearchSortOption.RECOMMENDED, savedIds))
+                        }
+                        is EntityWrapper.Fail -> emit(SearchResult.Error(ErrorHandler.getErrorMessage(it.error)))
+                    }
                 }
-                is EntityWrapper.Fail -> emit(SearchResult.Error(ErrorHandler.getErrorMessage(it.error)))
-            }
+        } catch (e: Exception) {
+            emit(SearchResult.Error(ErrorHandler.getErrorMessage(e)))
         }
     }
 
@@ -172,18 +183,30 @@ class SearchViewModel @Inject constructor(
 
     private fun observeSavedIds() {
         viewModelScope.launch {
-            saveUseCase.savedProductIds.collect { action(SearchAction.UpdateSavedIds(it)) }
+            saveUseCase.savedProductIds.collect { savedIds ->
+                val updatedSavedIds = authUseCase.getCurrentUser()?.let { savedIds } ?: emptySet()
+                action(SearchAction.UpdateSavedIds(updatedSavedIds))
+            }
         }
     }
 
-    fun setSearchMode(active: Boolean) { _isSearchMode.value = active }
+    fun setSearchMode(active: Boolean) {
+        _isSearchMode.value = active
+    }
 
-    fun updateQuery(query: String) { action(SearchAction.UpdateQuery(query)) }
+    fun updateQuery(query: String) {
+        action(SearchAction.UpdateQuery(query))
+    }
 
-    fun search(query: String) { action(SearchAction.Search(query)) }
+    fun search(query: String) {
+        action(SearchAction.Search(query))
+    }
 
-    fun clearSearch() { action(SearchAction.ClearSearch) }
+    fun clearSearch() {
+        action(SearchAction.ClearSearch)
+    }
 
+    override fun shouldRefreshOnConnect(): Boolean = state.value is SearchState.Error
     override fun refreshData() {
         val currentQuery = _query.value
         if (currentQuery.isNotBlank()) {

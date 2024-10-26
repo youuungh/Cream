@@ -41,10 +41,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.ninezero.di.R
 
@@ -194,6 +197,28 @@ fun SearchTopAppBar(
             containerColor = MaterialTheme.colorScheme.surface
         ),
         modifier = modifier
+    )
+}
+
+@Composable
+fun ProductDetailAppBar(
+    onBackClick: () -> Unit,
+    onCartClick: () -> Unit,
+    appBarAlpha: Float,
+    showCartButton: Boolean,
+    onHeightChanged: (height: Dp) -> Unit
+) {
+    val density = LocalDensity.current
+
+    DetailsAppBar(
+        title = "",
+        onBackClick = onBackClick,
+        onCartClick = onCartClick,
+        alpha = appBarAlpha,
+        showCartButton = showCartButton,
+        modifier = Modifier.onGloballyPositioned { coordinates ->
+            onHeightChanged(with(density) { coordinates.size.height.toDp() })
+        }
     )
 }
 

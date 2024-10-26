@@ -23,7 +23,3 @@ data class Product(
 fun List<Product>.updateSaveStatus(saveIds: Set<String>): List<Product> {
     return map { it.copy(isSaved = it.productId in saveIds) }
 }
-
-fun List<Product>.updateCartStatus(cartIds: Set<String>): List<Product> {
-    return map { it.copy(isInCart = it.productId in cartIds) }
-}

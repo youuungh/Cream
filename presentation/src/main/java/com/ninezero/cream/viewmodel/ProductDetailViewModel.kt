@@ -4,6 +4,7 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
 import com.ninezero.cream.base.BaseStateViewModel
 import com.ninezero.cream.model.Message
+import com.ninezero.cream.ui.component.bottomsheet.PaymentStatus
 import com.ninezero.cream.ui.product_detail.ProductDetailAction
 import com.ninezero.cream.ui.product_detail.ProductDetailEvent
 import com.ninezero.cream.ui.product_detail.ProductDetailReducer
@@ -18,9 +19,11 @@ import com.ninezero.domain.model.updateSaveStatus
 import com.ninezero.domain.repository.NetworkRepository
 import com.ninezero.domain.usecase.AuthUseCase
 import com.ninezero.domain.usecase.CartUseCase
+import com.ninezero.domain.usecase.OrderUseCase
 import com.ninezero.domain.usecase.ProductUseCase
 import com.ninezero.domain.usecase.SaveUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
@@ -33,6 +36,7 @@ class ProductDetailViewModel @Inject constructor(
     private val authUseCase: AuthUseCase,
     private val saveUseCase: SaveUseCase,
     private val cartUseCase: CartUseCase,
+    private val orderUseCase: OrderUseCase,
     reducer: ProductDetailReducer,
     networkRepository: NetworkRepository,
     savedStateHandle: SavedStateHandle
@@ -52,6 +56,7 @@ class ProductDetailViewModel @Inject constructor(
         is ProductDetailAction.Fetch -> fetchProductDetails()
         is ProductDetailAction.ToggleSave -> toggleSave(product)
         is ProductDetailAction.AddToCart -> addToCart(product)
+        is ProductDetailAction.ProcessPayment -> processPayment(product)
         is ProductDetailAction.FetchRelatedProducts -> fetchRelatedProducts(brandId)
         is ProductDetailAction.UpdateSavedIds -> updateSavedIds(savedIds)
         is ProductDetailAction.NavigateToSaved -> emitEvent(ProductDetailEvent.NavigateToSaved)
@@ -144,6 +149,30 @@ class ProductDetailViewModel @Inject constructor(
         } else emit(ProductDetailEvent.NavigateToLogin)
     }
 
+    private fun processPayment(product: Product): Flow<ProductDetailResult> = flow {
+        if (authUseCase.getCurrentUser() != null) {
+            try {
+                emit(ProductDetailResult.PaymentResult(PaymentStatus.PROCESSING))
+                delay(3000)
+
+                val totalPrice = product.price.instantBuyPrice
+                val fee = (totalPrice * 0.05).toInt()
+                val totalAmount = totalPrice + fee
+
+                orderUseCase.createOrder(
+                    products = listOf(product),
+                    totalAmount = totalAmount
+                ).onSuccess {
+                    emit(ProductDetailResult.PaymentResult(PaymentStatus.SUCCESS))
+                    emit(ProductDetailEvent.PaymentCompleted)
+                }.onFailure { throw it }
+            } catch (e: Exception) {
+                emit(ProductDetailResult.PaymentResult(PaymentStatus.FAILED))
+                emit(ProductDetailEvent.PaymentFailed)
+            }
+        } else emit(ProductDetailEvent.NavigateToLogin)
+    }
+
     private fun updateSavedIds(savedIds: Set<String>): Flow<ProductDetailResult> = flow {
         val currentState = state.value
         if (currentState is ProductDetailState.Content) {
@@ -157,7 +186,10 @@ class ProductDetailViewModel @Inject constructor(
 
     private fun observeSavedIds() {
         viewModelScope.launch {
-            saveUseCase.savedProductIds.collect { action(ProductDetailAction.UpdateSavedIds(it)) }
+            saveUseCase.savedProductIds.collect { savedIds ->
+                val updatedSavedIds = authUseCase.getCurrentUser()?.let { savedIds } ?: emptySet()
+                action(ProductDetailAction.UpdateSavedIds(updatedSavedIds))
+            }
         }
     }
 

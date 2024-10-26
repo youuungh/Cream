@@ -7,12 +7,14 @@ import com.ninezero.cream.ui.cart.CartEvent
 import com.ninezero.cream.ui.cart.CartReducer
 import com.ninezero.cream.ui.cart.CartResult
 import com.ninezero.cream.ui.cart.CartState
+import com.ninezero.cream.ui.component.bottomsheet.PaymentStatus
 import com.ninezero.cream.utils.ErrorHandler
 import com.ninezero.cream.utils.NETWORK_DELAY
 import com.ninezero.cream.utils.NO_INTERNET_CONNECTION
 import com.ninezero.domain.model.Product
 import com.ninezero.domain.repository.NetworkRepository
 import com.ninezero.domain.usecase.CartUseCase
+import com.ninezero.domain.usecase.OrderUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
@@ -26,6 +28,7 @@ import javax.inject.Inject
 @HiltViewModel
 class CartViewModel @Inject constructor(
     private val cartUseCase: CartUseCase,
+    private val orderUseCase: OrderUseCase,
     reducer: CartReducer,
     networkRepository: NetworkRepository
 ) : BaseStateViewModel<CartAction, CartResult, CartEvent, CartState, CartReducer>(
@@ -49,6 +52,7 @@ class CartViewModel @Inject constructor(
         is CartAction.UpdateSelection -> updateSelection(productId, isSelected)
         is CartAction.UpdateAllSelection -> updateAllSelection(isSelected)
         is CartAction.UpdateProducts -> updateProducts(products)
+        is CartAction.ProcessPayment -> processPayment(products)
         is CartAction.Error -> emitResult(CartResult.Error(message))
     }
 
@@ -107,6 +111,27 @@ class CartViewModel @Inject constructor(
         updateAllSelectedState()
     }
 
+    private fun processPayment(products: List<Product>): Flow<CartResult> = flow {
+        try {
+            emit(CartResult.PaymentResult(PaymentStatus.PROCESSING))
+            delay(3000)
+
+            orderUseCase.createOrder(
+                products = products,
+                totalAmount = cartUseCase.calculateTotalPrice(products) +
+                        cartUseCase.calculateTotalFee(products).toInt()
+            ).onSuccess {
+                products.forEach { cartUseCase.removeFromCart(it.productId) }
+                emit(CartResult.PaymentResult(PaymentStatus.SUCCESS))
+                emit(CartEvent.PaymentCompleted)
+            }.onFailure { throw it }
+
+        } catch (e: Exception) {
+            emit(CartResult.PaymentResult(PaymentStatus.FAILED))
+            emit(CartEvent.PaymentFailed)
+        }
+    }
+
     private fun observeCartProducts() {
         viewModelScope.launch {
             cartUseCase.fetchAll().collect { products ->
@@ -127,11 +152,15 @@ class CartViewModel @Inject constructor(
     }
 
     private fun updateAllSelectedState() {
-        _allSelected.value = _cartProducts.value.isNotEmpty() && _cartProducts.value.all { it.isSelected }
+        _allSelected.value =
+            _cartProducts.value.isNotEmpty() && _cartProducts.value.all { it.isSelected }
     }
 
-    fun calculateTotalPrice(): Int = cartUseCase.calculateTotalPrice(_cartProducts.value.filter { it.isSelected })
-    fun calculateTotalFee(): Double = cartUseCase.calculateTotalFee(_cartProducts.value.filter { it.isSelected })
+    fun calculateTotalPrice(): Int =
+        cartUseCase.calculateTotalPrice(_cartProducts.value.filter { it.isSelected })
+
+    fun calculateTotalFee(): Double =
+        cartUseCase.calculateTotalFee(_cartProducts.value.filter { it.isSelected })
 
     override fun shouldRefreshOnConnect(): Boolean = state.value is CartState.Error
     override fun refreshData() = action(CartAction.Fetch)

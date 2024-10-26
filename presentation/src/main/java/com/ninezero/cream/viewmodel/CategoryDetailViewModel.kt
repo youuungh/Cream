@@ -101,7 +101,10 @@ class CategoryDetailViewModel @Inject constructor(
 
     private fun observeSavedIds() {
         viewModelScope.launch {
-            saveUseCase.savedProductIds.collect { action(CategoryDetailAction.UpdateSavedIds(it)) }
+            saveUseCase.savedProductIds.collect { savedIds ->
+                val updatedSavedIds = authUseCase.getCurrentUser()?.let { savedIds } ?: emptySet()
+                action(CategoryDetailAction.UpdateSavedIds(updatedSavedIds))
+            }
         }
     }
 

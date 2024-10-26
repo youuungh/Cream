@@ -43,8 +43,9 @@ import com.ninezero.cream.ui.component.CustomDialog
 import com.ninezero.cream.ui.component.DeleteButton
 import com.ninezero.cream.ui.component.EmptyScreen
 import com.ninezero.cream.ui.component.ErrorScreen
+import com.ninezero.cream.ui.component.bottomsheet.AnimatedCreamBottomSheet
 import com.ninezero.cream.ui.component.bottomsheet.BottomSheetState
-import com.ninezero.cream.ui.component.bottomsheet.CreamBottomSheet
+import com.ninezero.cream.ui.component.bottomsheet.PaymentStatus
 import com.ninezero.cream.ui.component.skeleton.CartSkeleton
 import com.ninezero.cream.viewmodel.CartViewModel
 import com.ninezero.di.R
@@ -64,10 +65,14 @@ fun CartScreen(
     var selectedCount by remember { mutableIntStateOf(0) }
     var productToDelete by remember { mutableStateOf<Product?>(null) }
     var showPaymentBottomSheet by remember { mutableStateOf(false) }
+    var paymentStatus by remember { mutableStateOf(PaymentStatus.NONE) }
 
     viewModel.collectEvents {
         when (it) {
             is CartEvent.NavigateToProductDetail -> onProductClick(it.productId)
+            is CartEvent.NavigateToHome -> onNavigateToHome()
+            CartEvent.PaymentCompleted -> paymentStatus = PaymentStatus.SUCCESS
+            CartEvent.PaymentFailed -> paymentStatus = PaymentStatus.FAILED
         }
     }
 
@@ -177,13 +182,31 @@ fun CartScreen(
 
     if (showPaymentBottomSheet && uiState is CartState.Content) {
         val selectedProducts = (uiState as CartState.Content).products.filter { it.isSelected }
-        CreamBottomSheet(
-            showBottomSheet = remember { mutableStateOf(showPaymentBottomSheet) },
-            state = BottomSheetState.Payment(
-                products = selectedProducts,
-                onPaymentClick = { showPaymentBottomSheet = false }
-            ),
-            onDismiss = { showPaymentBottomSheet = false },
+
+        AnimatedCreamBottomSheet(
+            showBottomSheet = remember { mutableStateOf(true) },
+            state = when (paymentStatus) {
+                PaymentStatus.NONE -> BottomSheetState.Payment(
+                    products = selectedProducts,
+                    onPaymentClick = {
+                        paymentStatus = PaymentStatus.PROCESSING
+                        viewModel.action(CartAction.ProcessPayment(selectedProducts))
+                    }
+                )
+                else -> BottomSheetState.PaymentProgress(
+                    status = paymentStatus,
+                    onNavigateToHome = {
+                        showPaymentBottomSheet = false
+                        onNavigateToHome()
+                    }
+                )
+            },
+            onDismiss = {
+                if (paymentStatus != PaymentStatus.PROCESSING) {
+                    showPaymentBottomSheet = false
+                    paymentStatus = PaymentStatus.NONE
+                }
+            },
             coroutineScope = rememberCoroutineScope()
         )
     }

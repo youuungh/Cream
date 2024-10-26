@@ -5,7 +5,11 @@ import com.ninezero.cream.utils.SearchSortOption
 import com.ninezero.domain.model.Product
 
 enum class BottomSheetType {
-    None, Detail, Payment
+    NONE, DETAIL, PAYMENT, PAYMENT_PROGRESS
+}
+
+enum class PaymentStatus {
+    NONE, PROCESSING, SUCCESS, FAILED
 }
 
 sealed interface BottomSheetState {
@@ -14,12 +18,7 @@ sealed interface BottomSheetState {
         val productName: String,
         val productKo: String,
         val onAddToCart: () -> Unit,
-        val onBuyNow: () -> Unit
-    ) : BottomSheetState
-
-    data class Payment(
-        val products: List<Product>,
-        val onPaymentClick: () -> Unit
+        val onBuyClick: () -> Unit
     ) : BottomSheetState
 
     data class SearchSort(
@@ -32,10 +31,15 @@ sealed interface BottomSheetState {
         val onOptionSelected: (SavedSortOption) -> Unit
     ) : BottomSheetState
 
+    data class Payment(
+        val products: List<Product>,
+        val onPaymentClick: () -> Unit
+    ) : BottomSheetState
+
+    data class PaymentProgress(
+        val status: PaymentStatus,
+        val onNavigateToHome: () -> Unit
+    ) : BottomSheetState
+
     object None : BottomSheetState
 }
-
-data class DetailBottomSheetState(
-    val isVisible: Boolean = false,
-    val type: BottomSheetType = BottomSheetType.None
-)

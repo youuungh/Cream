@@ -20,6 +20,8 @@
     <string name="product_price">상품금액</string>
     <string name="estimated_payment">예상 결제금액</string>
     <string name="fee">수수료</string>
+    <string name="sign_out">로그아웃</string>
+    <string name="signing_out">로그아웃 중</string>
     <string name="order_summary">선택 주문정보</string>
     <string name="final_order_info">최종 주문정보</string>
     <string name="total_product_price">총 상품금액</string>
@@ -48,6 +50,8 @@
     <string name="dialog_delete_item_confirm">상품을 삭제하시겠습니까?</string>
     <string name="dialog_clear_search_history">최근 검색 삭제</string>
     <string name="dialog_clear_search_history_confirm">검색 기록을 모두 삭제하시겠습니까?</string>
+    <string name="dialog_sign_out">로그아웃</string>
+    <string name="dialog_sign_out_confirm">검색 기록, 관심상품, 장바구니 데이터가 영구적으로 삭제됩니다. 로그아웃 하시겠습니까?</string>
     
     <string name="main_home">HOME</string>
     <string name="main_category">CATEGORY</string>
@@ -62,6 +66,8 @@
     <string name="for_you_subtitle">추천 상품</string>
     <string name="top_brand">Top Brand</string>
     <string name="top_brand_subtitle">인기 탑 브랜드</string>
+    <string name="order_details">Order Details</string>
+    <string name="order_details_subtitle">주문내역</string>
 
     <string name="sort_by_saved_date">관심 등록순</string>
     <string name="sort_by_price">즉시 구매가순</string>
@@ -74,10 +80,17 @@
     <string name="no_cart_items_title">장바구니에 담긴 상품이 없습니다</string>
     <string name="no_cart_items_subtitle">원하는 상품을 장바구니에 담아보세요</string>
     <string name="no_search_results">검색 결과가 없습니다</string>
+    <string name="no_order_details">주문 내역이 없습니다</string>
 
     <string name="login_with_google">구글로 로그인</string>
     <string name="login_with_kakao">카카오로 로그인</string>
     <string name="login_with_naver">네이버로 로그인</string>
+
+    <string name="payment_processing">결제 진행 중…</string>
+    <string name="payment_success">결제 완료</string>
+    <string name="payment_failed">결제 실패</string>
+
+    <string name="go_to_home">홈으로 이동</string>
 
     <string name="already_in_cart">장바구니에 이미 담긴 상품입니다</string>"
     <string name="added_to_cart">장바구니에 담겼습니다"</string>

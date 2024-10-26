@@ -390,9 +390,15 @@ fun SearchContent(
                     )
                 }
             }
-            is SearchState.Error -> {
-                Text(text = state.message, modifier = Modifier.padding(16.dp))
-            }
+            is SearchState.Error -> ErrorScreen(
+                onRetry = {
+                    val currentQuery = searchViewModel.query.value
+                    if (currentQuery.isNotBlank()) {
+                        searchViewModel.search(currentQuery)
+                    }
+                },
+                modifier = Modifier.fillMaxSize()
+            )
         }
     }
 

@@ -123,6 +123,7 @@ fun MainScreen() {
                         },
                         onProductClick = { productId -> navController.navigateToProductDetail(productId = productId, it) },
                         onNavigateBack = navController::navigateBack,
+                        onNavigateToHome = navController::navigateToMain,
                         onNavigateToLogin = navController::navigateToLogin,
                         onNavigateToSaved = {
                             navigateToSaved = true

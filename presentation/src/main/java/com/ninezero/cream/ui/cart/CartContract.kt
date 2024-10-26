@@ -5,6 +5,7 @@ import com.ninezero.cream.base.MviEvent
 import com.ninezero.cream.base.MviResult
 import com.ninezero.cream.base.MviStateReducer
 import com.ninezero.cream.base.MviViewState
+import com.ninezero.cream.ui.component.bottomsheet.PaymentStatus
 import com.ninezero.domain.model.Product
 import javax.inject.Inject
 
@@ -16,6 +17,7 @@ sealed class CartAction : MviAction {
     data class UpdateSelection(val productId: String, val isSelected: Boolean) : CartAction()
     data class UpdateAllSelection(val isSelected: Boolean) : CartAction()
     data class UpdateProducts(val products: List<Product>) : CartAction()
+    data class ProcessPayment(val products: List<Product>) : CartAction()
     data class Error(val message: String) : CartAction()
 }
 
@@ -27,16 +29,23 @@ sealed class CartResult : MviResult {
     object RemoveSelected : CartResult()
     data class UpdateSelection(val productId: String, val isSelected: Boolean) : CartResult()
     data class UpdateAllSelection(val isSelected: Boolean) : CartResult()
+    data class PaymentResult(val status: PaymentStatus) : CartResult()
     data class Error(val message: String) : CartResult()
 }
 
-sealed class CartEvent : MviEvent {
+sealed class CartEvent : MviEvent, CartResult() {
     data class NavigateToProductDetail(val productId: String) : CartEvent()
+    object NavigateToHome : CartEvent()
+    object PaymentCompleted : CartEvent()
+    object PaymentFailed : CartEvent()
 }
 
 sealed class CartState : MviViewState {
     object Fetching : CartState()
-    data class Content(val products: List<Product>) : CartState()
+    data class Content(
+        val products: List<Product>,
+        val paymentStatus: PaymentStatus? = null
+    ) : CartState()
     data class Error(val message: String) : CartState()
 }
 
@@ -72,7 +81,13 @@ class CartReducer @Inject constructor() : MviStateReducer<CartState, CartResult>
                     CartState.Content(products.map { it.copy(isSelected = result.isSelected) })
                 } else this
             }
+            is CartResult.PaymentResult -> {
+                if (this is CartState.Content) {
+                    this.copy(paymentStatus = result.status)
+                } else this
+            }
             is CartResult.Error -> CartState.Error(result.message)
+            is CartEvent -> this
         }
     }
 }

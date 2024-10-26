@@ -59,8 +59,8 @@ class FirebaseAuthService @Inject constructor(
 
     override suspend fun signOut(): Result<Unit> {
         return try {
-            fAuth.signOut()
             userPrefs.clearUser()
+            fAuth.signOut()
             Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(e)

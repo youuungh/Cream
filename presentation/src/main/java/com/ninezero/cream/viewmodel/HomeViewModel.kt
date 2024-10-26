@@ -103,7 +103,10 @@ class HomeViewModel @Inject constructor(
 
     private fun observeSavedIds() {
         viewModelScope.launch {
-            saveUseCase.savedProductIds.collect { action(HomeAction.UpdateSavedIds(it)) }
+            saveUseCase.savedProductIds.collect { savedIds ->
+                val updatedSavedIds = authUseCase.getCurrentUser()?.let { savedIds } ?: emptySet()
+                action(HomeAction.UpdateSavedIds(updatedSavedIds))
+            }
         }
     }
 

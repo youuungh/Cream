@@ -5,6 +5,11 @@ const val BOTTOM_BAR_HEIGHT = 56
 const val IMAGE_HEIGHT = 400
 const val BANNER_HEIGHT = 400
 
+const val TAB_KEY = "product_detail_tab"
+const val STYLE_INFO_INDEX = 3
+const val RECOMMEND_INFO_INDEX = 4
+const val MIN_SCROLL_OFFSET = 0
+
 const val CONTENT_OVERLAP = 10
 const val TAB_OVERLAP = CONTENT_OVERLAP + DETAIL_BOTTOM_BAR_HEIGHT // 10 + 80
 const val SCROLL_THRESHOLD_OFFSET = 66 // 56 + 10

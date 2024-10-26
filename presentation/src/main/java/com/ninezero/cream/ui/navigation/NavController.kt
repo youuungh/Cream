@@ -189,6 +189,7 @@ fun NavGraphBuilder.addMainGraph(
     ) {
         MyPageScreen(
             onCartClick = onCartClick,
+            onNavigateToHome = onNavigateToHome,
             onSignOut = onSignOut,
             modifier = modifier
         )

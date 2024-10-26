@@ -9,7 +9,6 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
 import androidx.compose.ui.unit.IntOffset
@@ -45,12 +44,16 @@ fun AnimatedCreamBottomSheet(
                     productName = targetState.productName,
                     productKo = targetState.productKo,
                     onAddToCart = targetState.onAddToCart,
-                    onBuyNow = targetState.onBuyNow
+                    onBuyClick = targetState.onBuyClick
                 )
                 is BottomSheetState.Payment -> PaymentBottomSheetContent(
                     onDismiss = onDismiss,
                     products = targetState.products,
                     onPaymentClick = targetState.onPaymentClick
+                )
+                is BottomSheetState.PaymentProgress -> PaymentProgressContent(
+                    status = targetState.status,
+                    onNavigateToHome = targetState.onNavigateToHome
                 )
                 else -> {}
             }

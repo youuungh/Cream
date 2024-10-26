@@ -2,13 +2,9 @@ package com.ninezero.domain.usecase
 
 import com.ninezero.domain.model.Product
 import com.ninezero.domain.repository.CartRepository
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 class CartUseCase @Inject constructor(
@@ -30,6 +26,8 @@ class CartUseCase @Inject constructor(
             cartRepository.removeFromCart(productId)
         }
     }
+
+    suspend fun removeAll() = cartRepository.removeAll()
 
     suspend fun updateSelection(productId: String, isSelected: Boolean) =
         cartRepository.updateSelection(productId, isSelected)

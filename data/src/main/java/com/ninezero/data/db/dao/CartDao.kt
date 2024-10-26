@@ -18,6 +18,9 @@ interface CartDao {
     @Query("DELETE FROM cart_products WHERE productId = :productId")
     suspend fun delete(productId: String)
 
+    @Query("DELETE FROM cart_products")
+    suspend fun deleteAll()
+
     @Query("UPDATE cart_products SET isSelected = :isSelected WHERE productId = :productId")
     suspend fun updateSelection(productId: String, isSelected: Boolean)
 

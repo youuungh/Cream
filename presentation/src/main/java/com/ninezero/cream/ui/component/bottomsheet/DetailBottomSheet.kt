@@ -39,7 +39,7 @@ fun DetailBottomSheetContent(
     productName: String,
     productKo: String,
     onAddToCart: () -> Unit,
-    onBuyNow: () -> Unit
+    onBuyClick: () -> Unit
 ) {
     BottomSheetLayout(
         title = stringResource(id = R.string.bottom_sheet_buy),
@@ -104,7 +104,7 @@ fun DetailBottomSheetContent(
             )
             FilledButton(
                 text = stringResource(id = R.string.bottom_sheet_buy_now),
-                onClick = onBuyNow,
+                onClick = onBuyClick,
                 modifier = Modifier
                     .height(48.dp)
                     .weight(1f)

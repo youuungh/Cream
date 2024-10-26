@@ -139,6 +139,35 @@ fun OrderButton(
 }
 
 @Composable
+fun SignOutButton(
+    onClick: () -> Unit,
+    text: String,
+    modifier: Modifier = Modifier
+) {
+    Box(
+        modifier = modifier
+            .clip(MaterialTheme.shapes.small)
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = rememberRipple(bounded = true),
+                onClick = onClick
+            )
+            .border(
+                width = 1.dp,
+                color = MaterialTheme.colorScheme.onBackground,
+                shape = MaterialTheme.shapes.small
+            )
+            .padding(4.dp)
+    ) {
+        Text(
+            text = text,
+            style = MaterialTheme.typography.labelMedium,
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
+        )
+    }
+}
+
+@Composable
 fun RetryButton(
     onClick: () -> Unit,
     text: String,
@@ -422,11 +451,6 @@ private fun PreviewButtons() {
         ) {
             BuyButton(onClick = {}, price = "100,000")
             OrderButton(onClick = {}, totalPrice = 100000, selectedCount = 2)
-            FilledButton(text = "Filled Button", onClick = {})
-            OutlinedButton(text = "Outlined Button", onClick = {})
-            TonalButton(onClick = {}) {
-                Text(text = "Filled Tonal Button")
-            }
             LoadingButton(
                 modifier = Modifier.width(200.dp),
                 text = "Login",
@@ -446,6 +470,10 @@ private fun PreviewButtons() {
             DeleteButton(
                 onClick = {},
                 text = "선택 삭제"
+            )
+            SignOutButton(
+                onClick = {},
+                text = "로그아웃"
             )
             SocialLoginButtons(
                 onGoogleLogin = {},

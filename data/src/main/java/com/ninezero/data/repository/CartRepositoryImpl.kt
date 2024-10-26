@@ -19,6 +19,8 @@ class CartRepositoryImpl @Inject constructor(
 
     override suspend fun removeFromCart(productId: String) = cartDao.delete(productId)
 
+    override suspend fun removeAll() = cartDao.deleteAll()
+
     override suspend fun updateSelection(productId: String, isSelected: Boolean) =
         cartDao.updateSelection(productId, isSelected)
 
