@@ -66,7 +66,7 @@ dependencies {
 
     // Google
     implementation(libs.play.services.auth)
-//    implementation(libs.play.services.ads)
+    implementation(libs.play.services.ads)
 
     // Naver
     implementation(libs.oauth.jdk8)
@@ -99,6 +99,7 @@ dependencies {
     implementation(libs.androidx.ui)
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.ui.tooling.preview)
+    implementation(libs.androidx.material)
     implementation(libs.androidx.material3)
     implementation(libs.androidx.foundation.android)
     testImplementation(libs.junit)

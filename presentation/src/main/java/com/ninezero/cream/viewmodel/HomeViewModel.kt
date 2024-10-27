@@ -18,7 +18,10 @@ import com.ninezero.domain.usecase.AuthUseCase
 import com.ninezero.domain.usecase.HomeUseCase
 import com.ninezero.domain.usecase.SaveUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -35,6 +38,9 @@ class HomeViewModel @Inject constructor(
     reducer = reducer,
     networkRepository = networkRepository
 ) {
+    private val _isRefresh = MutableStateFlow(false)
+    val isRefresh = _isRefresh.asStateFlow()
+
     init {
         action(HomeAction.Fetch)
         observeSavedIds()
@@ -111,5 +117,15 @@ class HomeViewModel @Inject constructor(
     }
 
     override fun shouldRefreshOnConnect(): Boolean = state.value is HomeState.Error
-    override fun refreshData() = action(HomeAction.Fetch)
+    override fun refreshData() {
+        viewModelScope.launch {
+            _isRefresh.value = true
+            delay(300)
+
+            launch { action(HomeAction.Fetch) }.join()
+
+            delay(300)
+            _isRefresh.value = false
+        }
+    }
 }

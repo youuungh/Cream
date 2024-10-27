@@ -17,9 +17,9 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -33,8 +33,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.ninezero.cream.base.collectAsState
 import com.ninezero.cream.base.collectEvents
+import com.ninezero.cream.ui.component.CreamPullRefresh
+import com.ninezero.cream.ui.component.CreamScaffold
 import com.ninezero.cream.ui.component.CreamSurface
 import com.ninezero.cream.ui.component.CreamTopAppBar
 import com.ninezero.cream.ui.component.Divider
@@ -59,6 +60,7 @@ fun SavedScreen(
 ) {
     val uiState by viewModel.state.collectAsState()
     val sortType by viewModel.sortType.collectAsState()
+    val isRefresh by viewModel.isRefresh.collectAsState()
     val scope = rememberCoroutineScope()
     val showBottomSheet = remember { mutableStateOf(false) }
 
@@ -68,8 +70,8 @@ fun SavedScreen(
         }
     }
 
-    CreamSurface(modifier = modifier.fillMaxSize()) {
-        Scaffold(
+    CreamSurface(modifier = Modifier.fillMaxSize()) {
+        CreamScaffold(
             topBar = {
                 CreamTopAppBar(
                     title = stringResource(R.string.main_saved),
@@ -77,33 +79,38 @@ fun SavedScreen(
                 )
             }
         ) { innerPadding ->
-            when (val state = uiState) {
-                is SavedState.Fetching -> SavedSkeleton(modifier = Modifier.padding(innerPadding))
+            CreamPullRefresh(
+                refreshing = isRefresh,
+                onRefresh = { viewModel.refreshData() }
+            ) {
+                when (val state = uiState) {
+                    is SavedState.Fetching -> SavedSkeleton(modifier = modifier.padding(innerPadding))
 
-                is SavedState.Content -> {
-                    if (state.products.isEmpty()) {
-                        EmptyScreen(
-                            onNavigateToHome = onNavigateToHome,
-                            title = stringResource(id = R.string.no_saved_items),
-                            label = stringResource(id = R.string.view_home),
-                            modifier = Modifier.padding(innerPadding)
-                        )
-                    } else {
-                        SavedContent(
-                            savedProducts = state.products,
-                            sortType = sortType,
-                            onProductClick = onProductClick,
-                            onRemoveClick = { product -> viewModel.action(SavedAction.Remove(product)) },
-                            onSortClick = { showBottomSheet.value = true },
-                            modifier = Modifier.padding(innerPadding)
-                        )
+                    is SavedState.Content -> {
+                        if (state.products.isEmpty()) {
+                            EmptyScreen(
+                                onNavigateToHome = onNavigateToHome,
+                                title = stringResource(id = R.string.no_saved_items),
+                                label = stringResource(id = R.string.view_home),
+                                modifier = modifier.padding(innerPadding)
+                            )
+                        } else {
+                            SavedContent(
+                                savedProducts = state.products,
+                                sortType = sortType,
+                                onProductClick = onProductClick,
+                                onRemoveClick = { product -> viewModel.action(SavedAction.Remove(product)) },
+                                onSortClick = { showBottomSheet.value = true },
+                                modifier = modifier.padding(innerPadding)
+                            )
+                        }
                     }
-                }
 
-                is SavedState.Error -> ErrorScreen(
-                    onRetry = { viewModel.action(SavedAction.Fetch) },
-                    modifier = Modifier.padding(innerPadding)
-                )
+                    is SavedState.Error -> ErrorScreen(
+                        onRetry = { viewModel.action(SavedAction.Fetch) },
+                        modifier = Modifier.padding(innerPadding)
+                    )
+                }
             }
         }
 

@@ -1,5 +1,4 @@
 @file:OptIn(ExperimentalFoundationApi::class)
-
 package com.ninezero.cream.ui.product_detail
 
 import androidx.compose.animation.AnimatedVisibility
@@ -74,8 +73,6 @@ import com.ninezero.cream.utils.BOTTOM_BAR_HEIGHT
 import com.ninezero.cream.utils.CONTENT_OVERLAP
 import com.ninezero.cream.utils.NumUtils.formatPriceWithCommas
 import com.ninezero.cream.utils.ProductDetailTab
-import com.ninezero.cream.utils.RECOMMEND_INFO_INDEX
-import com.ninezero.cream.utils.STYLE_INFO_INDEX
 import com.ninezero.cream.utils.TAB_KEY
 import com.ninezero.cream.utils.rememberSlideInOutAnimState
 import com.ninezero.cream.viewmodel.ProductDetailViewModel

@@ -9,6 +9,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.ninezero.cream.utils.DETAIL_BOTTOM_BAR_HEIGHT
 import com.ninezero.cream.utils.RECOMMEND_INFO_INDEX
 import com.ninezero.cream.utils.STYLE_INFO_INDEX
 import com.ninezero.cream.utils.TAB_KEY
@@ -89,7 +90,7 @@ class DetailTabState(
     }
 
     private fun calculateScrollOffset(): Int = with(density) {
-        (appBarHeight + tabHeight).toPx().toInt()
+        (appBarHeight + tabHeight + TAB_OVERLAP.dp).toPx().toInt()
     }
 
     fun updateTabHeight(height: Dp) {

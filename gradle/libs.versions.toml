@@ -16,10 +16,7 @@ ksp = "1.9.0-1.0.13"
 oauthJdk8 = "5.10.0"
 roomKtx = "2.7.0-alpha07"
 playServicesAds = "23.3.0"
-firebaseBom = "33.4.0"
-firebaseAnalyticsKtx = "22.1.2"
-firebaseCrashlyticsKtx = "19.2.0"
-firebaseAuthKtx = "23.0.0"
+firebaseBom = "33.5.1"
 playServicesAuth = "21.2.0"
 roomRuntime = "2.7.0-alpha07"
 roomCompiler = "2.7.0-alpha07"
@@ -35,11 +32,10 @@ foundationAndroid = "1.6.6"
 v2User = "2.13.0"
 datastorePreferences = "1.1.1"
 datastorePreferencesCore = "1.1.1"
-firebaseFunctionsKtx = "21.0.0"
 crashlytics-plugin = "3.0.2"
 converterGson = "2.11.0"
-firebaseFirestoreKtx = "25.1.1"
 lottieCompose = "6.5.2"
+materialVersion = "1.7.4"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -81,10 +77,11 @@ play-services-ads = { group = "com.google.android.gms", name = "play-services-ad
 
 # Firebase
 firebase-bom = { group = "com.google.firebase", name = "firebase-bom", version.ref = "firebaseBom" }
-firebase-analytics-ktx = { group = "com.google.firebase", name = "firebase-analytics-ktx", version.ref = "firebaseAnalyticsKtx" }
-firebase-crashlytics-ktx = { group = "com.google.firebase", name = "firebase-crashlytics-ktx", version.ref = "firebaseCrashlyticsKtx" }
-firebase-auth-ktx = { group = "com.google.firebase", name = "firebase-auth-ktx", version.ref = "firebaseAuthKtx" }
-firebase-functions-ktx = { group = "com.google.firebase", name = "firebase-functions-ktx", version.ref = "firebaseFunctionsKtx" }
+firebase-analytics-ktx = { group = "com.google.firebase", name = "firebase-analytics-ktx" }
+firebase-crashlytics-ktx = { group = "com.google.firebase", name = "firebase-crashlytics-ktx" }
+firebase-auth-ktx = { group = "com.google.firebase", name = "firebase-auth-ktx" }
+firebase-functions-ktx = { group = "com.google.firebase", name = "firebase-functions-ktx" }
+firebase-firestore-ktx = { group = "com.google.firebase", name = "firebase-firestore-ktx" }
 
 # Gson
 gson = { group = "com.google.code.gson", name = "gson", version.ref = "gson" }
@@ -102,12 +99,12 @@ timber = { group = "com.jakewharton.timber", name = "timber", version.ref = "tim
 # Kakao
 v2-user = { module = "com.kakao.sdk:v2-user", version.ref = "v2User" }
 
-# DataStire
+# DataStore
 androidx-datastore-preferences = { group = "androidx.datastore", name = "datastore-preferences", version.ref = "datastorePreferences" }
 androidx-datastore-preferences-core = { group = "androidx.datastore", name = "datastore-preferences-core", version.ref = "datastorePreferencesCore" }
 converter-gson = { group = "com.squareup.retrofit2", name = "converter-gson", version.ref = "converterGson" }
-firebase-firestore-ktx = { group = "com.google.firebase", name = "firebase-firestore-ktx", version.ref = "firebaseFirestoreKtx" }
 lottie-compose = { group = "com.airbnb.android", name = "lottie-compose", version.ref = "lottieCompose" }
+androidx-material = { group = "androidx.compose.material", name = "material", version.ref = "materialVersion" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

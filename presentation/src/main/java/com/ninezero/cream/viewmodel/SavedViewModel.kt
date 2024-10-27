@@ -38,6 +38,9 @@ class SavedViewModel @Inject constructor(
     private val _sortType = MutableStateFlow(SavedSortOption.SAVED_DATE)
     val sortType: StateFlow<SavedSortOption> = _sortType.asStateFlow()
 
+    private val _isRefresh = MutableStateFlow(false)
+    val isRefresh = _isRefresh.asStateFlow()
+
     private val _savedProducts = MutableStateFlow<List<Product>>(emptyList())
 
     init {
@@ -120,5 +123,15 @@ class SavedViewModel @Inject constructor(
     }
 
     override fun shouldRefreshOnConnect(): Boolean = state.value is SavedState.Error
-    override fun refreshData() = action(SavedAction.Fetch)
+    override fun refreshData() {
+        viewModelScope.launch {
+            _isRefresh.value = true
+            delay(300)
+
+            launch { action(SavedAction.Fetch) }.join()
+
+            delay(300)
+            _isRefresh.value = false
+        }
+    }
 }

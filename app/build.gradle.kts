@@ -33,6 +33,7 @@ android {
         resValue("string", "oauth_client_name", properties.getProperty("OAUTH_CLIENT_NAME"))
 
         manifestPlaceholders["KAKAO_API_KEY"] = properties.getProperty("KAKAO_API_KEY")
+        manifestPlaceholders["GOOGLE_ADMOB_ID"] = properties.getProperty("GOOGLE_ADMOB_ID")
     }
 
     buildTypes {
@@ -82,7 +83,7 @@ dependencies {
 
     // Google
     implementation(libs.play.services.auth)
-//    implementation(libs.play.services.ads)
+    implementation(libs.play.services.ads)
 
     // Naver
     implementation(libs.oauth.jdk8)

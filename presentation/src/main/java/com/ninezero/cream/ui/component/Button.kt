@@ -1,7 +1,11 @@
+@file:OptIn(ExperimentalFoundationApi::class)
 package com.ninezero.cream.ui.component
 
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -147,11 +151,8 @@ fun SignOutButton(
     Box(
         modifier = modifier
             .clip(MaterialTheme.shapes.small)
-            .clickable(
-                interactionSource = remember { MutableInteractionSource() },
-                indication = rememberRipple(bounded = true),
-                onClick = onClick
-            )
+            .background(MaterialTheme.colorScheme.surface)
+            .combinedClickable(onClick = onClick)
             .border(
                 width = 1.dp,
                 color = MaterialTheme.colorScheme.onBackground,
@@ -176,11 +177,8 @@ fun RetryButton(
     Box(
         modifier = modifier
             .clip(MaterialTheme.shapes.small)
-            .clickable(
-                interactionSource = remember { MutableInteractionSource() },
-                indication = rememberRipple(bounded = true),
-                onClick = onClick
-            )
+            .background(MaterialTheme.colorScheme.surface)
+            .combinedClickable(onClick = onClick)
             .border(
                 width = 1.dp,
                 color = MaterialTheme.colorScheme.onBackground,

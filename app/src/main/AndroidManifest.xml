@@ -15,6 +15,10 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.Cream"
         tools:targetApi="31">
+        <property
+            android:name="android.adservices.AD_SERVICES_CONFIG"
+            android:resource="@xml/gma_ad_services_config"
+            tools:replace="android:resource"/>
         <activity
             android:name="com.ninezero.cream.ui.MainActivity"
             android:exported="true"
@@ -31,7 +35,6 @@
                 <data android:scheme="cream"/>
             </intent-filter>
         </activity>
-
         <activity
             android:name="com.kakao.sdk.auth.AuthCodeHandlerActivity"
             android:exported="true">
@@ -45,6 +48,9 @@
                     android:scheme="kakao${KAKAO_API_KEY}" />
             </intent-filter>
         </activity>
+        <meta-data
+            android:name="com.google.android.gms.ads.APPLICATION_ID"
+            android:value="${GOOGLE_ADMOB_ID}" />
     </application>
 
 </manifest>

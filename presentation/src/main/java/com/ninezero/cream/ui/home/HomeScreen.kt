@@ -20,7 +20,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
@@ -48,6 +47,7 @@ import com.ninezero.cream.ui.component.ProductCard
 import com.ninezero.cream.ui.component.RowSection
 import com.ninezero.cream.base.collectAsState
 import com.ninezero.cream.base.collectEvents
+import com.ninezero.cream.ui.component.CreamPullRefresh
 import com.ninezero.cream.ui.component.CreamScaffold
 import com.ninezero.cream.ui.component.CreamSurface
 import com.ninezero.cream.ui.component.CustomDialog
@@ -84,6 +84,7 @@ fun HomeScreen(
     searchViewModel: SearchViewModel = hiltViewModel()
 ) {
     val homeUiState by homeViewModel.state.collectAsState()
+    val isRefresh by homeViewModel.isRefresh.collectAsState()
     val searchUiState by searchViewModel.state.collectAsState()
     val searchQuery by searchViewModel.query.collectAsState()
     val isSearchMode by searchViewModel.isSearchMode.collectAsState()
@@ -158,60 +159,65 @@ fun HomeScreen(
                 },
                 snackbarHostState = creamScaffoldState.snackBarHostState
             ) { innerPadding ->
-                AnimatedContent(
-                    targetState = isSearchMode,
-                    transitionSpec = {
-                        if (targetState) {
-                            slideInVertically { height -> -height } + fadeIn() togetherWith
-                                    slideOutVertically { height -> height } + fadeOut()
+                CreamPullRefresh(
+                    refreshing = isRefresh,
+                    onRefresh = { homeViewModel.refreshData() }
+                ) {
+                    AnimatedContent(
+                        targetState = isSearchMode,
+                        transitionSpec = {
+                            if (targetState) {
+                                slideInVertically { height -> -height } + fadeIn() togetherWith
+                                        slideOutVertically { height -> height } + fadeOut()
+                            } else {
+                                slideInVertically { height -> height } + fadeIn() togetherWith
+                                        slideOutVertically { height -> -height } + fadeOut()
+                            }
+                        },
+                        label = "search_content"
+                    ) { searchMode ->
+                        if (searchMode) {
+                            SearchContent(
+                                state = searchUiState,
+                                onProductClick = onProductClick,
+                                searchViewModel = searchViewModel,
+                                onClearAndHideHistory = { showClearHistoryDialog = true },
+                                onSuggestionClick = {
+                                    keyboardController?.hide()
+                                    focusManager.clearFocus()
+                                    searchViewModel.search(it)
+                                    searchViewModel.setSearchMode(true)
+                                },
+                                onSortClick = { showBottomSheet = true },
+                                focusRequester = focusRequester,
+                                keyboardController = keyboardController,
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .padding(innerPadding)
+                                    .pointerInput(Unit) {
+                                        detectTapGestures(onTap = {
+                                            focusManager.clearFocus()
+                                            keyboardController?.hide()
+                                        })
+                                    }
+                            )
                         } else {
-                            slideInVertically { height -> height } + fadeIn() togetherWith
-                                    slideOutVertically { height -> -height } + fadeOut()
-                        }
-                    },
-                    label = "search_content"
-                ) { searchMode ->
-                    if (searchMode) {
-                        SearchContent(
-                            state = searchUiState,
-                            onProductClick = onProductClick,
-                            searchViewModel = searchViewModel,
-                            onClearAndHideHistory = { showClearHistoryDialog = true },
-                            onSuggestionClick = {
-                                keyboardController?.hide()
-                                focusManager.clearFocus()
-                                searchViewModel.search(it)
-                                searchViewModel.setSearchMode(true)
-                            },
-                            onSortClick = { showBottomSheet = true },
-                            focusRequester = focusRequester,
-                            keyboardController = keyboardController,
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .padding(innerPadding)
-                                .pointerInput(Unit) {
-                                    detectTapGestures(onTap = {
-                                        focusManager.clearFocus()
-                                        keyboardController?.hide()
-                                    })
-                                }
-                        )
-                    } else {
-                        when (val state = homeUiState) {
-                            is HomeState.Fetching -> HomeSkeleton(modifier = Modifier.padding(innerPadding))
+                            when (val state = homeUiState) {
+                                is HomeState.Fetching -> HomeSkeleton(modifier = Modifier.padding(innerPadding))
 
-                            is HomeState.Content -> HomeContent(
-                                data = state.homeData,
-                                onProductClick = { productId -> homeViewModel.action(HomeAction.ProductClicked(productId)) },
-                                onSaveClick = { product -> homeViewModel.action(HomeAction.ToggleSave(product)) },
-                                onBrandClick = { /*TODO*/ },
-                                modifier = Modifier.padding(innerPadding)
-                            )
+                                is HomeState.Content -> HomeContent(
+                                    data = state.homeData,
+                                    onProductClick = { productId -> homeViewModel.action(HomeAction.ProductClicked(productId)) },
+                                    onSaveClick = { product -> homeViewModel.action(HomeAction.ToggleSave(product)) },
+                                    onBrandClick = { /*TODO*/ },
+                                    modifier = Modifier.padding(innerPadding)
+                                )
 
-                            is HomeState.Error -> ErrorScreen(
-                                onRetry = { homeViewModel.action(HomeAction.Fetch) },
-                                modifier = Modifier.padding(innerPadding)
-                            )
+                                is HomeState.Error -> ErrorScreen(
+                                    onRetry = { homeViewModel.action(HomeAction.Fetch) },
+                                    modifier = Modifier.padding(innerPadding)
+                                )
+                            }
                         }
                     }
                 }
@@ -342,7 +348,7 @@ fun SearchContent(
     keyboardController: SoftwareKeyboardController?,
     modifier: Modifier = Modifier
 ) {
-    Box(modifier = modifier) {
+    CreamSurface(modifier = modifier) {
         when (state) {
             is SearchState.Init -> {
                 if (!state.isHistoryHidden) {

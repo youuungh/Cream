@@ -39,7 +39,6 @@ import com.ninezero.cream.ui.LocalSharedTransitionScope
 import com.ninezero.cream.ui.component.CreamScaffold
 import com.ninezero.cream.ui.component.CustomSnackbar
 import com.ninezero.cream.ui.component.rememberCreamScaffoldState
-import com.ninezero.cream.ui.product_detail.ProductDetailEvent
 import com.ninezero.cream.utils.CategorySharedElementKey
 import com.ninezero.cream.utils.CategorySharedElementType
 import com.ninezero.cream.utils.detailBoundsTransform

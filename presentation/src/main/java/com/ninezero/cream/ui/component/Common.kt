@@ -29,6 +29,8 @@ import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -55,6 +57,10 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.viewinterop.AndroidView
+import com.google.android.gms.ads.AdRequest
+import com.google.android.gms.ads.AdSize
+import com.google.android.gms.ads.AdView
 import com.ninezero.cream.utils.SearchSortOption
 import com.ninezero.di.R
 
@@ -79,6 +85,17 @@ fun VerticalDivider(
             .fillMaxHeight()
             .width(1.dp)
             .background(color = color)
+    )
+}
+
+@Composable
+fun SpacerDivider() {
+    HorizontalDivider(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 16.dp),
+        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f),
+        thickness = 8.dp
     )
 }
 
@@ -377,5 +394,28 @@ fun LoadingOverlay(
                 color = MaterialTheme.colorScheme.onSurface
             )
         }
+    }
+}
+
+@Composable
+fun AdMobBanner(
+    adMobId: String,
+    modifier: Modifier = Modifier
+) {
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(bottom = 80.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        AndroidView(
+            factory = {
+                AdView(it).apply {
+                    setAdSize(AdSize.BANNER)
+                    adUnitId = adMobId
+                    loadAd(AdRequest.Builder().build())
+                }
+            }
+        )
     }
 }

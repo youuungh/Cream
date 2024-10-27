@@ -23,9 +23,13 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.ninezero.cream.base.collectEvents
+import com.ninezero.cream.ui.component.AdMobBanner
+import com.ninezero.cream.ui.component.CreamPullRefresh
 import com.ninezero.cream.ui.component.CreamScaffold
+import com.ninezero.cream.ui.component.CreamSurface
 import com.ninezero.cream.ui.component.CreamTopAppBar
 import com.ninezero.cream.ui.component.CustomDialog
+import com.ninezero.cream.ui.component.DevInfo
 import com.ninezero.cream.ui.component.EmptyScreen
 import com.ninezero.cream.ui.component.ErrorScreen
 import com.ninezero.cream.ui.component.LoadingOverlay
@@ -33,9 +37,9 @@ import com.ninezero.cream.ui.component.OrderProductCard
 import com.ninezero.cream.ui.component.SectionTitle
 import com.ninezero.cream.ui.component.UserProfileCard
 import com.ninezero.cream.ui.component.skeleton.MyPageSkeleton
+import com.ninezero.cream.utils.TEST_ADMOB_ID
 import com.ninezero.cream.viewmodel.MyPageViewModel
 import com.ninezero.di.R
-import timber.log.Timber
 
 @Composable
 fun MyPageScreen(
@@ -48,6 +52,7 @@ fun MyPageScreen(
     val uiState by viewModel.state.collectAsState()
     var showSignOutDialog by remember { mutableStateOf(false) }
     var isSigningOut by remember { mutableStateOf(false) }
+    val isRefresh by viewModel.isRefresh.collectAsState()
 
     viewModel.collectEvents {
         when (it) {
@@ -58,7 +63,7 @@ fun MyPageScreen(
         }
     }
 
-    Box(modifier = Modifier.fillMaxSize()) {
+    CreamSurface(modifier = Modifier.fillMaxSize()) {
         CreamScaffold(
             topBar = {
                 CreamTopAppBar(
@@ -67,30 +72,35 @@ fun MyPageScreen(
                 )
             }
         ) { innerPadding ->
-            when (val state = uiState) {
-                is MyPageState.Fetching -> MyPageSkeleton(modifier = modifier.padding(innerPadding))
-                is MyPageState.Content -> {
-                    Crossfade(
-                        targetState = isSigningOut,
-                        label = "sign_out"
-                    ) {
-                        if (it) {
-                            LoadingOverlay(
-                                text = stringResource(R.string.signing_out),
-                                modifier = modifier.padding(innerPadding)
-                            )
-                        } else {
-                            MyPageContent(
-                                state = state,
-                                modifier = modifier.padding(innerPadding),
-                                onSignOut = { showSignOutDialog = true }
-                            )
+            CreamPullRefresh(
+                refreshing = isRefresh,
+                onRefresh = { viewModel.refreshData() }
+            ) {
+                when (val state = uiState) {
+                    is MyPageState.Fetching -> MyPageSkeleton(modifier = modifier.padding(innerPadding))
+                    is MyPageState.Content -> {
+                        Crossfade(
+                            targetState = isSigningOut,
+                            label = "sign_out"
+                        ) {
+                            if (it) {
+                                LoadingOverlay(
+                                    text = stringResource(R.string.signing_out),
+                                    modifier = modifier.padding(innerPadding)
+                                )
+                            } else {
+                                MyPageContent(
+                                    state = state,
+                                    modifier = modifier.padding(innerPadding),
+                                    onSignOut = { showSignOutDialog = true }
+                                )
+                            }
                         }
                     }
+                    is MyPageState.Error -> ErrorScreen(
+                        onRetry = { viewModel.action(MyPageAction.Fetch) }
+                    )
                 }
-                is MyPageState.Error -> ErrorScreen(
-                    onRetry = { viewModel.action(MyPageAction.Fetch) }
-                )
             }
         }
     }
@@ -162,11 +172,12 @@ fun MyPageContent(
             items(state.orders) {
                 OrderProductCard(
                     order = it,
-                    modifier = Modifier
-                        .padding(horizontal = 16.dp)
-                        .padding(bottom = 8.dp)
+                    modifier = Modifier.padding(horizontal = 16.dp)
                 )
             }
         }
+
+        item { DevInfo() }
+        item { AdMobBanner(adMobId = TEST_ADMOB_ID) }
     }
 }

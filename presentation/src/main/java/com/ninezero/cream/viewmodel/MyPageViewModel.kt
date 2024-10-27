@@ -15,7 +15,10 @@ import com.ninezero.domain.usecase.OrderUseCase
 import com.ninezero.domain.usecase.SaveUseCase
 import com.ninezero.domain.usecase.SearchUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.launch
 import timber.log.Timber
@@ -35,6 +38,8 @@ class MyPageViewModel @Inject constructor(
     reducer = reducer,
     networkRepository = networkRepository
 ) {
+    private val _isRefresh = MutableStateFlow(false)
+    val isRefresh = _isRefresh.asStateFlow()
 
     init {
         action(MyPageAction.Fetch)
@@ -106,7 +111,17 @@ class MyPageViewModel @Inject constructor(
 
     override fun shouldRefreshOnConnect(): Boolean = state.value is MyPageState.Error
     override fun refreshData() {
-        action(MyPageAction.Fetch)
-        observeOrders()
+        viewModelScope.launch {
+            _isRefresh.value = true
+            delay(300)
+
+            launch {
+                action(MyPageAction.Fetch)
+                observeOrders()
+            }.join()
+
+            delay(300)
+            _isRefresh.value = false
+        }
     }
 }

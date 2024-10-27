@@ -1,11 +1,15 @@
 package com.ninezero.cream.ui.component
 
+import android.content.Intent
+import android.net.Uri
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -39,10 +43,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -50,6 +57,7 @@ import coil.compose.AsyncImage
 import com.ninezero.cream.ui.theme.creamGreen
 import com.ninezero.cream.ui.theme.creamRed
 import com.ninezero.cream.utils.DETAIL_BOTTOM_BAR_HEIGHT
+import com.ninezero.cream.utils.GITHUB_URL
 import com.ninezero.cream.utils.IMAGE_HEIGHT
 import com.ninezero.cream.utils.NumUtils.formatPriceWithCommas
 import com.ninezero.cream.utils.PriceDiffInfo
@@ -436,5 +444,45 @@ fun PaymentInfo(
                 style = MaterialTheme.typography.titleMedium
             )
         }
+    }
+}
+
+@Composable
+fun DevInfo(
+    modifier: Modifier = Modifier
+) {
+    val context = LocalContext.current
+
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(vertical = 16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        SpacerDivider()
+        Spacer(modifier = Modifier.height(12.dp))
+
+        Text(
+            text = stringResource(R.string.dev_info),
+            style = MaterialTheme.typography.labelMedium,
+            fontWeight = FontWeight.Normal,
+            textAlign = TextAlign.Center
+        )
+
+        Image(
+            painter = painterResource(id = R.drawable.ic_github),
+            contentDescription = "GitHub",
+            modifier = Modifier
+                .size(24.dp)
+                .clip(RectangleShape)
+                .clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null
+                ) {
+                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(GITHUB_URL))
+                    context.startActivity(intent)
+                }
+        )
     }
 }
