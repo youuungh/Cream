@@ -34,12 +34,6 @@ data class ProductDetailHandlers(
     val onProcessPayment: (Product) -> Unit
 )
 
-data class BottomSheetHandlers(
-    val onTypeChange: (BottomSheetType) -> Unit,
-    val onPaymentStatusChange: (PaymentStatus) -> Unit,
-    val onDismiss: () -> Unit
-)
-
 @Composable
 fun rememberTabStateHolder(
     density: Density = LocalDensity.current,

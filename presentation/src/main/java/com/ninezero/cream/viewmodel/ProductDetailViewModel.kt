@@ -4,6 +4,7 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
 import com.ninezero.cream.base.BaseStateViewModel
 import com.ninezero.cream.model.Message
+import com.ninezero.cream.ui.component.bottomsheet.BottomSheetType
 import com.ninezero.cream.ui.component.bottomsheet.PaymentStatus
 import com.ninezero.cream.ui.product_detail.ProductDetailAction
 import com.ninezero.cream.ui.product_detail.ProductDetailEvent
@@ -59,6 +60,7 @@ class ProductDetailViewModel @Inject constructor(
         is ProductDetailAction.ProcessPayment -> processPayment(product)
         is ProductDetailAction.FetchRelatedProducts -> fetchRelatedProducts(brandId)
         is ProductDetailAction.UpdateSavedIds -> updateSavedIds(savedIds)
+        is ProductDetailAction.ShowBottomSheet -> emitEvent(ProductDetailEvent.UpdateBottomSheet(visible, type, status))
         is ProductDetailAction.NavigateToSaved -> emitEvent(ProductDetailEvent.NavigateToSaved)
         is ProductDetailAction.NavigateToCart -> emitEvent(ProductDetailEvent.NavigateToCart)
     }
@@ -152,6 +154,11 @@ class ProductDetailViewModel @Inject constructor(
     private fun processPayment(product: Product): Flow<ProductDetailResult> = flow {
         if (authUseCase.getCurrentUser() != null) {
             try {
+                emit(ProductDetailEvent.UpdateBottomSheet(
+                    visible = true,
+                    type = BottomSheetType.PAYMENT_PROGRESS,
+                    status = PaymentStatus.PROCESSING
+                ))
                 emit(ProductDetailResult.PaymentResult(PaymentStatus.PROCESSING))
                 delay(3000)
 
@@ -170,7 +177,14 @@ class ProductDetailViewModel @Inject constructor(
                 emit(ProductDetailResult.PaymentResult(PaymentStatus.FAILED))
                 emit(ProductDetailEvent.PaymentFailed)
             }
-        } else emit(ProductDetailEvent.NavigateToLogin)
+        } else {
+            emit(ProductDetailEvent.UpdateBottomSheet(
+                visible = false,
+                type = BottomSheetType.NONE,
+                status = PaymentStatus.NONE
+            ))
+            emit(ProductDetailEvent.NavigateToLogin)
+        }
     }
 
     private fun updateSavedIds(savedIds: Set<String>): Flow<ProductDetailResult> = flow {

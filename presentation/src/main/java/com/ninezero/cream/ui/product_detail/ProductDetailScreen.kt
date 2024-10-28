@@ -107,6 +107,11 @@ fun ProductDetailScreen(
             is ProductDetailEvent.NavigateToSaved -> onNavigateToSaved()
             is ProductDetailEvent.NavigateToCart -> onCartClick()
             is ProductDetailEvent.NavigateToHome -> onNavigateToHome()
+            is ProductDetailEvent.UpdateBottomSheet -> {
+                showBottomSheet = it.visible
+                bottomSheetType = it.type
+                paymentStatus = it.status
+            }
             is ProductDetailEvent.ShowSnackbar -> creamScaffoldState.showSnackbar(it.message)
             ProductDetailEvent.PaymentCompleted -> paymentStatus = PaymentStatus.SUCCESS
             ProductDetailEvent.PaymentFailed -> paymentStatus = PaymentStatus.FAILED
@@ -148,40 +153,20 @@ fun ProductDetailScreen(
                     val handlers = ProductDetailHandlers(
                         onProductClick = onProductClick,
                         onNavigateToHome = onNavigateToHome,
-                        onSaveToggle = { product ->
-                            viewModel.action(ProductDetailAction.ToggleSave(product))
-                        },
+                        onSaveToggle = { product -> viewModel.action(ProductDetailAction.ToggleSave(product)) },
                         onAddToCart = {
                             viewModel.action(ProductDetailAction.AddToCart(state.product))
-                            showBottomSheet = false
+                            viewModel.action(ProductDetailAction.ShowBottomSheet(visible = false, type = BottomSheetType.NONE))
                         },
-                        onBuyClick = {
-                            showBottomSheet = true
-                            bottomSheetType = BottomSheetType.DETAIL
-                        },
-                        onProcessPayment = { product ->
-                            paymentStatus = PaymentStatus.PROCESSING
-                            viewModel.action(ProductDetailAction.ProcessPayment(product))
-                        }
-                    )
-
-                    val bottomSheetHandlers = BottomSheetHandlers(
-                        onTypeChange = { bottomSheetType = it },
-                        onPaymentStatusChange = { paymentStatus = it },
-                        onDismiss = {
-                            if (paymentStatus != PaymentStatus.PROCESSING) {
-                                showBottomSheet = false
-                                bottomSheetType = BottomSheetType.NONE
-                                paymentStatus = PaymentStatus.NONE
-                            }
-                        }
+                        onBuyClick = { viewModel.action(ProductDetailAction.ShowBottomSheet()) },
+                        onProcessPayment = { product -> viewModel.action(ProductDetailAction.ProcessPayment(product)) }
                     )
 
                     ProductDetailContent(
                         uiState = detailUIState,
                         bottomSheetState = bottomSheetUIState,
                         handlers = handlers,
-                        bottomSheetHandlers = bottomSheetHandlers,
+                        viewModel = viewModel,
                         updateAppBarAlpha = { appBarAlpha = it }
                     )
                 }
@@ -219,7 +204,7 @@ fun ProductDetailContent(
     uiState: ProductDetailUIState,
     bottomSheetState: BottomSheetUIState,
     handlers: ProductDetailHandlers,
-    bottomSheetHandlers: BottomSheetHandlers,
+    viewModel: ProductDetailViewModel,
     updateAppBarAlpha: (Float) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -308,37 +293,54 @@ fun ProductDetailContent(
         )
 
         if (bottomSheetState.isVisible) {
+            val showBottomSheetState = remember { mutableStateOf(false) }
+
+            LaunchedEffect(bottomSheetState.type) {
+                showBottomSheetState.value = true
+            }
+
             AnimatedCreamBottomSheet(
-                showBottomSheet = remember { mutableStateOf(bottomSheetState.isVisible) },
+                showBottomSheet = showBottomSheetState,
                 state = when (bottomSheetState.type) {
                     BottomSheetType.DETAIL -> BottomSheetState.Detail(
                         productImageUrl = uiState.product.imageUrl,
                         productName = uiState.product.productName,
                         productKo = uiState.product.ko,
                         onAddToCart = handlers.onAddToCart,
-                        onBuyClick = { bottomSheetHandlers.onTypeChange(BottomSheetType.PAYMENT) }
+                        onBuyClick = {
+                            viewModel.action(ProductDetailAction.ShowBottomSheet(
+                                type = BottomSheetType.PAYMENT
+                            ))
+                        }
                     )
 
                     BottomSheetType.PAYMENT -> BottomSheetState.Payment(
                         products = listOf(uiState.product),
-                        onPaymentClick = {
-                            bottomSheetHandlers.onPaymentStatusChange(PaymentStatus.PROCESSING)
-                            bottomSheetHandlers.onTypeChange(BottomSheetType.PAYMENT_PROGRESS)
-                            handlers.onProcessPayment(uiState.product)
-                        }
+                        onPaymentClick = { handlers.onProcessPayment(uiState.product) }
                     )
 
                     BottomSheetType.PAYMENT_PROGRESS -> BottomSheetState.PaymentProgress(
                         status = bottomSheetState.paymentStatus,
                         onNavigateToHome = {
-                            bottomSheetHandlers.onDismiss()
+                            viewModel.action(ProductDetailAction.ShowBottomSheet(
+                                visible = false,
+                                type = BottomSheetType.NONE
+                            ))
                             handlers.onNavigateToHome()
                         }
                     )
 
                     BottomSheetType.NONE -> BottomSheetState.None
                 },
-                onDismiss = bottomSheetHandlers.onDismiss,
+                onDismiss = {
+                    if (bottomSheetState.paymentStatus != PaymentStatus.PROCESSING) {
+                        viewModel.action(ProductDetailAction.ShowBottomSheet(
+                            visible = false,
+                            type = BottomSheetType.NONE,
+                            status = PaymentStatus.NONE
+                        ))
+                    }
+                },
                 coroutineScope = scope
             )
         }

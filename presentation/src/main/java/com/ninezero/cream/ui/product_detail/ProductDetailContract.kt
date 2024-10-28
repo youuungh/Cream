@@ -6,6 +6,7 @@ import com.ninezero.cream.base.MviResult
 import com.ninezero.cream.base.MviStateReducer
 import com.ninezero.cream.base.MviViewState
 import com.ninezero.cream.model.Message
+import com.ninezero.cream.ui.component.bottomsheet.BottomSheetType
 import com.ninezero.cream.ui.component.bottomsheet.PaymentStatus
 import com.ninezero.domain.model.Product
 import javax.inject.Inject
@@ -19,6 +20,11 @@ sealed class ProductDetailAction : MviAction {
     data class FetchRelatedProducts(val brandId: String) : ProductDetailAction()
     data class ProcessPayment(val product: Product) : ProductDetailAction()
     data class UpdateSavedIds(val savedIds: Set<String>) : ProductDetailAction()
+    data class ShowBottomSheet(
+        val visible: Boolean = true,
+        val type: BottomSheetType = BottomSheetType.DETAIL,
+        val status: PaymentStatus = PaymentStatus.NONE
+    ) : ProductDetailAction()
 }
 
 sealed class ProductDetailResult : MviResult {
@@ -42,6 +48,11 @@ sealed class ProductDetailEvent : MviEvent, ProductDetailResult() {
     object NavigateToHome : ProductDetailEvent()
     object PaymentCompleted : ProductDetailEvent()
     object PaymentFailed : ProductDetailEvent()
+    data class UpdateBottomSheet(
+        val visible: Boolean,
+        val type: BottomSheetType,
+        val status: PaymentStatus
+    ) : ProductDetailEvent()
     data class ShowSnackbar(val message: Message) : ProductDetailEvent()
 }
 
