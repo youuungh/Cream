@@ -19,6 +19,8 @@ import com.ninezero.domain.usecase.AuthUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -43,12 +45,15 @@ class LoginViewModel @Inject constructor(
                 is LoginAction.SignInWithKakao -> authUseCase.signInWithKakao(accessToken)
                 is LoginAction.LoginError -> Result.failure(Exception(message))
             }
-            handleNetworkCallback { flow { emit(result) } }.collect { loginResult ->
-                loginResult.fold(
-                    onSuccess = { emit(LoginResult.Success(it)) },
-                    onFailure = { emit(LoginResult.Error(ErrorHandler.getErrorMessage(it))) }
-                )
-            }
+
+            handleNetworkCallback { flowOf(result) }
+                .map { loginResult ->
+                    loginResult.fold(
+                        onSuccess = { LoginResult.Success(it) },
+                        onFailure = { LoginResult.Error(ErrorHandler.getErrorMessage(it)) }
+                    )
+                }
+                .collect { emit(it) }
         } catch (e: Exception) {
             emit(LoginResult.Error(ErrorHandler.getErrorMessage(e)))
             emitEvent(LoginEvent.ShowSnackbar(Message(messageId = R.string.network_error)))

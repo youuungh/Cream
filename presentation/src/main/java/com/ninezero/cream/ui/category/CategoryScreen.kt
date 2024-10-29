@@ -22,6 +22,7 @@ import com.ninezero.cream.ui.component.CreamSurface
 import com.ninezero.cream.ui.component.CreamTopAppBar
 import com.ninezero.cream.viewmodel.CategoryViewModel
 import com.ninezero.di.R
+import com.ninezero.domain.model.Category
 import timber.log.Timber
 
 @Composable
@@ -49,34 +50,56 @@ fun CategoryScreen(
                     )
                 }
             ) { innerPadding ->
-                when (val state = uiState) {
-                    is CategoryState.Fetching -> CategorySkeleton(
-                        modifier = Modifier.padding(innerPadding)
-                    )
-
-                    is CategoryState.Content -> {
-                        key(state.categories) {
-                            VerticalGrid(
-                                columns = 2,
-                                items = state.categories,
-                                modifier = Modifier.padding(innerPadding)
-                            ) {
-                                CategoryCard(
-                                    category = it,
-                                    onCategoryClick = { categoryId, categoryName ->
-                                        viewModel.action(CategoryAction.CategoryClicked(categoryId, categoryName))
-                                    }
-                                )
-                            }
-                        }
-                    }
-
-                    is CategoryState.Error -> ErrorScreen(
-                        onRetry = { viewModel.action(CategoryAction.Fetch) },
-                        modifier = Modifier.padding(innerPadding)
-                    )
-                }
+                CategoryScreenContent(
+                    uiState = uiState,
+                    onCategoryClick = { categoryId, categoryName ->
+                        viewModel.action(CategoryAction.CategoryClicked(categoryId, categoryName))
+                    },
+                    onRetry = { viewModel.action(CategoryAction.Fetch) },
+                    modifier = Modifier.padding(innerPadding)
+                )
             }
+        }
+    }
+}
+
+@Composable
+private fun CategoryScreenContent(
+    uiState: CategoryState,
+    onCategoryClick: (String, String) -> Unit,
+    onRetry: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    when (uiState) {
+        is CategoryState.Fetching -> CategorySkeleton(modifier = modifier)
+        is CategoryState.Content -> CategoryGrid(
+            categories = uiState.categories,
+            onCategoryClick = onCategoryClick,
+            modifier = modifier
+        )
+        is CategoryState.Error -> ErrorScreen(
+            onRetry = onRetry,
+            modifier = modifier
+        )
+    }
+}
+
+@Composable
+private fun CategoryGrid(
+    categories: List<Category>,
+    onCategoryClick: (String, String) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    VerticalGrid(
+        columns = 2,
+        items = categories,
+        modifier = modifier
+    ) { category ->
+        key(category.categoryId) {
+            CategoryCard(
+                category = category,
+                onCategoryClick = onCategoryClick
+            )
         }
     }
 }

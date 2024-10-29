@@ -5,6 +5,7 @@ package com.ninezero.cream.ui.auth
 import android.app.Activity
 import android.content.Context
 import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.ActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -66,15 +67,21 @@ fun LoginScreen(
     val state by viewModel.state.collectAsState()
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    val creamScaffoldState = rememberCreamScaffoldState()
+    val scaffoldState = rememberCreamScaffoldState()
 
-    val googleSignInLauncher =
-        rememberLauncherForActivityResult(contract = ActivityResultContracts.StartActivityForResult()) { result ->
+    val handleGoogleSignIn = remember(viewModel) {
+        { result: ActivityResult ->
             if (result.resultCode == Activity.RESULT_OK) {
                 val task = GoogleSignIn.getSignedInAccountFromIntent(result.data)
                 viewModel.handleGoogleSignInResult(task)
             }
         }
+    }
+
+    val googleSignInLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult(),
+        onResult = handleGoogleSignIn
+    )
 
     val naverLoginCallback = remember {
         object : OAuthLoginCallback {
@@ -100,7 +107,7 @@ fun LoginScreen(
 
     viewModel.collectEvents {
         when (it) {
-            is LoginEvent.ShowSnackbar -> creamScaffoldState.showSnackbar(it.message)
+            is LoginEvent.ShowSnackbar -> scaffoldState.showSnackbar(it.message)
         }
     }
 
@@ -110,12 +117,7 @@ fun LoginScreen(
             is LoginState.Error -> {
                 val errorMessage =
                     context.getString(R.string.login_error, (state as LoginState.Error).message)
-                creamScaffoldState.showSnackbar(
-                    Message(
-                        messageId = R.string.login_error,
-                        message = errorMessage
-                    )
-                )
+                scaffoldState.showSnackbar(Message(messageId = R.string.login_error, message = errorMessage))
             }
             else -> {}
         }
@@ -139,7 +141,7 @@ fun LoginScreen(
                 snackbar = { snackbarData -> CustomSnackbar(snackbarData) }
             )
         },
-        snackbarHostState = creamScaffoldState.snackBarHostState
+        snackbarHostState = scaffoldState.snackBarHostState
     ) { innerPadding ->
         Box(
             modifier = Modifier
@@ -180,11 +182,7 @@ fun LoginScreen(
                             handleKakaoLogin(
                                 context,
                                 onSuccess = { token ->
-                                    viewModel.action(
-                                        LoginAction.SignInWithKakao(
-                                            token.accessToken
-                                        )
-                                    )
+                                    viewModel.action(LoginAction.SignInWithKakao(token.accessToken))
                                 },
                                 onError = { error -> viewModel.action(LoginAction.LoginError("Kakao login failed: ${error.message}")) },
                                 onCancel = { viewModel.action(LoginAction.LoginError("Kakao login cancelled")) }

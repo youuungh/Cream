@@ -88,7 +88,8 @@ fun HomeScreen(
     val searchUiState by searchViewModel.state.collectAsState()
     val searchQuery by searchViewModel.query.collectAsState()
     val isSearchMode by searchViewModel.isSearchMode.collectAsState()
-    val creamScaffoldState = rememberCreamScaffoldState()
+
+    val scaffoldState = rememberCreamScaffoldState()
     var showBottomSheet by remember { mutableStateOf(false) }
     var showClearHistoryDialog by remember { mutableStateOf(false) }
     val keyboardController = LocalSoftwareKeyboardController.current
@@ -97,19 +98,12 @@ fun HomeScreen(
 
     val backHandlingEnabled by remember { derivedStateOf { isSearchMode } }
 
-    BackHandler(backHandlingEnabled) {
-        keyboardController?.hide()
-        focusManager.clearFocus()
-        searchViewModel.clearSearch()
-        searchViewModel.setSearchMode(false)
-    }
-
     homeViewModel.collectEvents {
         when (it) {
             is HomeEvent.NavigateToProductDetail -> onProductClick(it.productId)
             is HomeEvent.NavigateToLogin -> onNavigateToLogin()
             is HomeEvent.NavigateToSaved -> onNavigateToSaved()
-            is HomeEvent.ShowSnackbar -> creamScaffoldState.showSnackbar(it.message)
+            is HomeEvent.ShowSnackbar -> scaffoldState.showSnackbar(it.message)
         }
     }
 
@@ -117,8 +111,15 @@ fun HomeScreen(
         when (it) {
             is SearchEvent.NavigateToLogin -> onNavigateToLogin()
             is SearchEvent.NavigateToSaved -> onNavigateToSaved()
-            is SearchEvent.ShowSnackbar -> creamScaffoldState.showSnackbar(it.message)
+            is SearchEvent.ShowSnackbar -> scaffoldState.showSnackbar(it.message)
         }
+    }
+
+    BackHandler(backHandlingEnabled) {
+        keyboardController?.hide()
+        focusManager.clearFocus()
+        searchViewModel.clearSearch()
+        searchViewModel.setSearchMode(false)
     }
 
     CreamSurface(modifier = modifier.fillMaxSize()) {
@@ -157,7 +158,7 @@ fun HomeScreen(
                         snackbar = { snackbarData -> CustomSnackbar(snackbarData) }
                     )
                 },
-                snackbarHostState = creamScaffoldState.snackBarHostState
+                snackbarHostState = scaffoldState.snackBarHostState
             ) { innerPadding ->
                 CreamPullRefresh(
                     refreshing = isRefresh,

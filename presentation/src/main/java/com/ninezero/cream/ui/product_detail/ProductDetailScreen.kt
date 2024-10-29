@@ -89,7 +89,7 @@ fun ProductDetailScreen(
     viewModel: ProductDetailViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.state.collectAsState()
-    val creamScaffoldState = rememberCreamScaffoldState()
+    val scaffoldState = rememberCreamScaffoldState()
 
     var visible by remember { mutableStateOf(false) }
     var appBarAlpha by remember { mutableFloatStateOf(0f) }
@@ -112,7 +112,7 @@ fun ProductDetailScreen(
                 bottomSheetType = it.type
                 paymentStatus = it.status
             }
-            is ProductDetailEvent.ShowSnackbar -> creamScaffoldState.showSnackbar(it.message)
+            is ProductDetailEvent.ShowSnackbar -> scaffoldState.showSnackbar(it.message)
             ProductDetailEvent.PaymentCompleted -> paymentStatus = PaymentStatus.SUCCESS
             ProductDetailEvent.PaymentFailed -> paymentStatus = PaymentStatus.FAILED
         }
@@ -188,7 +188,7 @@ fun ProductDetailScreen(
             )
 
             SnackbarHost(
-                hostState = creamScaffoldState.snackBarHostState,
+                hostState = scaffoldState.snackBarHostState,
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
                     .padding(bottom = BOTTOM_BAR_HEIGHT.dp)
@@ -295,9 +295,7 @@ fun ProductDetailContent(
         if (bottomSheetState.isVisible) {
             val showBottomSheetState = remember { mutableStateOf(false) }
 
-            LaunchedEffect(bottomSheetState.type) {
-                showBottomSheetState.value = true
-            }
+            LaunchedEffect(bottomSheetState.type) { showBottomSheetState.value = true }
 
             AnimatedCreamBottomSheet(
                 showBottomSheet = showBottomSheetState,

@@ -50,9 +50,10 @@ fun MyPageScreen(
     viewModel: MyPageViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.state.collectAsState()
+    val isRefresh by viewModel.isRefresh.collectAsState()
+
     var showSignOutDialog by remember { mutableStateOf(false) }
     var isSigningOut by remember { mutableStateOf(false) }
-    val isRefresh by viewModel.isRefresh.collectAsState()
 
     viewModel.collectEvents {
         when (it) {
@@ -76,31 +77,13 @@ fun MyPageScreen(
                 refreshing = isRefresh,
                 onRefresh = { viewModel.refreshData() }
             ) {
-                when (val state = uiState) {
-                    is MyPageState.Fetching -> MyPageSkeleton(modifier = modifier.padding(innerPadding))
-                    is MyPageState.Content -> {
-                        Crossfade(
-                            targetState = isSigningOut,
-                            label = "sign_out"
-                        ) {
-                            if (it) {
-                                LoadingOverlay(
-                                    text = stringResource(R.string.signing_out),
-                                    modifier = modifier.padding(innerPadding)
-                                )
-                            } else {
-                                MyPageContent(
-                                    state = state,
-                                    modifier = modifier.padding(innerPadding),
-                                    onSignOut = { showSignOutDialog = true }
-                                )
-                            }
-                        }
-                    }
-                    is MyPageState.Error -> ErrorScreen(
-                        onRetry = { viewModel.action(MyPageAction.Fetch) }
-                    )
-                }
+                MyPageScreenContent(
+                    uiState = uiState,
+                    isSigningOut = isSigningOut,
+                    onRetry = { viewModel.action(MyPageAction.Fetch) },
+                    onSignOut = { showSignOutDialog = true },
+                    modifier = modifier.padding(innerPadding)
+                )
             }
         }
     }
@@ -121,6 +104,42 @@ fun MyPageScreen(
 }
 
 @Composable
+private fun MyPageScreenContent(
+    uiState: MyPageState,
+    isSigningOut: Boolean,
+    onRetry: () -> Unit,
+    onSignOut: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    when (uiState) {
+        is MyPageState.Fetching -> MyPageSkeleton(modifier = modifier)
+        is MyPageState.Content -> {
+            Crossfade(
+                targetState = isSigningOut,
+                label = "sign_out"
+            ) { isSigningOutState ->
+                if (isSigningOutState) {
+                    LoadingOverlay(
+                        text = stringResource(R.string.signing_out),
+                        modifier = modifier
+                    )
+                } else {
+                    MyPageContent(
+                        state = uiState,
+                        onSignOut = onSignOut,
+                        modifier = modifier
+                    )
+                }
+            }
+        }
+        is MyPageState.Error -> ErrorScreen(
+            onRetry = onRetry,
+            modifier = modifier
+        )
+    }
+}
+
+@Composable
 fun MyPageContent(
     state: MyPageState.Content,
     modifier: Modifier = Modifier,
@@ -131,7 +150,7 @@ fun MyPageContent(
         contentPadding = PaddingValues(vertical = 8.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        item {
+        item(key = "profile") {
             UserProfileCard(
                 user = state.user,
                 onSignOut = onSignOut,
@@ -139,41 +158,50 @@ fun MyPageContent(
             )
         }
 
-        item {
+        item(key = "section_title") {
             SectionTitle(
                 title = stringResource(R.string.order_details),
                 subtitle = stringResource(R.string.order_details_subtitle),
-                modifier = Modifier.fillMaxWidth().wrapContentHeight()
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .wrapContentHeight()
             )
         }
 
-        if (!state.isOrdersLoaded) {
-            item {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .fillParentMaxHeight(0.6f),
-                    contentAlignment = Alignment.Center
-                ) {
-                    CircularProgressIndicator()
+        when {
+            !state.isOrdersLoaded -> {
+                item(key = "loading") {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .fillParentMaxHeight(0.6f),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularProgressIndicator()
+                    }
                 }
             }
-        } else if (state.orders.isEmpty()) {
-            item {
-                EmptyScreen(
-                    title = stringResource(R.string.no_order_details),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .fillParentMaxHeight(0.6f)
-                        .padding(vertical = 32.dp)
-                )
+            state.orders.isEmpty() -> {
+                item(key = "empty") {
+                    EmptyScreen(
+                        title = stringResource(R.string.no_order_details),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .fillParentMaxHeight(0.6f)
+                            .padding(vertical = 32.dp)
+                    )
+                }
             }
-        } else {
-            items(state.orders) {
-                OrderProductCard(
-                    order = it,
-                    modifier = Modifier.padding(horizontal = 16.dp)
-                )
+            else -> {
+                items(
+                    items = state.orders,
+                    key = { it.orderId }
+                ) {
+                    OrderProductCard(
+                        order = it,
+                        modifier = Modifier.padding(horizontal = 16.dp)
+                    )
+                }
             }
         }
 

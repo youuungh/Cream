@@ -44,7 +44,6 @@ import com.ninezero.cream.utils.CategorySharedElementType
 import com.ninezero.cream.utils.detailBoundsTransform
 import com.ninezero.cream.utils.nonSpatialExpressiveSpring
 import com.ninezero.cream.viewmodel.CategoryDetailViewModel
-import timber.log.Timber
 
 @Composable
 fun CategoryDetailScreen(
@@ -57,12 +56,13 @@ fun CategoryDetailScreen(
     viewModel: CategoryDetailViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.state.collectAsState()
-    val creamScaffoldState = rememberCreamScaffoldState()
+    val scaffoldState = rememberCreamScaffoldState()
 
     val sharedTransitionScope = LocalSharedTransitionScope.current
         ?: throw IllegalStateException("No SharedTransitionScope found")
     val animatedVisibilityScope = LocalNavAnimatedVisibilityScope.current
         ?: throw IllegalStateException("No AnimatedVisibilityScope found")
+
     val roundedCornerAnimation by animatedVisibilityScope.transition
         .animateDp(
             label = "rounded_corner",
@@ -80,7 +80,7 @@ fun CategoryDetailScreen(
             is CategoryDetailEvent.NavigateToProductDetail -> onProductClick(it.productId)
             is CategoryDetailEvent.NavigateToLogin -> onNavigateToLogin()
             is CategoryDetailEvent.NavigateToSaved -> onNavigateToSaved()
-            is CategoryDetailEvent.ShowSnackbar -> creamScaffoldState.showSnackbar(it.message)
+            is CategoryDetailEvent.ShowSnackbar -> scaffoldState.showSnackbar(it.message)
         }
     }
 
@@ -128,7 +128,7 @@ fun CategoryDetailScreen(
                         snackbar = { snackbarData -> CustomSnackbar(snackbarData) }
                     )
                 },
-                snackbarHostState = creamScaffoldState.snackBarHostState,
+                snackbarHostState = scaffoldState.snackBarHostState,
             ) { innerPadding ->
                 when (val state = uiState) {
                     is CategoryDetailState.Fetching -> CategoryDetailSkeleton(

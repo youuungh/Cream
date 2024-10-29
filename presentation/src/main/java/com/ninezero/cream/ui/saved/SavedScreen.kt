@@ -83,34 +83,17 @@ fun SavedScreen(
                 refreshing = isRefresh,
                 onRefresh = { viewModel.refreshData() }
             ) {
-                when (val state = uiState) {
-                    is SavedState.Fetching -> SavedSkeleton(modifier = modifier.padding(innerPadding))
-
-                    is SavedState.Content -> {
-                        if (state.products.isEmpty()) {
-                            EmptyScreen(
-                                onNavigateToHome = onNavigateToHome,
-                                title = stringResource(id = R.string.no_saved_items),
-                                label = stringResource(id = R.string.view_home),
-                                modifier = modifier.padding(innerPadding)
-                            )
-                        } else {
-                            SavedContent(
-                                savedProducts = state.products,
-                                sortType = sortType,
-                                onProductClick = onProductClick,
-                                onRemoveClick = { product -> viewModel.action(SavedAction.Remove(product)) },
-                                onSortClick = { showBottomSheet.value = true },
-                                modifier = modifier.padding(innerPadding)
-                            )
-                        }
-                    }
-
-                    is SavedState.Error -> ErrorScreen(
-                        onRetry = { viewModel.action(SavedAction.Fetch) },
-                        modifier = Modifier.padding(innerPadding)
-                    )
-                }
+                SavedScreenContent(
+                    uiState = uiState,
+                    sortType = sortType,
+                    innerPadding = innerPadding,
+                    onNavigateToHome = onNavigateToHome,
+                    onProductClick = onProductClick,
+                    onRemoveClick = { product -> viewModel.action(SavedAction.Remove(product)) },
+                    onSortClick = { showBottomSheet.value = true },
+                    onRetry = { viewModel.action(SavedAction.Fetch) },
+                    modifier = modifier
+                )
             }
         }
 
@@ -129,6 +112,46 @@ fun SavedScreen(
 }
 
 @Composable
+private fun SavedScreenContent(
+    uiState: SavedState,
+    sortType: SavedSortOption,
+    innerPadding: PaddingValues,
+    onNavigateToHome: () -> Unit,
+    onProductClick: (String) -> Unit,
+    onRemoveClick: (Product) -> Unit,
+    onSortClick: () -> Unit,
+    onRetry: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    when (uiState) {
+        is SavedState.Fetching -> SavedSkeleton(modifier = modifier.padding(innerPadding))
+        is SavedState.Content -> {
+            if (uiState.products.isEmpty()) {
+                EmptyScreen(
+                    onNavigateToHome = onNavigateToHome,
+                    title = stringResource(id = R.string.no_saved_items),
+                    label = stringResource(id = R.string.view_home),
+                    modifier = modifier.padding(innerPadding)
+                )
+            } else {
+                SavedContent(
+                    savedProducts = uiState.products,
+                    sortType = sortType,
+                    onProductClick = onProductClick,
+                    onRemoveClick = onRemoveClick,
+                    onSortClick = onSortClick,
+                    modifier = modifier.padding(innerPadding)
+                )
+            }
+        }
+        is SavedState.Error -> ErrorScreen(
+            onRetry = onRetry,
+            modifier = Modifier.padding(innerPadding)
+        )
+    }
+}
+
+@Composable
 fun SavedContent(
     savedProducts: List<Product>,
     sortType: SavedSortOption,
@@ -143,46 +166,12 @@ fun SavedContent(
             .padding(horizontal = 16.dp),
         contentPadding = PaddingValues(bottom = 24.dp)
     ) {
-        item {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 8.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    stringResource(R.string.total_items, savedProducts.size),
-                    style = MaterialTheme.typography.labelLarge.copy(
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
-                        fontWeight = FontWeight.Normal
-                    )
-                )
-                Row(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(8.dp))
-                        .clickable(onClick = onSortClick)
-                        .padding(horizontal = 8.dp, vertical = 4.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        stringResource(sortType.stringResId),
-                        textAlign = TextAlign.Center,
-                        style = MaterialTheme.typography.labelLarge.copy(
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
-                            fontWeight = FontWeight.Normal
-                        )
-                    )
-                    Icon(
-                        painter = painterResource(R.drawable.ic_sort),
-                        contentDescription = null,
-                        modifier = Modifier
-                            .padding(start = 4.dp)
-                            .size(20.dp),
-                        tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                    )
-                }
-            }
+        item(key = "header") {
+            SavedHeader(
+                itemCount = savedProducts.size,
+                sortType = sortType,
+                onSortClick = onSortClick
+            )
         }
 
         animatedItems(
@@ -190,6 +179,54 @@ fun SavedContent(
             onProductClick = onProductClick,
             onRemoveClick = onRemoveClick
         )
+    }
+}
+
+@Composable
+private fun SavedHeader(
+    itemCount: Int,
+    sortType: SavedSortOption,
+    onSortClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(vertical = 8.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            stringResource(R.string.total_items, itemCount),
+            style = MaterialTheme.typography.labelLarge.copy(
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                fontWeight = FontWeight.Normal
+            )
+        )
+        Row(
+            modifier = Modifier
+                .clip(RoundedCornerShape(8.dp))
+                .clickable(onClick = onSortClick)
+                .padding(horizontal = 8.dp, vertical = 4.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = stringResource(sortType.stringResId),
+                textAlign = TextAlign.Center,
+                style = MaterialTheme.typography.labelLarge.copy(
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                    fontWeight = FontWeight.Normal
+                )
+            )
+            Icon(
+                painter = painterResource(R.drawable.ic_sort),
+                contentDescription = null,
+                modifier = Modifier
+                    .padding(start = 4.dp)
+                    .size(20.dp),
+                tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+            )
+        }
     }
 }
 
@@ -212,9 +249,9 @@ fun LazyListScope.animatedItems(
                     fadeInSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy),
                     fadeOutSpec = spring(dampingRatio = Spring.DampingRatioNoBouncy),
                     placementSpec = spring(
-                    dampingRatio = Spring.DampingRatioLowBouncy,
-                    stiffness = Spring.StiffnessLow
-                )
+                        dampingRatio = Spring.DampingRatioLowBouncy,
+                        stiffness = Spring.StiffnessLow
+                    )
             )
         )
 

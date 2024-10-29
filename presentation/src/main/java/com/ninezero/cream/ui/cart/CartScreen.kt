@@ -60,6 +60,7 @@ fun CartScreen(
 ) {
     val uiState by viewModel.state.collectAsState()
     val allSelected by viewModel.allSelected.collectAsState()
+
     var showDeleteSelectedDialog by remember { mutableStateOf(false) }
     var showDeleteSingleItemDialog by remember { mutableStateOf(false) }
     var selectedCount by remember { mutableIntStateOf(0) }
@@ -91,50 +92,31 @@ fun CartScreen(
             )
         }
     ) { innerPadding ->
-        when (val state = uiState) {
-            is CartState.Fetching -> CartSkeleton(modifier = Modifier.padding(innerPadding))
-
-            is CartState.Content -> {
-                if (state.products.isEmpty()) {
-                    EmptyScreen(
-                        onNavigateToHome = onNavigateToHome,
-                        title = stringResource(R.string.no_cart_items_title),
-                        subtitle = stringResource(R.string.no_cart_items_subtitle),
-                        label = stringResource(R.string.view_home),
-                        modifier = Modifier.padding(innerPadding)
-                    )
-                } else {
-                    CartContent(
-                        products = state.products,
-                        allSelected = allSelected,
-                        onProductClick = onProductClick,
-                        onRemoveProduct = { product ->
-                            productToDelete = product
-                            showDeleteSingleItemDialog = true
-                        },
-                        onUpdateSelection = { productId, isSelected ->
-                            viewModel.action(CartAction.UpdateSelection(productId, isSelected))
-                        },
-                        onUpdateAllSelection = { isSelected ->
-                            viewModel.action(CartAction.UpdateAllSelection(isSelected))
-                        },
-                        onDeleteSelected = {
-                            selectedCount = state.products.count { it.isSelected }
-                            showDeleteSelectedDialog = true
-                        },
-                        calculateTotalPrice = viewModel::calculateTotalPrice,
-                        calculateTotalFee = viewModel::calculateTotalFee,
-                        onOrderClick = { showPaymentBottomSheet = true },
-                        modifier = Modifier.padding(innerPadding)
-                    )
-                }
-            }
-
-            is CartState.Error -> ErrorScreen(
-                onRetry = { viewModel.action(CartAction.Fetch) },
-                modifier = Modifier.padding(innerPadding)
-            )
-        }
+        CartScreenContent(
+            uiState = uiState,
+            allSelected = allSelected,
+            onNavigateToHome = onNavigateToHome,
+            onProductClick = onProductClick,
+            onRetry = { viewModel.action(CartAction.Fetch) },
+            onRemoveProduct = { product ->
+                productToDelete = product
+                showDeleteSingleItemDialog = true
+            },
+            onUpdateSelection = { productId, isSelected ->
+                viewModel.action(CartAction.UpdateSelection(productId, isSelected))
+            },
+            onUpdateAllSelection = { isSelected ->
+                viewModel.action(CartAction.UpdateAllSelection(isSelected))
+            },
+            onDeleteSelected = { count ->
+                selectedCount = count
+                showDeleteSelectedDialog = true
+            },
+            calculateTotalPrice = viewModel::calculateTotalPrice,
+            calculateTotalFee = viewModel::calculateTotalFee,
+            onOrderClick = { showPaymentBottomSheet = true },
+            modifier = Modifier.padding(innerPadding)
+        )
     }
 
     if (showDeleteSelectedDialog) {
@@ -213,6 +195,55 @@ fun CartScreen(
 }
 
 @Composable
+private fun CartScreenContent(
+    uiState: CartState,
+    allSelected: Boolean,
+    onNavigateToHome: () -> Unit,
+    onProductClick: (String) -> Unit,
+    onRetry: () -> Unit,
+    onRemoveProduct: (Product) -> Unit,
+    onUpdateSelection: (String, Boolean) -> Unit,
+    onUpdateAllSelection: (Boolean) -> Unit,
+    onDeleteSelected: (Int) -> Unit,
+    calculateTotalPrice: () -> Int,
+    calculateTotalFee: () -> Double,
+    onOrderClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    when (uiState) {
+        is CartState.Fetching -> CartSkeleton(modifier = modifier)
+        is CartState.Content -> {
+            if (uiState.products.isEmpty()) {
+                EmptyScreen(
+                    onNavigateToHome = onNavigateToHome,
+                    title = stringResource(R.string.no_cart_items_title),
+                    subtitle = stringResource(R.string.no_cart_items_subtitle),
+                    label = stringResource(R.string.view_home),
+                    modifier = modifier
+                )
+            } else {
+                CartContent(
+                    products = uiState.products,
+                    allSelected = allSelected,
+                    onProductClick = onProductClick,
+                    onRemoveProduct = onRemoveProduct,
+                    onUpdateSelection = onUpdateSelection,
+                    onUpdateAllSelection = onUpdateAllSelection,
+                    onDeleteSelected = {
+                        onDeleteSelected(uiState.products.count { it.isSelected })
+                    },
+                    calculateTotalPrice = calculateTotalPrice,
+                    calculateTotalFee = calculateTotalFee,
+                    onOrderClick = onOrderClick,
+                    modifier = modifier
+                )
+            }
+        }
+        is CartState.Error -> ErrorScreen(onRetry = onRetry, modifier = modifier)
+    }
+}
+
+@Composable
 fun CartContent(
     products: List<Product>,
     allSelected: Boolean,
@@ -227,63 +258,112 @@ fun CartContent(
     modifier: Modifier = Modifier
 ) {
     Column(modifier = modifier.fillMaxSize()) {
-        CreamSurface(
-            modifier = Modifier.fillMaxWidth(),
-            color = MaterialTheme.colorScheme.surface,
-            elevation = 4.dp
-        ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.weight(1f)
-                ) {
-                    CustomCheckbox(
-                        checked = allSelected,
-                        onCheckedChange = { isChecked -> onUpdateAllSelection(isChecked) },
-                        label = stringResource(R.string.select_all),
-                    )
-                }
-                DeleteButton(
-                    onClick = onDeleteSelected,
-                    text = stringResource(R.string.delete_selected)
-                )
-            }
-        }
+        CartHeader(
+            allSelected = allSelected,
+            onUpdateAllSelection = onUpdateAllSelection,
+            onDeleteSelected = onDeleteSelected
+        )
 
-        LazyColumn(
-            modifier = Modifier
-                .weight(1f)
-                .background(MaterialTheme.colorScheme.surfaceVariant),
-            contentPadding = PaddingValues(vertical = 8.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            items(products) { product ->
-                CartCard(
-                    product = product,
-                    onProductClick = onProductClick,
-                    onRemoveProduct = onRemoveProduct,
-                    onUpdateSelection = onUpdateSelection
-                )
-            }
+        CartList(
+            products = products,
+            onProductClick = onProductClick,
+            onRemoveProduct = onRemoveProduct,
+            onUpdateSelection = onUpdateSelection,
+            calculateTotalPrice = calculateTotalPrice,
+            calculateTotalFee = calculateTotalFee,
+            modifier = Modifier.weight(1f)
+        )
 
-            item {
-                CartSummaryCard(
-                    totalPrice = calculateTotalPrice(),
-                    totalFee = calculateTotalFee()
-                )
-            }
-        }
-
-        val totalAmount = calculateTotalPrice() + calculateTotalFee().toInt()
-        CartBottomBar(
+        CartFooter(
             selectedCount = products.count { it.isSelected },
-            totalPrice = totalAmount,
+            totalAmount = calculateTotalPrice() + calculateTotalFee().toInt(),
             onOrderClick = onOrderClick
         )
     }
+}
+
+@Composable
+private fun CartHeader(
+    allSelected: Boolean,
+    onUpdateAllSelection: (Boolean) -> Unit,
+    onDeleteSelected: () -> Unit
+) {
+    CreamSurface(
+        modifier = Modifier.fillMaxWidth(),
+        color = MaterialTheme.colorScheme.surface,
+        elevation = 4.dp
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.weight(1f)
+            ) {
+                CustomCheckbox(
+                    checked = allSelected,
+                    onCheckedChange = onUpdateAllSelection,
+                    label = stringResource(R.string.select_all)
+                )
+            }
+            DeleteButton(
+                onClick = onDeleteSelected,
+                text = stringResource(R.string.delete_selected)
+            )
+        }
+    }
+}
+
+@Composable
+private fun CartList(
+    products: List<Product>,
+    onProductClick: (String) -> Unit,
+    onRemoveProduct: (Product) -> Unit,
+    onUpdateSelection: (String, Boolean) -> Unit,
+    calculateTotalPrice: () -> Int,
+    calculateTotalFee: () -> Double,
+    modifier: Modifier = Modifier
+) {
+    LazyColumn(
+        modifier = modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.surfaceVariant),
+        contentPadding = PaddingValues(vertical = 8.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        items(
+            items = products,
+            key = { it.productId }
+        ) { product ->
+            CartCard(
+                product = product,
+                onProductClick = onProductClick,
+                onRemoveProduct = onRemoveProduct,
+                onUpdateSelection = onUpdateSelection
+            )
+        }
+
+        item(key = "summary") {
+            CartSummaryCard(
+                totalPrice = calculateTotalPrice(),
+                totalFee = calculateTotalFee()
+            )
+        }
+    }
+}
+
+@Composable
+private fun CartFooter(
+    selectedCount: Int,
+    totalAmount: Int,
+    onOrderClick: () -> Unit
+) {
+    CartBottomBar(
+        selectedCount = selectedCount,
+        totalPrice = totalAmount,
+        onOrderClick = onOrderClick
+    )
 }
