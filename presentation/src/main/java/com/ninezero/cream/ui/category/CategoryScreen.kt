@@ -23,7 +23,6 @@ import com.ninezero.cream.ui.component.CreamTopAppBar
 import com.ninezero.cream.viewmodel.CategoryViewModel
 import com.ninezero.di.R
 import com.ninezero.domain.model.Category
-import timber.log.Timber
 
 @Composable
 fun CategoryScreen(
