@@ -13,7 +13,7 @@ MVI(Model-View-Intent) 패턴을 채택하여 단방향 데이터 흐름과 예�
 
 ## Demo Video
 
-<a href="https://streamable.com/hl2bw3">
+<a href="https://streamable.com/xyx025">
   <img src="https://github.com/user-attachments/assets/c31c4ee2-0dbc-40e9-b24c-36d50aec7852" height="600px"/>
 </a>
 
